@@ -14,7 +14,6 @@ const HeroSection = () => {
     <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 scroll-smooth">
       <Navigation />
       <Hero />
-      <StudentStories />
     </div>
   );
 };
@@ -240,7 +239,7 @@ const ParallaxElements = () => {
       <ParallaxCard
         title="Wellness Tracking"
         description="Monitor your mood, track stress patterns, and receive personalized wellness recommendations."
-        image="https://images.unsplash.com/photo-1506126613408-eca07ce68e71?q=80&w=400&auto=format&fit=crop"
+        image="https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?q=80&w=400&auto=format&fit=crop"
         start={200}
         end={-250}
         className="mx-auto w-2/3"
@@ -306,66 +305,4 @@ const ParallaxCard = ({ className, title, description, image, start, end }: Para
     </motion.div>
   );
 };
-
-const StudentStories = () => {
-  const stories = [
-    { title: "Overcoming Social Anxiety", author: "Sarah M.", category: "Mental Health" },
-    { title: "Finding My Support Network", author: "Alex K.", category: "Community" },
-    { title: "Stress Management Success", author: "Maya P.", category: "Wellness" },
-    { title: "Academic Pressure Relief", author: "Jordan L.", category: "Academic" },
-    { title: "International Student Journey", author: "Aisha R.", category: "Cultural" },
-  ];
-
-  return (
-    <section
-      id="student-stories"
-      className="mx-auto max-w-5xl px-4 py-48 bg-white"
-    >
-      <motion.h2
-        initial={{ y: 48, opacity: 0 }}
-        whileInView={{ y: 0, opacity: 1 }}
-        transition={{ ease: "easeInOut", duration: 0.75 }}
-        className="mb-20 text-4xl font-black text-gray-900 text-center"
-      >
-        Student Stories
-      </motion.h2>
-
-      {stories.map((story, index) => (
-        <StoryItem
-          key={index}
-          title={story.title}
-          author={story.author}
-          category={story.category}
-        />
-      ))}
-    </section>
-  );
-};
-
-interface StoryItemProps {
-  title: string;
-  author: string;
-  category: string;
-}
-
-const StoryItem = ({ title, author, category }: StoryItemProps) => {
-  return (
-    <motion.div
-      initial={{ y: 48, opacity: 0 }}
-      whileInView={{ y: 0, opacity: 1 }}
-      transition={{ ease: "easeInOut", duration: 0.75 }}
-      className="mb-9 flex items-center justify-between border-b border-gray-200 px-3 pb-9 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-    >
-      <div>
-        <p className="mb-1.5 text-xl text-gray-900 font-semibold">{title}</p>
-        <p className="text-sm text-gray-600">by {author}</p>
-      </div>
-      <div className="flex items-center gap-1.5 text-end text-sm text-blue-600 font-medium">
-        <p>{category}</p>
-        <FiArrowRight />
-      </div>
-    </motion.div>
-  );
-};
-
 export default HeroSection;
