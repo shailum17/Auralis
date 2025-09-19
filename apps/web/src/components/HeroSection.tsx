@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 import {
   motion,
   useMotionTemplate,
@@ -81,13 +82,20 @@ const Navigation = () => {
           </div>
 
           <div className="hidden md:block">
-            <a
-              href="#"
-              className="inline-flex items-center justify-center px-6 py-2 sm:py-2.5 text-base font-semibold text-white transition-all duration-200 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg sm:text-sm hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-              role="button"
-            >
-              Join Community
-            </a>
+            <div className="relative">
+              <div className="absolute inset-0 z-0 rounded-lg blur-[10px] opacity-60 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                }}
+              />
+              <Link
+                href="/auth/signin"
+                className="relative inline-flex items-center justify-center px-6 py-2 sm:py-2.5 text-base font-semibold text-black transition-all duration-200 bg-white rounded-lg sm:text-sm hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-400 z-10"
+                role="button"
+              >
+                Join Community
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -110,13 +118,20 @@ const Navigation = () => {
                 <a href="#community" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Community
                 </a>
-                <a
-                  href="#"
-                  className="inline-flex items-center justify-center px-6 py-2 text-base font-semibold leading-7 text-white transition-all duration-200 bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-                  role="button"
-                >
-                  Join Community
-                </a>
+                <div className="relative">
+                  <div className="absolute inset-0 z-0 rounded-lg blur-[40px] opacity-60 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                    }}
+                  />
+                  <Link
+                    href="/auth/signin"
+                    className="relative inline-flex items-center justify-center px-6 py-2 text-base font-semibold leading-7 text-black transition-all duration-200 bg-white border border-transparent rounded-lg hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-400 z-10"
+                    role="button"
+                  >
+                    Join Community
+                  </Link>
+                </div>
               </div>
             </div>
           </motion.nav>
