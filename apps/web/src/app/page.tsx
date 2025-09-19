@@ -320,61 +320,74 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-16">
+      <footer className="bg-white py-12 border-t border-gray-200">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* Company Info */}
             <div>
-              <div className="flex items-center space-x-2 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">SC</span>
-                </div>
-                <span className="text-xl font-bold">Student Community</span>
-              </div>
-              <p className="text-gray-400 leading-relaxed">
-                A privacy-first platform designed to support student mental health and foster meaningful connections.
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Auralis</h3>
+              <p className="text-gray-600 leading-relaxed text-sm">
+                Empowering students through AI-powered wellness, productivity, and community features designed for academic success.
               </p>
             </div>
 
+            {/* Features */}
             <div>
-              <h4 className="font-semibold mb-4">Platform</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+              <h4 className="font-semibold text-gray-900 mb-4">Features</h4>
+              <ul className="space-y-2 text-gray-600 text-sm">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">AI-Powered Chat</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Wellness Tracking</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Study Groups</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Academic Analytics</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Resource Sharing</a></li>
               </ul>
             </div>
 
+            {/* Support */}
             <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Mental Health</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Crisis Support</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Academic Help</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Wellness Tips</a></li>
+              <h4 className="font-semibold text-gray-900 mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-600 text-sm">
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Contact Us</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Community Guidelines</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a></li>
               </ul>
             </div>
 
+            {/* Newsletter Signup */}
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community Guidelines</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Report Issue</a></li>
-              </ul>
+              <h4 className="font-semibold text-gray-900 mb-3">Stay Updated</h4>
+              <p className="text-gray-600 text-sm mb-3">
+                Get the latest updates on new features and student resources.
+              </p>
+              
+              {/* Newsletter Form with Gradient Background */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-lg blur-sm opacity-70" style={{
+                  background: 'linear-gradient(90deg, #a7f3d0 0%, #bfdbfe 25%, #ddd6fe 50%, #f3e8ff 75%, #fde68a 100%)'
+                }}></div>
+                <div className="relative bg-white rounded-lg p-1">
+                  <div className="flex">
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      className="flex-1 px-3 py-2 text-sm text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none"
+                    />
+                    <button className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2 px-4 rounded transition-colors">
+                      Subscribe
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400 text-sm">
-              © 2024 Student Community Platform. All rights reserved.
+          {/* Copyright */}
+          <div className="border-t border-gray-200 pt-6">
+            <p className="text-gray-600 text-sm text-center">
+              © 2024 Auralis. All rights reserved.
             </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Cookie Policy</a>
-            </div>
           </div>
         </div>
       </footer>
