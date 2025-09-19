@@ -1,46 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import StudentTestimonials from '@/components/StudentTestimonials';
 import HeroSection from '@/components/HeroSection';
 
-export default function Home() {
-  const [activeFeature, setActiveFeature] = useState(0);
 
-  const features = [
+export default function Home() {
+
+  const swapFeatures = [
     {
       title: "Anonymous Posting",
-      description: "Share your thoughts and experiences without judgment. Post anonymously while maintaining complete privacy.",
-      icon: "🎭",
-      color: "from-blue-500 to-purple-600"
+      description: "Share your thoughts and experiences without judgment. Post anonymously while maintaining complete privacy and safety.",
+      image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop",
+      benefits: ["Complete anonymity", "Safe expression", "No judgment zone", "Privacy protection"]
     },
     {
-      title: "Real-time Chat",
-      description: "Connect instantly with fellow students through direct messages and group chats with live typing indicators.",
-      icon: "💬",
-      color: "from-green-500 to-teal-600"
+      title: "AI-Powered Wellness",
+      description: "Get personalized wellness recommendations powered by ethical AI that respects your privacy and helps you thrive.",
+      image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=600&auto=format&fit=crop",
+      benefits: ["Personalized insights", "Privacy-first AI", "Stress pattern analysis", "Mood tracking"]
     },
     {
-      title: "Wellness Tracking",
-      description: "Monitor your mental health with mood tracking, stress analysis, and personalized wellness recommendations.",
-      icon: "🌱",
-      color: "from-pink-500 to-rose-600"
-    },
-    {
-      title: "Safe Moderation",
-      description: "Community-driven moderation with human oversight ensures a safe, supportive environment for everyone.",
-      icon: "🛡️",
-      color: "from-orange-500 to-red-600"
+      title: "Peer Support Network",
+      description: "Connect with fellow students who understand your journey. Build meaningful relationships in a supportive environment.",
+      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=600&auto=format&fit=crop",
+      benefits: ["24/7 peer support", "Study groups", "Mental health circles", "Academic guidance"]
     }
-  ];
-
-
-
-  const stats = [
-    { number: "10K+", label: "Active Students" },
-    { number: "50K+", label: "Anonymous Posts" },
-    { number: "95%", label: "Feel Supported" },
-    { number: "24/7", label: "Community Support" }
   ];
 
   return (
@@ -48,37 +34,26 @@ export default function Home() {
       {/* Hero Section with Navigation and Scroll Animations */}
       <HeroSection />
 
-      {/* Features Section */}
+      {/* Features Section - Swap Scroll Column */}
       <section id="features" className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Built for Student Wellbeing
+              Built for Student Success
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Every feature is designed with privacy, safety, and mental health in mind
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`group cursor-pointer transition-all duration-300 ${
-                  activeFeature === index ? 'scale-105' : 'hover:scale-102'
-                }`}
-                onMouseEnter={() => setActiveFeature(index)}
-              >
-                <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 h-full">
-                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center text-2xl mb-6`}>
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {swapFeatures.map((feature, index) => (
+            <FeatureRow key={index} feature={feature} index={index} />
+          ))}
         </div>
       </section>
 
@@ -140,7 +115,7 @@ export default function Home() {
           <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto">
             Take the first step towards a more supportive student experience. Your privacy and wellbeing are our priority.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-white hover:bg-gray-100 text-blue-600 font-semibold py-4 px-8 rounded-xl transition-all transform hover:scale-105">
               Get Started Free
@@ -214,3 +189,115 @@ export default function Home() {
     </div>
   )
 }
+
+interface SwapFeatureProps {
+  title: string;
+  description: string;
+  image: string;
+  benefits: string[];
+}
+
+interface FeatureRowProps {
+  feature: SwapFeatureProps;
+  index: number;
+}
+
+const FeatureRow = ({ feature, index }: FeatureRowProps) => {
+  const isEven = index % 2 === 0;
+  const ref = useRef(null);
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"]
+  });
+
+  // Create scroll-based transforms for swapping effect
+  const imageX = useTransform(scrollYProgress, [0, 0.3, 0.7, 1],
+    isEven ? [200, 0, 0, -200] : [-200, 0, 0, 200]
+  );
+  const contentX = useTransform(scrollYProgress, [0, 0.3, 0.7, 1],
+    isEven ? [-200, 0, 0, 200] : [200, 0, 0, -200]
+  );
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.8, 1, 1, 0.8]);
+
+  return (
+    <motion.div
+      ref={ref}
+      className="relative h-screen flex items-center justify-center overflow-hidden"
+      style={{ opacity }}
+    >
+      {/* Image Column with scroll-based movement */}
+      <motion.div
+        className="absolute w-1/2 h-96"
+        style={{
+          x: imageX,
+          scale,
+          left: isEven ? '0%' : '50%'
+        }}
+      >
+        <div className="relative h-full">
+          <motion.img
+            src={feature.image}
+            alt={feature.title}
+            className="w-full h-full object-cover rounded-2xl shadow-2xl"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
+
+          {/* Floating badge */}
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-800">
+            {String(index + 1).padStart(2, '0')}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Content Column with scroll-based movement */}
+      <motion.div
+        className="absolute w-1/2 h-96 flex items-center"
+        style={{
+          x: contentX,
+          scale,
+          left: isEven ? '50%' : '0%'
+        }}
+      >
+        <div className={`${isEven ? 'pl-12' : 'pr-12'} w-full`}>
+          <h3 className="text-4xl font-bold text-gray-900 mb-6">
+            {feature.title}
+          </h3>
+          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+            {feature.description}
+          </p>
+
+          <div className="space-y-4 mb-8">
+            {feature.benefits.map((benefit, benefitIndex) => (
+              <div
+                key={benefitIndex}
+                className="flex items-center"
+              >
+                <div className={`w-3 h-3 rounded-full mr-4 ${isEven
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500'
+                  : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                  }`} />
+                <span className="text-gray-700 font-medium">{benefit}</span>
+              </div>
+            ))}
+          </div>
+
+          <motion.button
+            whileHover={{ scale: 1.05, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            className={`font-semibold py-3 px-8 rounded-xl shadow-lg text-white ${isEven
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+              }`}
+          >
+            Learn More
+            <span className="inline-block ml-2">→</span>
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
