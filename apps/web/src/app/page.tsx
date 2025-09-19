@@ -57,48 +57,211 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="py-20 bg-gradient-to-r from-blue-50 to-purple-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
+      {/* How It Works - Template Design */}
+      <section id="how-it-works" className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4 max-w-7xl">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Simple Steps to Get Started
+              The only platform that creates unique & supportive student communities
             </h2>
-            <p className="text-xl text-gray-600">
-              Join thousands of students in just a few clicks
-            </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-12 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                1
+          {/* Three Column Layout */}
+          <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+            {/* Column 1: Create & Connect */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              className="text-center"
+            >
+              <div className="relative mb-8">
+                <div className="absolute inset-0 z-0 rounded-2xl blur-[40px] opacity-90 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                  }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  viewport={{ once: true }}
+                  className="relative bg-white rounded-2xl p-6 shadow-xl z-10"
+                >
+                  <div className="text-xs text-gray-500 mb-4 text-left font-medium">STUDENTS</div>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">JW</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">Jenny Wilson</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">CF</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">Cody Fisher</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">RF</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">Robert Fox</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-pink-400 to-pink-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">SN</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">Savannah Nguyen</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">FM</span>
+                      </div>
+                      <span className="text-gray-800 font-medium">Floyd Miles</span>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Create Account</h3>
-              <p className="text-gray-600">
-                Sign up with just your email. We only collect what's necessary for your experience.
-              </p>
-            </div>
+              <motion.h3
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                viewport={{ once: true }}
+                className="text-2xl font-bold text-gray-900 mb-4"
+              >
+                Create Your Profile & Connect
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                viewport={{ once: true }}
+                className="text-gray-600 leading-relaxed"
+              >
+                Start your journey in minutes. Create a profile, share interests, and connect with peers. Post thoughts anonymously or with your profile - it's always your choice. Join discussions and build meaningful relationships.
+              </motion.p>
+            </motion.div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                2
+            {/* Column 2: Share & Support */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              viewport={{ once: true, margin: "-100px" }}
+              className="text-center"
+            >
+              <div className="relative mb-8">
+                <div className="absolute inset-0 z-0 rounded-2xl blur-[40px] opacity-90 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                  }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  viewport={{ once: true }}
+                  className="relative bg-white rounded-2xl p-6 shadow-xl z-10"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-medium">AF</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium text-gray-800">Albert Flores</div>
+                        <div className="text-xs text-gray-600 mt-1">Thanks for the awesome feedback! We are trying to implement this in our next update. Cheers!</div>
+                        <div className="text-xs text-gray-400 mt-2">7 hours ago • Reply</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-medium">EP</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-medium text-gray-800">Eleanor Pena</div>
+                        <div className="text-xs text-gray-600 mt-1">@Albert Flores That would be great!</div>
+                        <div className="text-xs text-gray-400 mt-2">5 hours ago • Reply</div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Share & Connect</h3>
-              <p className="text-gray-600">
-                Post anonymously, join discussions, and connect with students who understand your journey.
-              </p>
-            </div>
+              <motion.h3
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                viewport={{ once: true }}
+                className="text-2xl font-bold text-gray-900 mb-4"
+              >
+                Share & Get Support
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                viewport={{ once: true }}
+                className="text-gray-600 leading-relaxed"
+              >
+                Explore community forums with topic tags like #study-tips or #dorm-life. Our AI works silently to understand the community's emotional pulse and provides gentle, private support when needed.
+              </motion.p>
+            </motion.div>
 
-            <div className="text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-pink-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-6">
-                3
+            {/* Column 3: Track & Thrive */}
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              viewport={{ once: true, margin: "-100px" }}
+              className="text-center"
+            >
+              <div className="relative mb-8">
+                <div className="absolute inset-0 z-0 rounded-2xl blur-[40px] opacity-90 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                  }}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                  viewport={{ once: true }}
+                  className="relative bg-gray-900 rounded-2xl p-6 text-white shadow-xl z-10"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm font-medium">Insight</div>
+                    <div className="text-yellow-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-lg font-bold mb-2">You have made $37,492 this week!</div>
+                  <div className="text-sm text-gray-300 mb-4">Wellness Report</div>
+                  <div className="bg-gray-800 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-gray-400">Progress</span>
+                      <span className="text-xs text-gray-400">78%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full" style={{ width: '78%' }}></div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Grow Together</h3>
-              <p className="text-gray-600">
-                Access wellness resources, track your mood, and build a supportive network.
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Track Wellness & Resources</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Access our curated Resource Library anytime - articles, videos, and professional contacts. Build your social network, send direct messages, and create study groups that support your academic success.
               </p>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -107,23 +270,52 @@ export default function Home() {
       <StudentTestimonials />
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
-            Ready to Join Our Community?
-          </h2>
-          <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto">
-            Take the first step towards a more supportive student experience. Your privacy and wellbeing are our priority.
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4 text-center max-w-4xl">
+          <div className="flex items-center justify-center mb-6">
+            <h2 className="text-4xl font-bold text-gray-900">
+              Join
+            </h2>
+            <div className="mx-3">
+              <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h2 className="text-4xl font-bold text-gray-900">
+              Student Community
+            </h2>
+          </div>
+
+          <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
+            With lots of unique features, you can easily build a supportive network without judgment. Build your next chapter of student life.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white hover:bg-gray-100 text-blue-600 font-semibold py-4 px-8 rounded-xl transition-all transform hover:scale-105">
-              Get Started Free
-            </button>
-            <button className="bg-transparent hover:bg-white/10 text-white font-semibold py-4 px-8 rounded-xl border-2 border-white transition-all">
-              Learn More
-            </button>
+          {/* Email Signup Form with Colorful Shadow */}
+          <div className="relative max-w-2xl mx-auto mb-8">
+            {/* Colorful gradient shadow behind input field */}
+            <div className="absolute inset-0 z-0 rounded-2xl blur-[40px] opacity-60 pointer-events-none"
+              style={{
+                background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+              }}
+            />
+            
+            <div className="relative bg-white rounded-2xl p-2 shadow-lg border border-gray-200 z-10">
+              <div className="flex items-center">
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className="flex-1 px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg"
+                />
+                <button className="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-8 rounded-xl transition-all transform hover:scale-105">
+                  Get started now
+                </button>
+              </div>
+            </div>
           </div>
+
+          <p className="text-gray-600 text-sm">
+            No ads. No trails. No commitments
+          </p>
         </div>
       </section>
 
@@ -187,7 +379,7 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
 interface SwapFeatureProps {
