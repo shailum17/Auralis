@@ -35,7 +35,7 @@ export default function Home() {
       <HeroSection />
 
       {/* Features Section - Swap Scroll Column */}
-      <section id="features" className="py-20 bg-white">
+      <section id="features" className="py-16 bg-white">
         <div className="container mx-auto px-4 max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -43,11 +43,19 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <motion.span 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-block px-4 py-2 text-sm font-semibold text-blue-600 bg-blue-50 rounded-full mb-4"
+            >
+              ✨ Powerful Features
+            </motion.span>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               Built for Student Success
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Every feature is designed with privacy, safety, and mental health in mind
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Every feature is thoughtfully designed with privacy, safety, and mental health in mind to help you thrive academically and personally
             </p>
           </motion.div>
 
@@ -58,7 +66,7 @@ export default function Home() {
       </section>
 
       {/* How It Works - Template Design */}
-      <section id="how-it-works" className="py-20 bg-gray-50">
+      <section id="how-it-works" className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Header */}
           <motion.div
@@ -67,9 +75,20 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <motion.span 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-block px-4 py-2 text-sm font-semibold text-purple-600 bg-purple-50 rounded-full mb-4"
+            >
+              🚀 How It Works
+            </motion.span>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight max-w-4xl mx-auto">
               The only platform that creates unique & supportive student communities
             </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Join thousands of students who have found their support network and academic success
+            </p>
           </motion.div>
 
           {/* Three Column Layout */}
@@ -135,7 +154,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
                 viewport={{ once: true }}
-                className="text-2xl font-bold text-gray-900 mb-4"
+                className="text-2xl md:text-3xl font-bold text-gray-900 mb-4"
               >
                 Create Your Profile & Connect
               </motion.h3>
@@ -144,7 +163,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
                 viewport={{ once: true }}
-                className="text-gray-600 leading-relaxed"
+                className="text-gray-600 leading-relaxed text-base"
               >
                 Start your journey in minutes. Create a profile, share interests, and connect with peers. Post thoughts anonymously or with your profile - it's always your choice. Join discussions and build meaningful relationships.
               </motion.p>
@@ -200,7 +219,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
                 viewport={{ once: true }}
-                className="text-2xl font-bold text-gray-900 mb-4"
+                className="text-2xl md:text-3xl font-bold text-gray-900 mb-4"
               >
                 Share & Get Support
               </motion.h3>
@@ -209,7 +228,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
                 viewport={{ once: true }}
-                className="text-gray-600 leading-relaxed"
+                className="text-gray-600 leading-relaxed text-base"
               >
                 Explore community forums with topic tags like #study-tips or #dorm-life. Our AI works silently to understand the community's emotional pulse and provides gentle, private support when needed.
               </motion.p>
@@ -257,10 +276,24 @@ export default function Home() {
                   </div>
                 </motion.div>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Track Wellness & Resources</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <motion.h3
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                viewport={{ once: true }}
+                className="text-2xl md:text-3xl font-bold text-gray-900 mb-4"
+              >
+                Track Wellness & Resources
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                viewport={{ once: true }}
+                className="text-gray-600 leading-relaxed text-base"
+              >
                 Access our curated Resource Library anytime - articles, videos, and professional contacts. Build your social network, send direct messages, and create study groups that support your academic success.
-              </p>
+              </motion.p>
             </motion.div>
           </div>
         </div>
@@ -270,28 +303,57 @@ export default function Home() {
       <StudentTestimonials />
 
       {/* CTA Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 text-center max-w-4xl">
-          <div className="flex items-center justify-center mb-6">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Join
-            </h2>
-            <div className="mx-3">
-              <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+      <section className="py-20 bg-gradient-to-br from-white via-blue-50/20 to-purple-50/20 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-blue-400 rounded-full blur-xl"></div>
+          <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-400 rounded-full blur-xl"></div>
+          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-pink-400 rounded-full blur-xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 text-center max-w-5xl relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mb-8"
+          >
+            <span className="inline-block px-4 py-2 text-sm font-semibold text-green-600 bg-green-50 rounded-full mb-6">
+              🎓 Ready to Join?
+            </span>
+            
+            <div className="flex items-center justify-center mb-6 flex-wrap gap-2">
+              <h2 className="text-4xl md:text-6xl font-bold text-gray-900">
+                Join
+              </h2>
+              <div className="mx-3">
+                <motion.svg 
+                  className="w-8 h-8 md:w-12 md:h-12 text-orange-500" 
+                  fill="currentColor" 
+                  viewBox="0 0 24 24"
+                  whileHover={{ rotate: 15, scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </motion.svg>
+              </div>
+              <h2 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Auralis
+              </h2>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900">
-              Student Community
-            </h2>
-          </div>
 
-          <p className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
-            With lots of unique features, you can easily build a supportive network without judgment. Build your next chapter of student life.
-          </p>
+            <p className="text-lg md:text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+              With lots of unique features, you can easily build a supportive network without judgment. Build your next chapter of student life with confidence and community support.
+            </p>
+          </motion.div>
 
-          {/* Email Signup Form with Colorful Shadow */}
-          <div className="relative max-w-2xl mx-auto mb-8">
+          {/* Email Signup Form with Enhanced Design */}
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative max-w-2xl mx-auto mb-8"
+          >
             {/* Colorful gradient shadow behind input field */}
             <div className="absolute inset-0 z-0 rounded-2xl blur-[40px] opacity-60 pointer-events-none"
               style={{
@@ -299,23 +361,49 @@ export default function Home() {
               }}
             />
             
-            <div className="relative bg-white rounded-2xl p-2 shadow-lg border border-gray-200 z-10">
-              <div className="flex items-center">
+            <div className="relative bg-white rounded-2xl p-2 shadow-xl border border-gray-200 z-10">
+              <div className="flex items-center flex-col sm:flex-row gap-2 sm:gap-0">
                 <input
                   type="email"
                   placeholder="Enter your email address"
-                  className="flex-1 px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg"
+                  className="flex-1 w-full sm:w-auto px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg focus:ring-2 focus:ring-blue-500 rounded-xl"
                 />
-                <button className="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 px-8 rounded-xl transition-all transform hover:scale-105">
-                  Get started now
-                </button>
+                <motion.button 
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-all transform shadow-lg"
+                >
+                  Get started now →
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <p className="text-gray-600 text-sm">
-            No ads. No trails. No commitments
-          </p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex items-center justify-center space-x-6 text-sm text-gray-600 mb-6"
+          >
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>No ads</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>No trials</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>No commitments</span>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -429,19 +517,20 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
   return (
     <motion.div
       ref={ref}
-      className="relative h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-[500px] lg:min-h-[600px] flex items-center justify-center overflow-hidden mb-16 lg:mb-20"
       style={{ opacity }}
     >
       {/* Image Column with scroll-based movement */}
       <motion.div
-        className="absolute w-1/2 h-96"
+        className="absolute w-full lg:w-1/2 h-80 lg:h-96"
         style={{
           x: imageX,
           scale,
-          left: isEven ? '0%' : '50%'
+          left: isEven ? '0%' : '50%',
+          top: isEven ? '0%' : '10%'
         }}
       >
-        <div className="relative h-full">
+        <div className="relative h-full mx-4 lg:mx-0">
           <motion.img
             src={feature.image}
             alt={feature.title}
@@ -449,57 +538,90 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.3 }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-2xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-2xl"></div>
 
-          {/* Floating badge */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-800">
+          {/* Enhanced floating badge */}
+          <motion.div 
+            className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold text-gray-800 shadow-lg"
+            initial={{ scale: 0 }}
+            whileInView={{ scale: 1 }}
+            transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+          >
             {String(index + 1).padStart(2, '0')}
-          </div>
+          </motion.div>
         </div>
       </motion.div>
 
       {/* Content Column with scroll-based movement */}
       <motion.div
-        className="absolute w-1/2 h-96 flex items-center"
+        className="absolute w-full lg:w-1/2 min-h-[400px] lg:min-h-[500px] flex items-center"
         style={{
           x: contentX,
           scale,
-          left: isEven ? '50%' : '0%'
+          left: isEven ? '50%' : '0%',
+          top: isEven ? '5%' : '0%'
         }}
       >
-        <div className={`${isEven ? 'pl-12' : 'pr-12'} w-full`}>
-          <h3 className="text-4xl font-bold text-gray-900 mb-6">
+        <div className={`${isEven ? 'lg:pl-12' : 'lg:pr-12'} w-full px-4 lg:px-8 py-8 lg:py-12`}>
+          <motion.h3 
+            className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-3 lg:mb-4 leading-tight"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             {feature.title}
-          </h3>
-          <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+          </motion.h3>
+          <motion.p 
+            className="text-sm lg:text-base xl:text-lg text-gray-600 mb-4 lg:mb-6 leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             {feature.description}
-          </p>
+          </motion.p>
 
-          <div className="space-y-4 mb-8">
+          <motion.div 
+            className="space-y-2 lg:space-y-3 mb-4 lg:mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             {feature.benefits.map((benefit, benefitIndex) => (
-              <div
+              <motion.div
                 key={benefitIndex}
                 className="flex items-center"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 + benefitIndex * 0.1 }}
               >
-                <div className={`w-3 h-3 rounded-full mr-4 ${isEven
+                <div className={`w-2 h-2 lg:w-3 lg:h-3 rounded-full mr-3 lg:mr-4 flex-shrink-0 ${isEven
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500'
                   : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                  }`} />
-                <span className="text-gray-700 font-medium">{benefit}</span>
-              </div>
+                  } shadow-lg`} />
+                <span className="text-gray-700 font-medium text-xs lg:text-sm xl:text-base leading-relaxed">{benefit}</span>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           <motion.button
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
-            className={`font-semibold py-3 px-8 rounded-xl shadow-lg text-white ${isEven
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className={`font-semibold py-2 lg:py-3 xl:py-4 px-4 lg:px-6 xl:px-8 rounded-xl shadow-lg text-white text-xs lg:text-sm xl:text-base ${isEven
               ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
               : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-              }`}
+              } transition-all duration-300`}
           >
             Learn More
-            <span className="inline-block ml-2">→</span>
+            <motion.span 
+              className="inline-block ml-2"
+              whileHover={{ x: 5 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              →
+            </motion.span>
           </motion.button>
         </div>
       </motion.div>
