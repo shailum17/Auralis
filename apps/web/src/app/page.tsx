@@ -43,7 +43,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -75,7 +75,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
@@ -310,7 +310,7 @@ export default function Home() {
           <div className="absolute bottom-10 right-10 w-32 h-32 bg-purple-400 rounded-full blur-xl"></div>
           <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-pink-400 rounded-full blur-xl"></div>
         </div>
-        
+
         <div className="container mx-auto px-4 text-center max-w-5xl relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -321,15 +321,15 @@ export default function Home() {
             <span className="inline-block px-4 py-2 text-sm font-semibold text-green-600 bg-green-50 rounded-full mb-6">
               🎓 Ready to Join?
             </span>
-            
+
             <div className="flex items-center justify-center mb-6 flex-wrap gap-2">
               <h2 className="text-4xl md:text-6xl font-bold text-gray-900">
                 Join
               </h2>
               <div className="mx-3">
-                <motion.svg 
-                  className="w-8 h-8 md:w-12 md:h-12 text-orange-500" 
-                  fill="currentColor" 
+                <motion.svg
+                  className="w-8 h-8 md:w-12 md:h-12 text-orange-500"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
                   whileHover={{ rotate: 15, scale: 1.1 }}
                   transition={{ type: "spring", stiffness: 400 }}
@@ -348,7 +348,7 @@ export default function Home() {
           </motion.div>
 
           {/* Email Signup Form with Enhanced Design */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -360,7 +360,7 @@ export default function Home() {
                 background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
               }}
             />
-            
+
             <div className="relative bg-white rounded-2xl p-2 shadow-xl border border-gray-200 z-10">
               <div className="flex items-center flex-col sm:flex-row gap-2 sm:gap-0">
                 <input
@@ -368,7 +368,7 @@ export default function Home() {
                   placeholder="Enter your email address"
                   className="flex-1 w-full sm:w-auto px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg focus:ring-2 focus:ring-blue-500 rounded-xl"
                 />
-                <motion.button 
+                <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className="w-full sm:w-auto bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-all transform shadow-lg"
@@ -449,7 +449,7 @@ export default function Home() {
               <p className="text-gray-600 text-sm mb-3">
                 Get the latest updates on new features and student resources.
               </p>
-              
+
               {/* Newsletter Form with Gradient Background */}
               <div className="relative">
                 <div className="absolute inset-0 rounded-lg blur-sm opacity-70" style={{
@@ -541,7 +541,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-2xl"></div>
 
           {/* Enhanced floating badge */}
-          <motion.div 
+          <motion.div
             className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-bold text-gray-800 shadow-lg"
             initial={{ scale: 0 }}
             whileInView={{ scale: 1 }}
@@ -563,7 +563,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
         }}
       >
         <div className={`${isEven ? 'lg:pl-12' : 'lg:pr-12'} w-full px-4 lg:px-8 py-8 lg:py-12`}>
-          <motion.h3 
+          <motion.h3
             className="text-2xl lg:text-3xl xl:text-4xl font-bold text-gray-900 mb-3 lg:mb-4 leading-tight"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -571,7 +571,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
           >
             {feature.title}
           </motion.h3>
-          <motion.p 
+          <motion.p
             className="text-sm lg:text-base xl:text-lg text-gray-600 mb-4 lg:mb-6 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -580,7 +580,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
             {feature.description}
           </motion.p>
 
-          <motion.div 
+          <motion.div
             className="space-y-2 lg:space-y-3 mb-4 lg:mb-6"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -615,7 +615,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
               } transition-all duration-300`}
           >
             Learn More
-            <motion.span 
+            <motion.span
               className="inline-block ml-2"
               whileHover={{ x: 5 }}
               transition={{ type: "spring", stiffness: 400 }}
