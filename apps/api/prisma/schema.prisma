@@ -1,4 +1,4 @@
-// This is your Prisma schema file for SQLite development
+// This is your Prisma schema file for MongoDB
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -6,24 +6,37 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+type PrivacySettings {
+  allowDirectMessages Boolean @default(true)
+  showOnlineStatus    Boolean @default(true)
+  allowProfileViewing Boolean @default(true)
+  dataCollection      Boolean @default(true)
+}
+
 model User {
-  id                String    @id @default(uuid())
-  email             String    @unique
-  passwordHash      String    @map("password_hash")
-  username          String    @unique
+  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  email             String           @unique
+  passwordHash      String           @map("password_hash")
+  username          String           @unique
   bio               String?
-  avatarUrl         String?   @map("avatar_url")
-  interests         String?   // JSON as string for SQLite
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-  emailVerified     Boolean   @default(false) @map("email_verified")
-  privacySettings   String?   @map("privacy_settings") // JSON as string
-  lastActive        DateTime? @map("last_active")
-  role              String    @default("USER") // Enum as string
+  avatarUrl         String?          @map("avatar_url")
+  interests         String[]         // Array of strings for MongoDB
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  emailVerified     Boolean          @default(false) @map("email_verified")
+  privacySettings   PrivacySettings? @map("privacy_settings")
+  lastActive        DateTime?        @map("last_active")
+  role              UserRole         @default(USER)
   
   // Relationships
   posts             Post[]
@@ -41,15 +54,15 @@ model User {
 }
 
 model Post {
-  id            String    @id @default(uuid())
-  authorId      String    @map("author_id")
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  authorId      String    @map("author_id") @db.ObjectId
   content       String
   isAnonymous   Boolean   @default(false) @map("is_anonymous")
-  tags          String?   // JSON as string for SQLite
+  tags          String[]  // Array of strings for MongoDB
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   isHidden      Boolean   @default(false) @map("is_hidden")
-  hiddenByModId String?   @map("hidden_by_mod_id")
+  hiddenByModId String?   @map("hidden_by_mod_id") @db.ObjectId
   hideReason    String?   @map("hide_reason")
   
   // Relationships
@@ -61,10 +74,10 @@ model Post {
 }
 
 model Comment {
-  id          String    @id @default(uuid())
-  postId      String    @map("post_id")
-  authorId    String    @map("author_id")
-  parentId    String?   @map("parent_id")
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  postId      String    @map("post_id") @db.ObjectId
+  authorId    String    @map("author_id") @db.ObjectId
+  parentId    String?   @map("parent_id") @db.ObjectId
   content     String
   isAnonymous Boolean   @default(false) @map("is_anonymous")
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -74,36 +87,62 @@ model Comment {
   // Relationships
   post        Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
   author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent      Comment?   @relation("CommentReplies", fields: [parentId], references: [id])
+  parent      Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies     Comment[]  @relation("CommentReplies")
   reactions   Reaction[]
   
   @@map("comments")
 }
 
+enum TargetType {
+  POST
+  COMMENT
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  SUPPORT
+  HELPFUL
+  INSIGHTFUL
+}
+
 model Reaction {
-  id           String      @id @default(uuid())
-  userId       String      @map("user_id")
-  targetId     String      @map("target_id")
-  targetType   String      @map("target_type") // Enum as string
-  reactionType String      @map("reaction_type") // Enum as string
-  createdAt    DateTime    @default(now()) @map("created_at")
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String       @map("user_id") @db.ObjectId
+  targetId     String       @map("target_id") @db.ObjectId
+  targetType   TargetType   @map("target_type")
+  reactionType ReactionType @map("reaction_type")
+  createdAt    DateTime     @default(now()) @map("created_at")
   
   // Relationships
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post         Post?       @relation(fields: [targetId], references: [id], onDelete: Cascade)
-  comment      Comment?    @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post         Post?        @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  comment      Comment?     @relation(fields: [targetId], references: [id], onDelete: Cascade)
   
   @@unique([userId, targetId, targetType])
   @@map("reactions")
 }
 
+enum ChannelType {
+  DIRECT_MESSAGE
+  GROUP_CHAT
+  STUDY_GROUP
+  SUPPORT_CIRCLE
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+  MODERATOR
+}
+
 model ChatChannel {
-  id        String    @id @default(uuid())
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
   name      String?
-  type      String    // Enum as string
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  type      ChannelType
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
   
   // Relationships
   members   ChatChannelMember[]
@@ -113,11 +152,11 @@ model ChatChannel {
 }
 
 model ChatChannelMember {
-  id        String   @id @default(uuid())
-  channelId String   @map("channel_id")
-  userId    String   @map("user_id")
-  joinedAt  DateTime @default(now()) @map("joined_at")
-  role      String   @default("MEMBER") // Enum as string
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  channelId String     @map("channel_id") @db.ObjectId
+  userId    String     @map("user_id") @db.ObjectId
+  joinedAt  DateTime   @default(now()) @map("joined_at")
+  role      MemberRole @default(MEMBER)
   
   // Relationships
   channel   ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
@@ -128,9 +167,9 @@ model ChatChannelMember {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  channelId String   @map("channel_id")
-  senderId  String   @map("sender_id")
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  channelId String   @map("channel_id") @db.ObjectId
+  senderId  String   @map("sender_id") @db.ObjectId
   content   String
   createdAt DateTime @default(now()) @map("created_at")
   isDeleted Boolean  @default(false) @map("is_deleted")
@@ -142,61 +181,102 @@ model Message {
   @@map("messages")
 }
 
+enum ReportReason {
+  HARASSMENT
+  SPAM
+  INAPPROPRIATE_CONTENT
+  MISINFORMATION
+  SELF_HARM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum ActionType {
+  WARNING
+  TEMPORARY_BAN
+  PERMANENT_BAN
+  CONTENT_REMOVAL
+  ACCOUNT_SUSPENSION
+}
+
 model Report {
-  id          String      @id @default(uuid())
-  reporterId  String      @map("reporter_id")
-  targetId    String      @map("target_id")
-  targetType  String      @map("target_type") // Enum as string
-  reason      String      // Enum as string
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  reporterId  String       @map("reporter_id") @db.ObjectId
+  targetId    String       @map("target_id") @db.ObjectId
+  targetType  TargetType   @map("target_type")
+  reason      ReportReason
   description String?
-  status      String      @default("PENDING") // Enum as string
-  handledById String?     @map("handled_by_id")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  resolvedAt  DateTime?   @map("resolved_at")
+  status      ReportStatus @default(PENDING)
+  handledById String?      @map("handled_by_id") @db.ObjectId
+  createdAt   DateTime     @default(now()) @map("created_at")
+  resolvedAt  DateTime?    @map("resolved_at")
   
   // Relationships
-  reporter    User        @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  handler     User?       @relation("Handler", fields: [handledById], references: [id])
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  handler     User?        @relation("Handler", fields: [handledById], references: [id])
   
   @@map("reports")
 }
 
 model ModerationAction {
-  id          String          @id @default(uuid())
-  moderatorId String          @map("moderator_id")
-  targetId    String          @map("target_id")
-  targetType  String          @map("target_type") // Enum as string
-  actionType  String          @map("action_type") // Enum as string
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  moderatorId String     @map("moderator_id") @db.ObjectId
+  targetId    String     @map("target_id") @db.ObjectId
+  targetType  TargetType @map("target_type")
+  actionType  ActionType @map("action_type")
   reason      String
-  expiresAt   DateTime?       @map("expires_at")
-  createdAt   DateTime        @default(now()) @map("created_at")
+  expiresAt   DateTime?  @map("expires_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
   
   // Relationships
-  moderator   User            @relation(fields: [moderatorId], references: [id])
+  moderator   User       @relation(fields: [moderatorId], references: [id])
   
   @@map("moderation_actions")
 }
 
+type StressFeatures {
+  textSentiment     Float?
+  postFrequency     Float?
+  sleepPattern      Float?
+  socialInteraction Float?
+  academicStress    Float?
+}
+
+enum ResourceCategory {
+  MENTAL_HEALTH
+  ACADEMIC_SUPPORT
+  CRISIS_HELP
+  WELLNESS_TIPS
+  STUDY_RESOURCES
+  SOCIAL_SUPPORT
+}
+
 model StressScore {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String         @map("user_id") @db.ObjectId
   score     Float
-  features  String   // JSON as string for SQLite
-  createdAt DateTime @default(now()) @map("created_at")
-  scoreDate DateTime @map("score_date") // No @db.Date for SQLite
+  features  StressFeatures
+  createdAt DateTime       @default(now()) @map("created_at")
+  scoreDate DateTime       @map("score_date") @db.Date
   
   // Relationships
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@unique([userId, scoreDate])
   @@map("stress_scores")
 }
 
 model MoodEntry {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @map("user_id") @db.ObjectId
   moodScore Int      @map("mood_score")
-  tags      String?  // JSON as string for SQLite
+  tags      String[] // Array of strings for MongoDB
   notes     String?
   createdAt DateTime @default(now()) @map("created_at")
   
@@ -207,15 +287,15 @@ model MoodEntry {
 }
 
 model Resource {
-  id          String       @id @default(uuid())
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
   url         String
-  category    String       // Enum as string
-  locale      String       @default("en")
-  isActive    Boolean      @default(true) @map("is_active")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  category    ResourceCategory
+  locale      String           @default("en")
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
   
   @@map("resources")
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import StudentTestimonials from '@/components/StudentTestimonials';
 import HeroSection from '@/components/HeroSection';
@@ -265,12 +265,12 @@ export default function Home() {
                   </div>
                   <div className="text-lg font-bold mb-2">You have made $37,492 this week!</div>
                   <div className="text-sm text-gray-600 mb-4">Wellness Report</div>
-                  <div className="bg-gray-800 rounded-lg p-4">
+                  <div className="bg-gray-800 rounded-llg p-4">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs text-gray-400">Progress</span>
                       <span className="text-xs text-gray-400">78%</span>
                     </div>
-                    <div className="w-full bg-white-700 rounded-full h-2">
+                    <div className="w-full bg-gray-700 rounded-full h-2">
                       <div className="bg-gradient-to-r from-blue-400 to-purple-500 h-2 rounded-full" style={{ width: '78%' }}></div>
                     </div>
                   </div>
