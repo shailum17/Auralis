@@ -6,7 +6,7 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { FiArrowRight, FiCheck } from "react-icons/fi";
+import { FiArrowRight, FiCheck, FiChevronDown, FiPlus, FiMinus } from "react-icons/fi";
 
 const SECTION_HEIGHT = 1500;
 
@@ -66,6 +66,9 @@ const Navigation = () => {
             <a href="#community" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Community
             </a>
+            <a href="#faq" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
+              FAQ
+            </a>
           </div>
 
           <div className="hidden md:block">
@@ -117,6 +120,9 @@ const Navigation = () => {
                 </a>
                 <a href="#community" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Community
+                </a>
+                <a href="#faq" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
+                  FAQ
                 </a>
                 <div className="relative">
                   <div className="absolute inset-0 z-0 rounded-lg blur-[40px] opacity-60 pointer-events-none"
@@ -314,3 +320,104 @@ const ParallaxCard = ({ className, title, description, image, start, end }: Para
 
 
 export default HeroSection;
+
+// FAQ Section
+export const FAQ = () => {
+  const faqs = [
+    {
+      q: "Is my identity anonymous when I post?",
+      a: "Yes. Posts can be made anonymously. Moderators can review reports, but your identity is never shown publicly.",
+    },
+    {
+      q: "Do I need to pay to use Auralis?",
+      a: "No. Auralis is free for students. Some advanced features may be introduced later but core community features remain free.",
+    },
+    {
+      q: "What kind of support can I find here?",
+      a: "Peer support, wellness tracking, curated resources, and when available, ML-assisted stress insights. It is not a substitute for professional help.",
+    },
+    {
+      q: "How do you protect my data?",
+      a: "We use a privacy-first design, minimal data collection, and secure storage. See our privacy documentation for details.",
+    },
+  ];
+
+  return (
+    <section id="faq" className="relative isolate py-24 px-4 bg-white">
+      <div className="mx-auto max-w-4xl">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">Frequently Asked Questions</h2>
+          <p className="mt-4 text-base md:text-lg text-gray-600 max-w-2xl mx-auto">With lots of unique blocks, you can easily build a page without coding. Build your next landing page.</p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((item, idx) => (
+            <FAQItem key={idx} question={item.q} answer={item.a} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+interface FAQItemProps {
+  question: string;
+  answer: string;
+}
+
+const FAQItem = ({ question, answer }: FAQItemProps) => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <motion.div
+      initial={false}
+      animate={{ y: 0, opacity: 1 }}
+      className={`group relative rounded-2xl border bg-white transition-shadow ${open ? 'border-transparent shadow-lg' : 'border-gray-200 shadow-none hover:shadow-lg'}`}
+      style={{ backgroundColor: '#ffffff' }}
+    >
+      {/* Soft background glow on hover/open */}
+      <div
+        className={`pointer-events-none absolute -inset-6 rounded-[22px] transition-opacity duration-300 ${open ? 'opacity-60' : 'opacity-0 group-hover:opacity-60'}`}
+        style={{
+          background:
+            'linear-gradient(120deg, rgba(255,128,181,0.35) 0%, rgba(255,215,0,0.25) 25%, rgba(127,255,212,0.25) 65%, rgba(128,191,255,0.35) 85%)',
+          filter: 'blur(80px)'
+        }}
+      />
+      {/* Gradient BORDER only on hover or when open (masked, no fill) */}
+      <div
+        className={`pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+        style={{
+          background:
+            'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #7fffd4 65%, #80bfff 85%)',
+          padding: '1px',
+          WebkitMask:
+            'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+          WebkitMaskComposite: 'xor' as unknown as undefined,
+          maskComposite: 'exclude' as unknown as undefined
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="relative z-10 w-full flex items-center justify-between px-8 py-6 text-left group-hover:border-transparent"
+        aria-expanded={open}
+      >
+        <span className="text-lg md:text-xl font-semibold text-gray-900 pr-6">{question}</span>
+        <span className="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700">
+          {open ? <FiMinus className="w-5 h-5" /> : <FiPlus className="w-5 h-5" />}
+        </span>
+      </button>
+      <motion.div
+        initial={false}
+        animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.25 }}
+        className="overflow-hidden"
+      >
+        <div className="px-8 pb-8 text-gray-600 leading-relaxed">
+          {answer}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
