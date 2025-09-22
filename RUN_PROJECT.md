@@ -24,11 +24,14 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
+
+
 ### Terminal 3: Web Application
 ```bash
 cd apps/web
 npm run dev
 ```
+
 
 ## Service URLs
 - 🌐 **Web App**: http://localhost:3000

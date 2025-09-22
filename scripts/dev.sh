@@ -23,15 +23,15 @@ sleep 10
 
 # Generate Prisma client
 echo "🔧 Generating Prisma client..."
-cd apps/api && npx prisma generate && cd ../..
+cd apps/api && pnpm exec prisma generate && cd ../..
 
 # Run migrations
 echo "🔄 Running database migrations..."
-cd apps/api && npx prisma migrate dev && cd ../..
+cd apps/api && pnpm exec prisma migrate dev && cd ../..
 
 # Seed database
 echo "🌱 Seeding database..."
-cd apps/api && npm run prisma:seed && cd ../..
+cd apps/api && pnpm run prisma:seed && cd ../..
 
 echo ""
 echo "✅ Development environment ready!"

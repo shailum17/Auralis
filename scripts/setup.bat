@@ -39,11 +39,11 @@ timeout /t 15 /nobreak >nul
 
 REM Run database migrations
 echo 🗄️  Running database migrations...
-docker-compose exec api npx prisma migrate deploy
+docker-compose exec api pnpm exec prisma migrate deploy
 
 REM Seed the database
 echo 🌱 Seeding database with sample data...
-docker-compose exec api npm run prisma:seed
+docker-compose exec api pnpm run prisma:seed
 
 REM Start ML service
 echo 🤖 Starting ML service...

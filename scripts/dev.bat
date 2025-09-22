@@ -23,19 +23,19 @@ timeout /t 10 /nobreak >nul
 REM Generate Prisma client
 echo 🔧 Generating Prisma client...
 cd apps\api
-npx prisma generate
+pnpm exec prisma generate
 cd ..\..
 
 REM Run migrations
 echo 🔄 Running database migrations...
 cd apps\api
-npx prisma migrate dev
+pnpm exec prisma migrate dev
 cd ..\..
 
 REM Seed database
 echo 🌱 Seeding database...
 cd apps\api
-npm run prisma:seed
+pnpm run prisma:seed
 cd ..\..
 
 echo.

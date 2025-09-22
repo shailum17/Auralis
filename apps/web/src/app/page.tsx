@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import StudentTestimonials from '@/components/StudentTestimonials';
-import HeroSection from '@/components/HeroSection';
+import HeroSection, { FAQ } from '@/components/HeroSection';
 
 
 export default function Home() {
@@ -406,6 +406,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* FAQ at page end */}
+      <FAQ />
 
       {/* Footer */}
       <footer className="bg-white py-12 border-t border-gray-200">
