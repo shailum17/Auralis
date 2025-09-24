@@ -11,7 +11,7 @@ export class WellnessService {
       data: {
         userId,
         moodScore: createMoodEntryDto.moodScore,
-        tags: JSON.stringify(createMoodEntryDto.tags || []),
+        tags: createMoodEntryDto.tags || [],
         notes: createMoodEntryDto.notes,
       },
     });
