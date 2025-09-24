@@ -32,7 +32,8 @@ export class HealthService {
 
   private async checkDatabase() {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      // For MongoDB, we'll use a simple findFirst query instead of raw SQL
+      await this.prisma.user.findFirst({ take: 1 });
       return { status: 'ok', message: 'Database connection successful' };
     } catch (error) {
       return { status: 'error', message: 'Database connection failed', error: error.message };
