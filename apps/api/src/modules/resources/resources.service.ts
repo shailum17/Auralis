@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
-import { ResourceCategory } from '../../common/types/enums';
+import { ResourceCategory } from '@prisma/client';
 
 @Injectable()
 export class ResourcesService {

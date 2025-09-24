@@ -3,7 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
-import { ReactionType } from '../../common/types/enums';
+import { ReactionType } from '@prisma/client';
 
 interface PostWithAuthor {
   id: string;
@@ -42,7 +42,7 @@ export class PostsService {
         authorId: userId,
         content: createPostDto.content,
         isAnonymous: createPostDto.isAnonymous || false,
-        tags: JSON.stringify(createPostDto.tags || []),
+        tags: createPostDto.tags || [],
       },
       include: {
         author: {
@@ -178,7 +178,7 @@ export class PostsService {
       where: { id: postId },
       data: {
         content: updatePostDto.content,
-        tags: updatePostDto.tags ? JSON.stringify(updatePostDto.tags) : undefined,
+        tags: updatePostDto.tags || undefined,
         updatedAt: new Date(),
       },
       include: {
