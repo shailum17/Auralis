@@ -2,16 +2,22 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function LogoutPage() {
   const [countdown, setCountdown] = useState(5);
+  const { logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
+    // Perform logout when component mounts
+    logout();
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          // In a real app, you would redirect to home or login page
-          window.location.href = '/';
+          router.push('/');
           return 0;
         }
         return prev - 1;
@@ -19,7 +25,7 @@ export default function LogoutPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [logout, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50 flex items-center justify-center px-4">
