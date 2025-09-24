@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ModerationActionDto } from './dto/moderation-action.dto';
-import { ReportStatus, ModerationActionType, UserRole } from '../../common/types/enums';
+import { ReportStatus, ActionType, UserRole } from '@prisma/client';
 
 @Injectable()
 export class ModerationService {
@@ -195,14 +195,14 @@ export class ModerationService {
 
     // Execute the action
     switch (actionType) {
-      case ModerationActionType.HIDE_CONTENT:
+      case ActionType.HIDE_CONTENT:
         await this.hideContent(targetId, targetType, moderatorId, reason);
         break;
-      case ModerationActionType.DELETE_CONTENT:
+      case ActionType.DELETE_CONTENT:
         await this.deleteContent(targetId, targetType);
         break;
-      case ModerationActionType.SUSPEND_USER:
-      case ModerationActionType.BAN_USER:
+      case ActionType.SUSPEND_USER:
+      case ActionType.BAN_USER:
         // In a real implementation, you'd update user status
         // For now, we just record the action
         break;
