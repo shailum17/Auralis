@@ -196,21 +196,25 @@ export class AnalyticsService {
   }
 
   private async getTopTags(limit = 10): Promise<{ tag: string; count: number }[]> {
-    const result: { tag: string; count: bigint }[] = await this.prisma.$queryRaw(
-      Prisma.sql`
-        SELECT tag, COUNT(*) as count
-        FROM "posts", jsonb_array_elements_text("posts"."tags") as tag
-        WHERE "posts"."is_hidden" = false
-        GROUP BY tag
-        ORDER BY count DESC
-        LIMIT ${limit}
-      `,
-    );
+    // For MongoDB, we need to use aggregation pipeline
+    const posts = await this.prisma.post.findMany({
+      where: { isHidden: false },
+      select: { tags: true },
+    });
 
-    // Convert bigint to number for JSON serialization
-    return result.map(item => ({
-      ...item,
-      count: Number(item.count),
-    }));
+    // Count tags manually since MongoDB doesn't support array element aggregation in Prisma
+    const tagCounts = new Map<string, number>();
+    
+    posts.forEach(post => {
+      post.tags.forEach(tag => {
+        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+      });
+    });
+
+    // Convert to array and sort
+    return Array.from(tagCounts.entries())
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
   }
 }
