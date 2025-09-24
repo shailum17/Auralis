@@ -69,15 +69,11 @@ export class FeedService {
       skip: offset,
     });
 
-    // Filter by tags if provided (client-side filtering for SQLite)
+    // Filter by tags if provided
     if (tags && tags.length > 0) {
       posts = posts.filter(post => {
-        try {
-          const postTags = post.tags ? JSON.parse(post.tags as string) : [];
-          return tags.some(tag => postTags.includes(tag));
-        } catch {
-          return false;
-        }
+        const postTags = post.tags || [];
+        return tags.some(tag => postTags.includes(tag));
       });
     }
 
@@ -105,7 +101,7 @@ export class FeedService {
         },
         isHidden: false,
         tags: {
-          not: null,
+          isEmpty: false,
         },
       },
       select: {
@@ -123,8 +119,8 @@ export class FeedService {
     const tagStats = new Map<string, { count: number; engagement: number }>();
 
     posts.forEach(post => {
-      const tags = post.tags ? JSON.parse(post.tags as string) : [];
-      const engagement = post._count.comments + post._count.reactions;
+      const tags = post.tags || [];
+      const engagement = (post._count?.comments || 0) + (post._count?.reactions || 0);
 
       tags?.forEach(tag => {
         const current = tagStats.get(tag) || { count: 0, engagement: 0 };
