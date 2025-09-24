@@ -37,8 +37,8 @@ export class UsersService {
       data: {
         bio: updateProfileDto.bio,
         avatarUrl: updateProfileDto.avatarUrl,
-        interests: updateProfileDto.interests ? JSON.stringify(updateProfileDto.interests) : undefined,
-        privacySettings: updateProfileDto.privacySettings ? JSON.stringify(updateProfileDto.privacySettings) : undefined,
+        interests: updateProfileDto.interests || undefined,
+        privacySettings: updateProfileDto.privacySettings || undefined,
         updatedAt: new Date(),
       },
       select: {
