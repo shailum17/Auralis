@@ -97,14 +97,16 @@ model Comment {
 enum TargetType {
   POST
   COMMENT
+  USER
+  MESSAGE
 }
 
 enum ReactionType {
   LIKE
   LOVE
-  SUPPORT
-  HELPFUL
-  INSIGHTFUL
+  LAUGH
+  ANGRY
+  SAD
 }
 
 model Reaction {
@@ -182,27 +184,28 @@ model Message {
 }
 
 enum ReportReason {
-  HARASSMENT
   SPAM
+  HARASSMENT
+  HATE_SPEECH
   INAPPROPRIATE_CONTENT
-  MISINFORMATION
   SELF_HARM
+  VIOLENCE
   OTHER
 }
 
 enum ReportStatus {
   PENDING
-  UNDER_REVIEW
+  REVIEWING
   RESOLVED
   DISMISSED
 }
 
 enum ActionType {
-  WARNING
-  TEMPORARY_BAN
-  PERMANENT_BAN
-  CONTENT_REMOVAL
-  ACCOUNT_SUSPENSION
+  HIDE_CONTENT
+  DELETE_CONTENT
+  WARN_USER
+  SUSPEND_USER
+  BAN_USER
 }
 
 model Report {
@@ -251,10 +254,9 @@ type StressFeatures {
 enum ResourceCategory {
   MENTAL_HEALTH
   ACADEMIC_SUPPORT
-  CRISIS_HELP
-  WELLNESS_TIPS
-  STUDY_RESOURCES
-  SOCIAL_SUPPORT
+  CAREER_GUIDANCE
+  FINANCIAL_AID
+  CRISIS_SUPPORT
 }
 
 model StressScore {
