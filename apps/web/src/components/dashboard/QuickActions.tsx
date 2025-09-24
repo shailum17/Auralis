@@ -1,8 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function QuickActions() {
+  const { user } = useAuth();
   const actions = [
     {
       name: 'Log Mood',

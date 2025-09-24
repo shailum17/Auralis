@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,48 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, isAuthenticated, logout } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push('/auth/signin');
+    }
+  }, [loading, isAuthenticated, router]);
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  // Get user initials for avatar
+  const getUserInitials = (username: string, email: string) => {
+    if (username) {
+      return username.substring(0, 2).toUpperCase();
+    }
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  const userInitials = getUserInitials(user.username, user.email);
+  const displayName = user.username || user.email.split('@')[0];
+
+  const handleLogout = () => {
+    logout();
+    router.push('/auth/signin');
+  };
 
   const navigation = [
     {
@@ -66,7 +109,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Your Profile', href: '/profile' },
     { name: 'Settings', href: '/settings' },
     { name: 'Privacy', href: '/privacy' },
-    { name: 'Sign out', href: '/logout' },
+    { name: 'Sign out', action: handleLogout },
   ];
 
   return (
@@ -160,16 +203,39 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User Profile Section */}
           <div className="p-4 border-t">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm">SA</span>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium text-sm">{userInitials}</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">Sarah Anderson</p>
-                <p className="text-xs text-gray-500 truncate">Psychology Major</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
               <div className="flex-shrink-0">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                <div className={`w-2 h-2 rounded-full ${user.emailVerified ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
               </div>
+            </div>
+            
+            {/* User Menu Dropdown */}
+            <div className="mt-3 space-y-1">
+              {userNavigation.map((item) => (
+                item.action ? (
+                  <button
+                    key={item.name}
+                    onClick={item.action}
+                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    {item.name}
+                  </button>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href!}
+                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                  >
+                    {item.name}
+                  </Link>
+                )
+              ))}
             </div>
           </div>
         </div>
@@ -194,8 +260,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
               <span className="text-lg font-bold text-gray-900">Student Community</span>
             </div>
-            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium text-sm">SA</span>
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-medium text-sm">{userInitials}</span>
             </div>
           </div>
         </div>

@@ -1,80 +1,63 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+
+interface Activity {
+  id: number;
+  type: string;
+  action: string;
+  content: string;
+  timestamp: string;
+  reactions: number | null;
+  icon: React.ReactNode;
+  color: string;
+}
 
 export default function RecentActivity() {
-  const activities = [
-    {
-      id: 1,
-      type: 'post',
-      action: 'created a new post',
-      content: 'Just finished my first therapy session...',
-      timestamp: '2 hours ago',
-      reactions: 24,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      ),
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      id: 2,
-      type: 'mood',
-      action: 'logged mood entry',
-      content: 'Feeling good - 8/10',
-      timestamp: '5 hours ago',
-      reactions: null,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      color: 'bg-pink-100 text-pink-600'
-    },
-    {
-      id: 3,
-      type: 'study_group',
-      action: 'joined study group',
-      content: 'PSYC 301 - Final Exam Prep',
-      timestamp: '1 day ago',
-      reactions: null,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      id: 4,
-      type: 'comment',
-      action: 'commented on a post',
-      content: 'Thanks for sharing this resource!',
-      timestamp: '2 days ago',
-      reactions: 8,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      id: 5,
-      type: 'wellness',
-      action: 'completed wellness check-in',
-      content: 'Weekly wellness assessment',
-      timestamp: '3 days ago',
-      reactions: null,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: 'bg-yellow-100 text-yellow-600'
-    }
-  ];
+  const { user } = useAuth();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading user-specific activity data
+    const loadActivityData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // For now, show empty state to indicate it's user-specific
+      setActivities([]);
+      setLoading(false);
+    };
+
+    loadActivityData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-start space-x-4">
+                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
@@ -86,7 +69,23 @@ export default function RecentActivity() {
       </div>
 
       <div className="space-y-4">
-        {activities.map((activity, index) => (
+        {activities.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
+            <p className="text-gray-600 mb-4">
+              Start engaging with the community to see your activity here.
+            </p>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Explore Community
+            </button>
+          </div>
+        ) : (
+          activities.map((activity, index) => (
           <motion.div
             key={activity.id}
             initial={{ opacity: 0, x: -20 }}
@@ -117,7 +116,8 @@ export default function RecentActivity() {
               </svg>
             </button>
           </motion.div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

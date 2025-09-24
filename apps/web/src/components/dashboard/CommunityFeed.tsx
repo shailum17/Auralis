@@ -1,65 +1,78 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface Post {
+  id: number;
+  author: string;
+  isAnonymous: boolean;
+  avatar?: string;
+  content: string;
+  tags: string[];
+  timestamp: string;
+  reactions: { likes: number; supports: number; helpful: number };
+  comments: number;
+  userReacted: boolean;
+}
 
 export default function CommunityFeed() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState('all');
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const posts = [
-    {
-      id: 1,
-      author: 'Anonymous',
-      isAnonymous: true,
-      content: "Just finished my first therapy session through the campus counseling center. It was scary at first, but I'm so glad I took that step. For anyone considering it - you're not alone and it's okay to ask for help. 💙",
-      tags: ['mental-health', 'therapy', 'support'],
-      timestamp: '2 hours ago',
-      reactions: { likes: 24, supports: 18, helpful: 12 },
-      comments: 8,
-      userReacted: false
-    },
-    {
-      id: 2,
-      author: 'Alex Chen',
-      isAnonymous: false,
-      avatar: 'AC',
-      content: "Study group for PSYC 301 tomorrow at 3pm in the library! We're covering chapters 8-10. Everyone welcome - let's support each other through finals season! 📚✨",
-      tags: ['study-group', 'psychology', 'finals'],
-      timestamp: '4 hours ago',
-      reactions: { likes: 15, supports: 8, helpful: 22 },
-      comments: 5,
-      userReacted: true
-    },
-    {
-      id: 3,
-      author: 'Anonymous',
-      isAnonymous: true,
-      content: "Having a really tough week with anxiety. The breathing exercises from last week's wellness workshop are actually helping though. Sometimes the small tools make the biggest difference.",
-      tags: ['anxiety', 'wellness', 'coping-strategies'],
-      timestamp: '6 hours ago',
-      reactions: { likes: 31, supports: 28, helpful: 15 },
-      comments: 12,
-      userReacted: false
-    },
-    {
-      id: 4,
-      author: 'Maya Patel',
-      isAnonymous: false,
-      avatar: 'MP',
-      content: "Reminder: You don't have to be perfect. You don't have to have it all figured out. You just have to keep going, one day at a time. Sending love to everyone who needs to hear this today. 🌟",
-      tags: ['motivation', 'self-care', 'positivity'],
-      timestamp: '8 hours ago',
-      reactions: { likes: 45, supports: 38, helpful: 20 },
-      comments: 15,
-      userReacted: true
-    }
-  ];
+  useEffect(() => {
+    // Simulate loading user-specific feed data
+    const loadFeedData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // For now, show empty state to indicate it's user-specific
+      setPosts([]);
+      setLoading(false);
+    };
+
+    loadFeedData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const filters = [
     { id: 'all', name: 'All Posts', count: posts.length },
-    { id: 'mental-health', name: 'Mental Health', count: 2 },
-    { id: 'study-group', name: 'Study Groups', count: 1 },
-    { id: 'wellness', name: 'Wellness', count: 2 }
+    { id: 'mental-health', name: 'Mental Health', count: 0 },
+    { id: 'study-group', name: 'Study Groups', count: 0 },
+    { id: 'wellness', name: 'Wellness', count: 0 }
   ];
 
   const getReactionIcon = (type: string) => {
@@ -118,7 +131,24 @@ export default function CommunityFeed() {
 
       {/* Posts */}
       <div className="divide-y divide-gray-200">
-        {posts.map((post, index) => (
+        {posts.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Welcome to the Community!</h3>
+            <p className="text-gray-600 mb-6">
+              This is where you'll see posts from other students in your community. 
+              Be the first to share something or check back later for new posts.
+            </p>
+            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              Create Your First Post
+            </button>
+          </div>
+        ) : (
+          posts.map((post, index) => (
           <motion.div
             key={post.id}
             initial={{ opacity: 0, y: 20 }}
@@ -195,7 +225,8 @@ export default function CommunityFeed() {
               </button>
             </div>
           </motion.div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Load More */}
