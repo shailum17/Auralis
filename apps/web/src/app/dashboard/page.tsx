@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import WellnessOverview from '@/components/dashboard/WellnessOverview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -7,8 +8,23 @@ import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import QuickActions from '@/components/dashboard/QuickActions';
 import UpcomingEvents from '@/components/dashboard/UpcomingEvents';
 import WellnessInsights from '@/components/dashboard/WellnessInsights';
+import UserDebugInfo from '@/components/UserDebugInfo';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
+  // Get display name from user data
+  const getDisplayName = () => {
+    if (!user) return 'User';
+    return user.username || user.email.split('@')[0];
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
     <DashboardLayout>
@@ -20,11 +36,18 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Welcome back, Sarah! 👋
+                    {getGreeting()}, {getDisplayName()}! 👋
                   </h1>
                   <p className="text-gray-600 mt-1">
                     Here's what's happening in your community today
                   </p>
+                  {user && !user.emailVerified && (
+                    <div className="mt-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm text-yellow-800">
+                        📧 Please verify your email address to access all features.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -108,6 +131,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* Debug Info */}
+        <UserDebugInfo />
       </div>
     </DashboardLayout>
   );
