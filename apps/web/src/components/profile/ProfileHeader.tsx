@@ -1,30 +1,91 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserInitials, getUserDisplayName } from '@/lib/auth-utils';
 
 export default function ProfileHeader() {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-
-  const userProfile = {
-    name: 'Sarah Anderson',
-    username: '@sarah_a',
-    major: 'Psychology Major',
-    year: 'Junior',
-    bio: 'Passionate about mental health advocacy and peer support. Always here to listen and share resources. 🌟',
-    joinDate: 'September 2023',
+  const [userProfile, setUserProfile] = useState({
+    name: '',
+    username: '',
+    major: '',
+    year: '',
+    bio: '',
+    joinDate: '',
     stats: {
-      posts: 24,
-      helpfulVotes: 156,
-      studyGroups: 8,
-      wellnessStreak: 12
+      posts: 0,
+      helpfulVotes: 0,
+      studyGroups: 0,
+      wellnessStreak: 0
     },
-    badges: [
-      { name: 'Supportive Peer', icon: '🤝', color: 'bg-blue-100 text-blue-800' },
-      { name: 'Wellness Warrior', icon: '💪', color: 'bg-green-100 text-green-800' },
-      { name: 'Study Buddy', icon: '📚', color: 'bg-purple-100 text-purple-800' }
-    ]
-  };
+    badges: [] as Array<{
+      name: string;
+      icon: string;
+      color: string;
+    }>
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call to get user profile data
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Set user-specific data
+      setUserProfile({
+        name: getUserDisplayName(user),
+        username: `@${user.username || user.email.split('@')[0]}`,
+        major: 'Not specified', // This would come from user profile data
+        year: 'Not specified',
+        bio: 'Welcome to my profile! I\'m excited to be part of this community.',
+        joinDate: new Date(Date.now()).toLocaleDateString('en-US', { 
+          month: 'long', 
+          year: 'numeric' 
+        }),
+        stats: {
+          posts: 0,
+          helpfulVotes: 0,
+          studyGroups: 0,
+          wellnessStreak: 0
+        },
+        badges: [] // New users start with no badges
+      });
+      
+      setLoading(false);
+    };
+
+    loadUserProfile();
+  }, [user]);
+
+  if (loading || !user) {
+    return (
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8 animate-pulse">
+            <div className="flex items-start space-x-6">
+              <div className="w-24 h-24 bg-gray-200 rounded-full"></div>
+              <div className="flex-1">
+                <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/4 mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                <div className="flex space-x-2">
+                  <div className="h-6 bg-gray-200 rounded w-20"></div>
+                  <div className="h-6 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-sm">
@@ -39,8 +100,8 @@ export default function ProfileHeader() {
               
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">SA</span>
+                <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">{getUserInitials(user)}</span>
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,18 +130,24 @@ export default function ProfileHeader() {
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2">
-                  {userProfile.badges.map((badge, index) => (
-                    <motion.div
-                      key={badge.name}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}
-                    >
-                      <span>{badge.icon}</span>
-                      <span>{badge.name}</span>
-                    </motion.div>
-                  ))}
+                  {userProfile.badges.length === 0 ? (
+                    <div className="text-sm text-gray-500 italic">
+                      No badges yet. Start engaging with the community to earn your first badge! 🌟
+                    </div>
+                  ) : (
+                    userProfile.badges.map((badge, index) => (
+                      <motion.div
+                        key={badge.name}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}
+                      >
+                        <span>{badge.icon}</span>
+                        <span>{badge.name}</span>
+                      </motion.div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
