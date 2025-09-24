@@ -1,22 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PersonalInfo() {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    firstName: 'Sarah',
-    lastName: 'Anderson',
-    email: 'sarah.anderson@university.edu',
-    phone: '+1 (555) 123-4567',
-    major: 'Psychology',
-    year: 'Junior',
-    bio: 'Passionate about mental health advocacy and peer support. Always here to listen and share resources. 🌟',
-    interests: ['Mental Health', 'Study Groups', 'Peer Support', 'Wellness', 'Psychology Research'],
-    pronouns: 'She/Her',
-    location: 'Campus Residence Hall A'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    major: '',
+    year: '',
+    bio: '',
+    interests: [] as string[],
+    pronouns: '',
+    location: ''
   });
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call to get user profile data
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Set user-specific data
+      const nameParts = user.username?.split(' ') || user.email.split('@')[0].split('.');
+      setFormData({
+        firstName: nameParts[0] || '',
+        lastName: nameParts[1] || '',
+        email: user.email,
+        phone: '', // Not collected during registration
+        major: '', // Not collected during registration
+        year: '', // Not collected during registration
+        bio: 'Welcome to my profile! I\'m excited to be part of this community.',
+        interests: [] as string[], // Empty for new users
+        pronouns: '', // Not collected during registration
+        location: '' // Not collected during registration
+      });
+      
+      setLoading(false);
+    };
+
+    loadUserData();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl animate-pulse">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded w-24"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-4 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="space-y-6">
+            <div className="h-6 bg-gray-200 rounded w-1/4"></div>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-4 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
