@@ -265,7 +265,7 @@ export default function Home() {
                   </div>
                   <div className="text-lg font-bold mb-2">You have made $37,492 this week!</div>
                   <div className="text-sm text-gray-600 mb-4">Wellness Report</div>
-                  <div className="bg-gray-800 rounded-llg p-4">
+                  <div className="bg-white-900 rounded-llg p-4 border-2 border-gray-300 rounded-xl">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs text-gray-400">Progress</span>
                       <span className="text-xs text-gray-400">78%</span>
