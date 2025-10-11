@@ -3,11 +3,17 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { EmailService } from '../../common/email/email.service';
+import { OtpService } from './services/otp.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EnhancedLoginDto } from './dto/enhanced-login.dto';
+import { EnhancedRequestOtpDto } from './dto/enhanced-request-otp.dto';
+import { EnhancedVerifyOtpDto } from './dto/enhanced-verify-otp.dto';
+import { OtpRequestDto } from './dto/otp-request.dto';
+import { OtpVerifyDto } from './dto/otp-verify.dto';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +21,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private otpService: OtpService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -107,6 +114,37 @@ export class AuthService {
       return result;
     }
     return null;
+  }
+
+  // Enhanced validation that supports both email and username
+  async validateUserByIdentifier(identifier: string, password: string) {
+    // Try to find user by email first, then by username
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier },
+        ],
+      },
+    });
+
+    if (user && await bcrypt.compare(password, user.passwordHash)) {
+      const { passwordHash, ...result } = user;
+      return result;
+    }
+    return null;
+  }
+
+  // Helper method to find user by email or username
+  async findUserByIdentifier(identifier: string) {
+    return await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier },
+        ],
+      },
+    });
   }
 
   async refreshToken(refreshToken: string) {
@@ -363,17 +401,406 @@ export class AuthService {
     }
   }
 
+  // Password verification + OTP login methods
+  async verifyPasswordAndRequestOtp(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+
+    // First verify the password
+    const user = await this.validateUser(email, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Generate and send OTP
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await this.storeOtp(email, otp, expiresAt, 'password-login');
+
+    // Send OTP email
+    const emailSent = await this.emailService.sendOtpEmail(email, otp, 'password-login');
+    
+    if (!emailSent) {
+      throw new BadRequestException('Failed to send verification email');
+    }
+
+    return {
+      message: 'Password verified. OTP sent to your email for additional security.',
+      email: email,
+    };
+  }
+
+  async verifyPasswordOtp(verifyOtpDto: VerifyOtpDto) {
+    const { email, otp } = verifyOtpDto;
+
+    // Validate OTP
+    const isValidOtp = await this.validateOtp(email, otp, 'password-login');
+    if (!isValidOtp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    // Get user data
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        role: true,
+        emailVerified: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() },
+    });
+
+    // Clear the OTP
+    await this.clearOtp(email, 'password-login');
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id);
+
+    return {
+      user,
+      ...tokens,
+    };
+  }
+
+  // Enhanced authentication methods that support both email and username
+
+  async enhancedLogin(loginDto: EnhancedLoginDto) {
+    const { email, username, password } = loginDto;
+    const identifier = email || username;
+
+    if (!identifier) {
+      throw new BadRequestException('Either email or username is required');
+    }
+
+    const user = await this.validateUserByIdentifier(identifier, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() },
+    });
+
+    const tokens = await this.generateTokens(user.id);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+      ...tokens,
+    };
+  }
+
+  async enhancedRequestLoginOtp(requestOtpDto: EnhancedRequestOtpDto) {
+    const { email, username } = requestOtpDto;
+    const identifier = email || username;
+
+    if (!identifier) {
+      throw new BadRequestException('Either email or username is required');
+    }
+
+    const user = await this.findUserByIdentifier(identifier);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await this.storeOtp(user.email, otp, expiresAt, 'login');
+    await this.emailService.sendOtpEmail(user.email, otp, 'login');
+
+    return { 
+      message: 'Login OTP sent to your email',
+      email: user.email // Return the email for frontend display
+    };
+  }
+
+  async enhancedVerifyPasswordAndRequestOtp(loginDto: EnhancedLoginDto) {
+    const { email, username, password } = loginDto;
+    const identifier = email || username;
+
+    if (!identifier) {
+      throw new BadRequestException('Either email or username is required');
+    }
+
+    // First verify the password
+    const user = await this.validateUserByIdentifier(identifier, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Generate and send OTP
+    const otp = this.generateOtp();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await this.storeOtp(user.email, otp, expiresAt, 'password-login');
+
+    // Send OTP email
+    const emailSent = await this.emailService.sendOtpEmail(user.email, otp, 'password-login');
+    
+    if (!emailSent) {
+      throw new BadRequestException('Failed to send verification email');
+    }
+
+    return {
+      message: 'Password verified. OTP sent to your email for additional security.',
+      email: user.email,
+    };
+  }
+
+  async enhancedVerifyLoginOtp(verifyOtpDto: EnhancedVerifyOtpDto) {
+    const { email, username, identifier, otp, rememberMe, sessionDuration } = verifyOtpDto;
+    const userIdentifier = identifier || email || username;
+
+    if (!userIdentifier) {
+      throw new BadRequestException('User identifier is required');
+    }
+
+    const user = await this.findUserByIdentifier(userIdentifier);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isValid = await this.validateOtp(user.email, otp, 'login');
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() },
+    });
+
+    // Clear OTP
+    await this.clearOtp(user.email, 'login');
+
+    // Generate tokens with custom expiration if rememberMe is enabled
+    const tokens = await this.generateCustomTokens(user.id, rememberMe, sessionDuration);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+      ...tokens,
+    };
+  }
+
+  async enhancedVerifyPasswordOtp(verifyOtpDto: EnhancedVerifyOtpDto) {
+    const { email, username, identifier, otp, rememberMe, sessionDuration } = verifyOtpDto;
+    const userIdentifier = identifier || email || username;
+
+    if (!userIdentifier) {
+      throw new BadRequestException('User identifier is required');
+    }
+
+    const user = await this.findUserByIdentifier(userIdentifier);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Validate OTP
+    const isValidOtp = await this.validateOtp(user.email, otp, 'password-login');
+    if (!isValidOtp) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() },
+    });
+
+    // Clear the OTP
+    await this.clearOtp(user.email, 'password-login');
+
+    // Generate tokens with custom expiration if rememberMe is enabled
+    const tokens = await this.generateCustomTokens(user.id, rememberMe, sessionDuration);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+      ...tokens,
+    };
+  }
+
+  // Generate tokens with custom expiration
+  private async generateCustomTokens(userId: string, rememberMe?: boolean, sessionDuration?: number) {
+    const payload = { sub: userId };
+
+    // Calculate expiration times
+    let accessTokenExpiry = process.env.JWT_EXPIRES_IN || '15m';
+    let refreshTokenExpiry = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+
+    if (rememberMe && sessionDuration) {
+      // Convert hours to appropriate time format
+      const hours = Math.min(Math.max(sessionDuration, 1), 720); // Between 1 hour and 30 days
+      accessTokenExpiry = `${hours}h`;
+      refreshTokenExpiry = `${Math.min(hours * 2, 720)}h`; // Refresh token lasts twice as long, max 30 days
+    }
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: accessTokenExpiry,
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: refreshTokenExpiry,
+      }),
+    ]);
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
+
+  // New OTP System Methods
+
+  /**
+   * Request OTP using new system
+   */
+  async requestOtp(otpRequestDto: OtpRequestDto, ipAddress?: string, userAgent?: string) {
+    const { email, username, type } = otpRequestDto;
+    const identifier = email || username;
+
+    if (!identifier) {
+      throw new BadRequestException('Either email or username is required');
+    }
+
+    // Find user by identifier
+    const user = await this.findUserByIdentifier(identifier);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Check rate limiting
+    const canRequest = await this.otpService.checkRateLimit(user.email, type);
+    if (!canRequest) {
+      throw new BadRequestException('Too many OTP requests. Please try again later.');
+    }
+
+    // Generate and send OTP
+    const result = await this.otpService.generateAndSendOtp({
+      email: user.email,
+      userId: user.id,
+      type: type as any,
+      ipAddress,
+      userAgent
+    });
+
+    if (!result.success) {
+      throw new BadRequestException(result.error || 'Failed to send OTP');
+    }
+
+    return {
+      success: true,
+      message: 'OTP sent successfully',
+      email: user.email,
+      otpId: result.otpId
+    };
+  }
+
+  /**
+   * Verify OTP using new system
+   */
+  async verifyOtp(otpVerifyDto: OtpVerifyDto, ipAddress?: string, userAgent?: string) {
+    const { email, username, otp, type, rememberMe, sessionDuration } = otpVerifyDto;
+    const identifier = email || username;
+
+    if (!identifier) {
+      throw new BadRequestException('Either email or username is required');
+    }
+
+    // Find user by identifier
+    const user = await this.findUserByIdentifier(identifier);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify OTP
+    const result = await this.otpService.verifyOtp({
+      email: user.email,
+      otp,
+      type: type as any,
+      ipAddress,
+      userAgent
+    });
+
+    if (!result.success) {
+      throw new BadRequestException(result.error || 'OTP verification failed');
+    }
+
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() },
+    });
+
+    // Generate tokens with custom expiration if needed
+    const tokens = await this.generateCustomTokens(user.id, rememberMe, sessionDuration);
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+      ...tokens,
+    };
+  }
+
+  /**
+   * Get OTP status
+   */
+  async getOtpStatus(email: string, type: string) {
+    return await this.otpService.getOtpStatus(email, type);
+  }
+
   // Test email functionality
   async testEmail(email: string) {
-    const otp = this.generateOtp();
-    const success = await this.emailService.sendOtpEmail(email, otp, 'login');
+    const result = await this.otpService.generateAndSendOtp({
+      email,
+      type: 'LOGIN'
+    });
     
     return {
-      success,
-      message: success 
+      success: result.success,
+      message: result.success 
         ? 'Test email sent successfully! Check your inbox.' 
-        : 'Email sending failed. Check console logs for details.',
-      otp: process.env.NODE_ENV === 'development' ? otp : undefined,
+        : result.error || 'Email sending failed.',
+      otpId: result.otpId,
     };
   }
 
@@ -383,15 +810,83 @@ export class AuthService {
   }
 
   private async storeOtp(email: string, otp: string, expiresAt: Date, type: string) {
-    // In production, use Redis or a dedicated OTP table
-    // For now, we'll use a simple in-memory store (not recommended for production)
-    const key = `${email}:${type}`;
-    // This is a simplified implementation - use Redis in production
-    global.otpStore = global.otpStore || new Map();
-    global.otpStore.set(key, { otp, expiresAt });
+    try {
+      // Try to use database first
+      const otpType = this.mapOtpType(type);
+      
+      // Delete any existing OTP for this email and type
+      await this.prisma.$runCommandRaw({
+        delete: 'otps',
+        deletes: [{
+          q: { email, type: otpType },
+          limit: 0
+        }]
+      });
+
+      // Create new OTP record
+      await this.prisma.$runCommandRaw({
+        insert: 'otps',
+        documents: [{
+          email,
+          otp,
+          type: otpType,
+          expiresAt,
+          createdAt: new Date(),
+          isUsed: false
+        }]
+      });
+    } catch (error) {
+      console.error('Database OTP storage failed, using fallback:', error);
+      // Fallback to in-memory store
+      const key = `${email}:${type}`;
+      global.otpStore = global.otpStore || new Map();
+      global.otpStore.set(key, { otp, expiresAt });
+    }
   }
 
   private async validateOtp(email: string, otp: string, type: string): Promise<boolean> {
+    try {
+      // Try database first
+      const otpType = this.mapOtpType(type);
+      
+      const result = await this.prisma.$runCommandRaw({
+        find: 'otps',
+        filter: { email, type: otpType, isUsed: false }
+      }) as any;
+
+      if (result.cursor && result.cursor.firstBatch && result.cursor.firstBatch.length > 0) {
+        const storedOtp = result.cursor.firstBatch[0];
+        
+        if (new Date() > new Date(storedOtp.expiresAt)) {
+          // Clean up expired OTP
+          await this.prisma.$runCommandRaw({
+            delete: 'otps',
+            deletes: [{
+              q: { _id: storedOtp._id },
+              limit: 1
+            }]
+          });
+          return false;
+        }
+
+        if (storedOtp.otp === otp) {
+          // Mark OTP as used
+          await this.prisma.$runCommandRaw({
+            update: 'otps',
+            updates: [{
+              q: { _id: storedOtp._id },
+              u: { $set: { isUsed: true } }
+            }]
+          });
+          return true;
+        }
+        return false;
+      }
+    } catch (error) {
+      console.error('Database OTP validation failed, using fallback:', error);
+    }
+
+    // Fallback to in-memory store
     const key = `${email}:${type}`;
     const stored = global.otpStore?.get(key);
     
@@ -401,12 +896,45 @@ export class AuthService {
       return false;
     }
     
-    return stored.otp === otp;
+    if (stored.otp === otp) {
+      // Clear OTP from fallback store after successful validation
+      global.otpStore.delete(key);
+      return true;
+    }
+    
+    return false;
   }
 
   private async clearOtp(email: string, type: string) {
+    try {
+      // Try database first
+      const otpType = this.mapOtpType(type);
+      
+      await this.prisma.$runCommandRaw({
+        delete: 'otps',
+        deletes: [{
+          q: { email, type: otpType },
+          limit: 0
+        }]
+      });
+    } catch (error) {
+      console.error('Database OTP cleanup failed, using fallback:', error);
+    }
+
+    // Also clear from fallback store
     const key = `${email}:${type}`;
     global.otpStore?.delete(key);
+  }
+
+  private mapOtpType(type: string): string {
+    const typeMap = {
+      'email_verification': 'EMAIL_VERIFICATION',
+      'login': 'LOGIN',
+      'password_reset': 'PASSWORD_RESET',
+      'password-login': 'PASSWORD_LOGIN',
+    };
+    
+    return typeMap[type] || 'LOGIN';
   }
 
 
