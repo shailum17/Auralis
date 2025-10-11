@@ -217,9 +217,9 @@ export function useSecurityNotifications() {
     return addNotification({
       type: 'success',
       title: 'Login Successful',
-      message: `Welcome back! You've successfully signed in${location ? ` from ${location}` : ''}.`,
+      message: `Welcome back! Redirecting to your dashboard...`,
       autoHide: true,
-      duration: 4000
+      duration: 2000
     });
   };
 

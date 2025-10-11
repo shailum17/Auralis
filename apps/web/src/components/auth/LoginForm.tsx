@@ -59,6 +59,7 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
   const {
     notifications,
     removeNotification,
+    clearAll,
     showLoginSuccess,
     showSecurityAlert,
     showOtpSent,
@@ -88,13 +89,15 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
   }, []);
 
   const handleMethodToggle = useCallback((method: 'password' | 'otp') => {
+    // Clear notifications when switching methods
+    clearAll();
     updateState({
       method,
       step: 'credentials',
       errors: {},
       otp: Array(6).fill('')
     });
-  }, [updateState]);
+  }, [updateState, clearAll]);
 
   const handleInputChange = useCallback((field: keyof LoginFormState['formData'], value: string | boolean | number) => {
     setState(prev => ({
@@ -117,26 +120,40 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
       return;
     }
 
+    // Clear previous notifications and errors
+    clearAll();
     updateState({ loading: true, errors: {} });
     
     try {
-      // Detect if identifier is email or username
+      // First verify password, then request OTP using new system
       const identifierType = detectIdentifierType(state.formData.identifier);
       
-      // Prepare credentials for enhanced API
+      // Verify password first
       const credentials = identifierType === 'email' 
         ? { email: state.formData.identifier, password: state.formData.password }
         : { username: state.formData.identifier, password: state.formData.password };
 
-      const data = await authAPI.verifyPasswordAndRequestOtp(credentials);
+      const passwordResult = await authAPI.verifyPasswordAndRequestOtp(credentials);
       
-      if (data.success) {
-        updateState({ step: 'otp-verification' });
-        // Show OTP sent to email (API returns the actual email)
-        const emailForOtp = data.email || resolveEmailForDisplay(state.formData.identifier);
-        showOtpSent(emailForOtp);
+      if (passwordResult.success) {
+        // Password verified, now request OTP using new system
+        const otpRequest = identifierType === 'email'
+          ? { email: state.formData.identifier, type: 'PASSWORD_LOGIN' as const }
+          : { username: state.formData.identifier, type: 'PASSWORD_LOGIN' as const };
+
+        const otpResult = await authAPI.requestOtpNew(otpRequest);
+        
+        if (otpResult.success) {
+          updateState({ step: 'otp-verification' });
+          const emailForOtp = otpResult.email || resolveEmailForDisplay(state.formData.identifier);
+          showOtpSent(emailForOtp);
+        } else {
+          const errorMessage = otpResult.error || 'Failed to send verification code';
+          updateState({ errors: { general: errorMessage } });
+          showLoginError(errorMessage);
+        }
       } else {
-        const errorMessage = data.error || `Invalid ${identifierType} or password`;
+        const errorMessage = passwordResult.error || `Invalid ${identifierType} or password`;
         updateState({ errors: { general: errorMessage } });
         showLoginError(errorMessage);
       }
@@ -147,7 +164,7 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
     } finally {
       updateState({ loading: false });
     }
-  }, [state.formData, updateState, showOtpSent, showLoginError]);
+  }, [state.formData, updateState, showOtpSent, showLoginError, clearAll]);
 
   const handleOtpLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,22 +174,22 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
       return;
     }
 
+    // Clear previous notifications and errors
+    clearAll();
     updateState({ loading: true, errors: {} });
     
     try {
-      // Detect if identifier is email or username
+      // Use new OTP system for OTP-only login
       const identifierType = detectIdentifierType(state.formData.identifier);
       
-      // Prepare request for enhanced API
-      const request = identifierType === 'email' 
-        ? { email: state.formData.identifier }
-        : { username: state.formData.identifier };
+      const otpRequest = identifierType === 'email'
+        ? { email: state.formData.identifier, type: 'LOGIN' as const }
+        : { username: state.formData.identifier, type: 'LOGIN' as const };
 
-      const data = await authAPI.requestLoginOtp(request);
+      const data = await authAPI.requestOtpNew(otpRequest);
       
       if (data.success) {
         updateState({ step: 'otp-verification' });
-        // Show OTP sent to email (API returns the actual email)
         const emailForOtp = data.email || resolveEmailForDisplay(state.formData.identifier);
         showOtpSent(emailForOtp);
       } else {
@@ -187,32 +204,51 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
     } finally {
       updateState({ loading: false });
     }
-  }, [state.formData.identifier, updateState, showOtpSent, showLoginError]);
+  }, [state.formData.identifier, updateState, showOtpSent, showLoginError, clearAll]);
 
   const handleOtpChange = useCallback((otp: string[]) => {
     updateState({ otp, errors: { ...state.errors, otp: '' } });
   }, [state.errors, updateState]);
 
   const handleOtpComplete = useCallback(async (otpCode: string) => {
+    // Prevent multiple submissions
+    if (state.loading) return;
+    
+    // Clear previous notifications and errors
+    clearAll();
     updateState({ loading: true, errors: {} });
     
     try {
-      // Prepare verification data for enhanced API
-      const verification = {
-        identifier: state.formData.identifier,
-        otp: otpCode,
-        rememberMe: state.formData.rememberMe,
-        sessionDuration: state.formData.sessionDuration
-      };
+      // Use new OTP verification system
+      const identifierType = detectIdentifierType(state.formData.identifier);
       
-      const data = state.method === 'password' 
-        ? await authAPI.verifyPasswordOtp(verification)
-        : await authAPI.verifyLoginOtp(verification);
+      const verification = identifierType === 'email'
+        ? {
+            email: state.formData.identifier,
+            otp: otpCode,
+            type: state.method === 'password' ? 'PASSWORD_LOGIN' as const : 'LOGIN' as const,
+            rememberMe: state.formData.rememberMe,
+            sessionDuration: state.formData.sessionDuration
+          }
+        : {
+            username: state.formData.identifier,
+            otp: otpCode,
+            type: state.method === 'password' ? 'PASSWORD_LOGIN' as const : 'LOGIN' as const,
+            rememberMe: state.formData.rememberMe,
+            sessionDuration: state.formData.sessionDuration
+          };
+      
+      const data = await authAPI.verifyOtpNew(verification);
+
+      console.log('OTP Verification Response:', data);
 
       if (data.success && data.data) {
         const { user, accessToken, refreshToken } = data.data;
         showLoginSuccess(user.email);
-        onSuccess(user, { accessToken, refreshToken });
+        // Add a small delay to show the success notification before redirecting
+        setTimeout(() => {
+          onSuccess(user, { accessToken, refreshToken });
+        }, 1500);
       } else {
         const errorMessage = data.error || 'Invalid or expired OTP';
         updateState({ 
@@ -231,34 +267,48 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
     } finally {
       updateState({ loading: false });
     }
-  }, [state.method, state.formData.identifier, state.formData.rememberMe, onSuccess, updateState, showLoginSuccess, showLoginError]);
+  }, [state.method, state.formData.identifier, state.formData.rememberMe, state.formData.sessionDuration, state.loading, onSuccess, updateState, showLoginSuccess, showLoginError, clearAll]);
 
   const handleResendOtp = useCallback(async () => {
+    // Clear previous notifications and errors
+    clearAll();
     updateState({ loading: true, errors: {} });
     
     try {
-      // Detect if identifier is email or username
+      // Use new OTP system for resending
       const identifierType = detectIdentifierType(state.formData.identifier);
       
       let data;
       
       if (state.method === 'password') {
-        // Prepare credentials for enhanced API
+        // For password method, first verify password then request OTP
         const credentials = identifierType === 'email' 
           ? { email: state.formData.identifier, password: state.formData.password }
           : { username: state.formData.identifier, password: state.formData.password };
-        data = await authAPI.verifyPasswordAndRequestOtp(credentials);
+        
+        const passwordResult = await authAPI.verifyPasswordAndRequestOtp(credentials);
+        
+        if (passwordResult.success) {
+          // Password verified, now request OTP using new system
+          const otpRequest = identifierType === 'email'
+            ? { email: state.formData.identifier, type: 'PASSWORD_LOGIN' as const }
+            : { username: state.formData.identifier, type: 'PASSWORD_LOGIN' as const };
+          
+          data = await authAPI.requestOtpNew(otpRequest);
+        } else {
+          data = passwordResult;
+        }
       } else {
-        // Prepare request for enhanced API
-        const request = identifierType === 'email' 
-          ? { email: state.formData.identifier }
-          : { username: state.formData.identifier };
-        data = await authAPI.requestLoginOtp(request);
+        // For OTP-only method, use new OTP system directly
+        const otpRequest = identifierType === 'email'
+          ? { email: state.formData.identifier, type: 'LOGIN' as const }
+          : { username: state.formData.identifier, type: 'LOGIN' as const };
+        
+        data = await authAPI.requestOtpNew(otpRequest);
       }
       
       if (data.success) {
         updateState({ otp: Array(6).fill('') });
-        // Show OTP sent to email (API returns the actual email)
         const emailForOtp = data.email || resolveEmailForDisplay(state.formData.identifier);
         showOtpSent(emailForOtp);
       } else {
@@ -273,16 +323,18 @@ export function LoginForm({ onSuccess, onError, loading: externalLoading = false
     } finally {
       updateState({ loading: false });
     }
-  }, [state.method, state.formData.identifier, state.formData.password, updateState, showOtpSent, showLoginError]);
+  }, [state.method, state.formData.identifier, state.formData.password, updateState, showOtpSent, showLoginError, clearAll]);
 
   const handleBackToLogin = useCallback(() => {
+    // Clear notifications when going back
+    clearAll();
     updateState({
       step: 'credentials',
       otp: Array(6).fill(''),
       errors: {},
       otpResendCooldown: 0
     });
-  }, [updateState]);
+  }, [updateState, clearAll]);
 
   return (
     <div className="w-full max-w-md mx-auto">

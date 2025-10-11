@@ -62,9 +62,10 @@ export function OTPVerification({
   }, []);
 
   const handleOtpComplete = useCallback((otpCode: string) => {
+    if (loading) return; // Prevent multiple submissions while loading
     setAttempts(prev => prev + 1);
     onComplete(otpCode);
-  }, [onComplete]);
+  }, [onComplete, loading]);
 
   const handleResend = useCallback(() => {
     if (resendCooldown > 0) return;
