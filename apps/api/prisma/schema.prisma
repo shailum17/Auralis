@@ -23,6 +23,45 @@ type PrivacySettings {
   dataCollection      Boolean @default(true)
 }
 
+type WellnessSettings {
+  trackMood             Boolean @default(true)
+  trackStress           Boolean @default(true)
+  shareWellnessData     Boolean @default(false)
+  crisisAlertsEnabled   Boolean @default(true)
+  allowWellnessInsights Boolean @default(true)
+}
+
+type NotificationPreferences {
+  emailNotifications    Boolean @default(true)
+  pushNotifications     Boolean @default(true)
+  messageNotifications  Boolean @default(true)
+  postReactions         Boolean @default(true)
+  commentReplies        Boolean @default(true)
+  studyGroupInvites     Boolean @default(true)
+  sessionReminders      Boolean @default(true)
+  wellnessAlerts        Boolean @default(true)
+  moderationActions     Boolean @default(true)
+  systemAnnouncements   Boolean @default(true)
+}
+
+type UserPreferences {
+  feedAlgorithm         String  @default("personalized") // "chronological" | "personalized"
+  privacyLevel          String  @default("public") // "public" | "friends" | "private"
+  theme                 String  @default("light") // "light" | "dark" | "auto"
+  language              String  @default("en")
+  timezone              String  @default("UTC")
+  notifications         NotificationPreferences
+}
+
+type AcademicInfo {
+  institution String?
+  major       String?
+  year        Int?
+  courses     String[]
+  gpa         Float?
+  graduationYear Int?
+}
+
 model User {
   id                String           @id @default(auto()) @map("_id") @db.ObjectId
   email             String           @unique
@@ -35,6 +74,9 @@ model User {
   updatedAt         DateTime         @updatedAt @map("updated_at")
   emailVerified     Boolean          @default(false) @map("email_verified")
   privacySettings   PrivacySettings? @map("privacy_settings")
+  wellnessSettings  WellnessSettings? @map("wellness_settings")
+  preferences       UserPreferences? @map("user_preferences")
+  academicInfo      AcademicInfo?    @map("academic_info")
   lastActive        DateTime?        @map("last_active")
   role              UserRole         @default(USER)
   
@@ -49,6 +91,16 @@ model User {
   moderationActions ModerationAction[]
   stressScores      StressScore[]
   moodEntries       MoodEntry[]
+  otps              Otp[]
+  
+  // New relationships for platform enhancements
+  wellnessMetrics   WellnessMetric[]
+  createdStudyGroups StudyGroup[] @relation("StudyGroupCreator")
+  studyGroupMemberships StudyGroupMember[]
+  sessionAttendances SessionAttendee[]
+  notifications     Notification[]
+  reviewedFlags     ContentFlag[]
+  studyResources    StudyResource[]
   
   @@map("users")
 }
@@ -300,4 +352,220 @@ model Resource {
   updatedAt   DateTime         @updatedAt @map("updated_at")
   
   @@map("resources")
+}
+
+// New enums for platform enhancements
+enum WellnessType {
+  MOOD_SCORE
+  STRESS_LEVEL
+  SLEEP_QUALITY
+  ENERGY_LEVEL
+  ANXIETY_LEVEL
+  SOCIAL_CONNECTION
+}
+
+enum GroupRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum AttendeeStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  ATTENDED
+}
+
+enum NotificationType {
+  MESSAGE
+  POST_REACTION
+  COMMENT_REPLY
+  STUDY_GROUP_INVITE
+  SESSION_REMINDER
+  WELLNESS_ALERT
+  MODERATION_ACTION
+  SYSTEM_ANNOUNCEMENT
+}
+
+enum FlagType {
+  TOXICITY
+  SPAM
+  SELF_HARM
+  HARASSMENT
+  INAPPROPRIATE
+  CRISIS_LANGUAGE
+}
+
+enum FlagStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+// New models for platform enhancements
+
+model WellnessMetric {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String       @map("user_id") @db.ObjectId
+  type      WellnessType @map("wellness_type")
+  value     Float
+  metadata  Json?        // Flexible storage for type-specific data
+  createdAt DateTime     @default(now()) @map("created_at")
+  
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("wellness_metrics")
+}
+
+model StudyGroup {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  courseCode  String?  @map("course_code")
+  maxMembers  Int      @default(10) @map("max_members")
+  isPublic    Boolean  @default(true) @map("is_public")
+  createdById String   @map("created_by_id") @db.ObjectId
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  createdBy   User     @relation("StudyGroupCreator", fields: [createdById], references: [id])
+  members     StudyGroupMember[]
+  sessions    StudySession[]
+  resources   StudyResource[]
+  
+  @@map("study_groups")
+}
+
+model StudyGroupMember {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  groupId     String     @map("group_id") @db.ObjectId
+  userId      String     @map("user_id") @db.ObjectId
+  role        GroupRole  @default(MEMBER)
+  joinedAt    DateTime   @default(now()) @map("joined_at")
+  
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([groupId, userId])
+  @@map("study_group_members")
+}
+
+model StudySession {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  groupId     String     @map("group_id") @db.ObjectId
+  title       String
+  description String?
+  scheduledAt DateTime   @map("scheduled_at")
+  duration    Int        // Duration in minutes
+  location    String?    // Physical or virtual location
+  createdAt   DateTime   @default(now()) @map("created_at")
+  
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attendees   SessionAttendee[]
+  
+  @@map("study_sessions")
+}
+
+model SessionAttendee {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId String         @map("session_id") @db.ObjectId
+  userId    String         @map("user_id") @db.ObjectId
+  status    AttendeeStatus @default(PENDING)
+  
+  session   StudySession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([sessionId, userId])
+  @@map("session_attendees")
+}
+
+model StudyResource {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  groupId     String     @map("group_id") @db.ObjectId
+  uploadedById String    @map("uploaded_by_id") @db.ObjectId
+  title       String
+  description String?
+  fileUrl     String?    @map("file_url")
+  fileName    String?    @map("file_name")
+  fileSize    Int?       @map("file_size")
+  mimeType    String?    @map("mime_type")
+  tags        String[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  uploadedBy  User       @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  
+  @@map("study_resources")
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @map("user_id") @db.ObjectId
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional notification data
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+  
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+model ContentFlag {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  contentId   String     @map("content_id") @db.ObjectId
+  contentType TargetType @map("content_type")
+  flagType    FlagType   @map("flag_type")
+  confidence  Float      // ML confidence score
+  reviewedBy  String?    @map("reviewed_by") @db.ObjectId
+  status      FlagStatus @default(PENDING)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  reviewedAt  DateTime?  @map("reviewed_at")
+  
+  reviewer    User?      @relation(fields: [reviewedBy], references: [id])
+  
+  @@map("content_flags")
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  LOGIN
+  PASSWORD_RESET
+  PASSWORD_LOGIN
+  REGISTRATION
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  FAILED
+}
+
+model Otp {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?   @map("user_id") @db.ObjectId
+  email       String
+  otp         String
+  hashedOtp   String    @map("hashed_otp") // Store hashed version for security
+  type        OtpType
+  status      OtpStatus @default(PENDING)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  expiresAt   DateTime  @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  verifiedAt  DateTime? @map("verified_at")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  
+  // Relationships
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([email, type, status])
+  @@index([email, type])
+  @@index([expiresAt])
+  @@map("otps")
 }
