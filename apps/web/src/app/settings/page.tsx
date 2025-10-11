@@ -1,198 +1,184 @@
 'use client';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
+import { useState } from 'react';
+import { User, Edit, Bell, Palette, Shield, LogOut } from 'lucide-react';
 
 export default function SettingsPage() {
+  const [profile, setProfile] = useState({
+    fullName: 'Jenny Wilson',
+    username: 'jenny_wilson',
+    bio: 'Student of Psychology at Stanford. Passionate about mental wellness and building supportive communities. In my free time, I love hiking and reading.',
+    avatar: '/avatars/jenny.png', // Placeholder avatar
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Here you would typically call an API to save the profile data
+    console.log('Profile saved:', profile);
+    // You could show a success toast/message here
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-4xl mx-auto text-center">
-        {/* Animated Settings Vector */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mb-8"
-        >
-          <svg
-            className="w-80 h-80 mx-auto"
-            viewBox="0 0 400 300"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <h1 className="text-4xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-2 text-lg text-gray-600">Manage your profile, account, and notification settings.</p>
+        </motion.div>
+
+        <div className="mt-10 lg:grid lg:grid-cols-12 lg:gap-x-5">
+          <aside className="py-6 px-2 sm:px-6 lg:py-0 lg:px-0 lg:col-span-3">
+            <nav className="space-y-1">
+              <a href="#" className="bg-gray-100 text-blue-600 group rounded-md px-3 py-2 flex items-center text-sm font-medium" aria-current="page">
+                <User className="text-blue-500 group-hover:text-blue-600 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Profile</span>
+              </a>
+              <a href="#" className="text-gray-900 hover:text-gray-900 hover:bg-gray-50 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <Edit className="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Account</span>
+              </a>
+              <a href="#" className="text-gray-900 hover:text-gray-900 hover:bg-gray-50 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <Bell className="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Notifications</span>
+              </a>
+              <a href="#" className="text-gray-900 hover:text-gray-900 hover:bg-gray-50 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <Palette className="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Appearance</span>
+              </a>
+              <a href="#" className="text-gray-900 hover:text-gray-900 hover:bg-gray-50 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <Shield className="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Privacy & Security</span>
+              </a>
+              <a href="/logout" className="text-gray-900 hover:text-gray-900 hover:bg-gray-50 group rounded-md px-3 py-2 flex items-center text-sm font-medium">
+                <LogOut className="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-6 w-6" />
+                <span className="truncate">Logout</span>
+              </a>
+            </nav>
+          </aside>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-6 sm:px-6 lg:px-0 lg:col-span-9"
           >
-            {/* Settings Gear */}
-            <motion.g
-              animate={{
-                rotate: [0, 360]
-              }}
-              transition={{
-                duration: 10,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            >
-              <circle cx="200" cy="150" r="40" fill="#6B7280" />
-              <circle cx="200" cy="150" r="25" fill="#F9FAFB" />
-              {/* Gear teeth */}
-              <rect x="195" y="100" width="10" height="15" fill="#6B7280" />
-              <rect x="195" y="185" width="10" height="15" fill="#6B7280" />
-              <rect x="145" y="145" width="15" height="10" fill="#6B7280" />
-              <rect x="240" y="145" width="15" height="10" fill="#6B7280" />
-              <rect x="165" y="115" width="12" height="12" fill="#6B7280" transform="rotate(45 171 121)" />
-              <rect x="223" y="115" width="12" height="12" fill="#6B7280" transform="rotate(-45 229 121)" />
-              <rect x="165" y="173" width="12" height="12" fill="#6B7280" transform="rotate(-45 171 179)" />
-              <rect x="223" y="173" width="12" height="12" fill="#6B7280" transform="rotate(45 229 179)" />
-            </motion.g>
-            
-            {/* Floating Settings Icons */}
-            <motion.g
-              animate={{
-                y: [0, -10, 0],
-                opacity: [0.6, 1, 0.6]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                delay: 0.2
-              }}
-            >
-              <circle cx="120" cy="80" r="15" fill="#E5E7EB" />
-              <text x="120" y="87" fontSize="14" textAnchor="middle">🔔</text>
-            </motion.g>
-            
-            <motion.g
-              animate={{
-                y: [0, -8, 0],
-                opacity: [0.6, 1, 0.6]
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                delay: 0.8
-              }}
-            >
-              <circle cx="280" cy="100" r="15" fill="#E5E7EB" />
-              <text x="280" y="107" fontSize="14" textAnchor="middle">🔒</text>
-            </motion.g>
-            
-            <motion.g
-              animate={{
-                y: [0, -12, 0],
-                opacity: [0.6, 1, 0.6]
-              }}
-              transition={{
-                duration: 2.8,
-                repeat: Infinity,
-                delay: 1.2
-              }}
-            >
-              <circle cx="100" cy="220" r="15" fill="#E5E7EB" />
-              <text x="100" y="227" fontSize="14" textAnchor="middle">🎨</text>
-            </motion.g>
-            
-            <motion.g
-              animate={{
-                y: [0, -6, 0],
-                opacity: [0.6, 1, 0.6]
-              }}
-              transition={{
-                duration: 3.2,
-                repeat: Infinity,
-                delay: 0.5
-              }}
-            >
-              <circle cx="300" cy="200" r="15" fill="#E5E7EB" />
-              <text x="300" y="207" fontSize="14" textAnchor="middle">⚙️</text>
-            </motion.g>
-            
-            {/* Connection Lines */}
-            <motion.g
-              animate={{
-                opacity: [0.2, 0.6, 0.2]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity
-              }}
-            >
-              <line x1="135" y1="90" x2="175" y2="130" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="5,5" />
-              <line x1="265" y1="110" x2="225" y2="130" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="5,5" />
-              <line x1="115" y1="210" x2="175" y2="170" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="5,5" />
-              <line x1="285" y1="190" x2="225" y2="170" stroke="#9CA3AF" strokeWidth="2" strokeDasharray="5,5" />
-            </motion.g>
-          </svg>
-        </motion.div>
+            <form onSubmit={handleSubmit}>
+              <div className="shadow sm:rounded-2xl sm:overflow-hidden bg-white/80 backdrop-blur-sm border border-gray-200">
+                <div className="py-6 px-4 space-y-6 sm:p-6">
+                  <div>
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">Public Profile</h3>
+                    <p className="mt-1 text-sm text-gray-500">This information will be displayed publicly so be careful what you share.</p>
+                  </div>
 
-        {/* Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-        >
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-            Settings
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Customize your experience with personalized settings and preferences. 
-            This comprehensive settings panel is being developed!
-          </p>
-        </motion.div>
+                  <div className="grid grid-cols-3 gap-6">
+                    {/* Profile Photo */}
+                    <div className="col-span-3">
+                      <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
+                      <div className="mt-2 flex items-center space-x-5">
+                        <span className="inline-block h-16 w-16 rounded-full overflow-hidden bg-gray-100">
+                          {profile.avatar ? (
+                            <img className="h-full w-full object-cover" src={profile.avatar} alt="Profile" />
+                          ) : (
+                            <svg className="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          )}
+                        </span>
+                        <div className="flex items-center space-x-3">
+                          <button
+                            type="button"
+                            className="bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            Upload
+                          </button>
+                          <button
+                            type="button"
+                            className="text-sm text-red-600 hover:text-red-800"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-        {/* Features Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        >
-          <div className="p-6 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200">
-            <div className="text-3xl mb-3">🔔</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Notifications</h3>
-            <p className="text-sm text-gray-600">Control when and how you receive updates</p>
-          </div>
-          <div className="p-6 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200">
-            <div className="text-3xl mb-3">🎨</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Appearance</h3>
-            <p className="text-sm text-gray-600">Customize themes, colors, and layout preferences</p>
-          </div>
-          <div className="p-6 bg-white/50 backdrop-blur-sm rounded-xl border border-gray-200">
-            <div className="text-3xl mb-3">🔒</div>
-            <h3 className="font-semibold text-gray-900 mb-2">Privacy Controls</h3>
-            <p className="text-sm text-gray-600">Manage your data and privacy settings</p>
-          </div>
-        </motion.div>
+                    {/* Full Name */}
+                    <div className="col-span-3 sm:col-span-2">
+                      <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        id="fullName"
+                        value={profile.fullName}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                    </div>
 
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-        >
-          <Link
-            href="/dashboard"
-            className="bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-700 hover:to-slate-700 text-white px-8 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg"
-          >
-            Go to Dashboard
-          </Link>
-          <Link
-            href="/profile"
-            className="bg-white hover:bg-gray-50 text-gray-700 px-8 py-3 rounded-xl font-semibold border-2 border-gray-200 hover:border-gray-300 transition-all"
-          >
-            View Profile
-          </Link>
-        </motion.div>
+                    {/* Username */}
+                    <div className="col-span-3 sm:col-span-2">
+                      <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                        Username
+                      </label>
+                      <div className="mt-1 rounded-md shadow-sm flex">
+                        <span className="bg-gray-50 border border-r-0 border-gray-300 rounded-l-md px-3 inline-flex items-center text-gray-500 sm:text-sm">
+                          auralis.app/
+                        </span>
+                        <input
+                          type="text"
+                          name="username"
+                          id="username"
+                          value={profile.username}
+                          onChange={handleInputChange}
+                          className="flex-1 block w-full min-w-0 border-gray-300 rounded-none rounded-r-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        />
+                      </div>
+                    </div>
 
-        {/* Footer Message */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.3, duration: 0.8 }}
-          className="mt-8 text-sm text-gray-500"
-        >
-          <p>
-            ⚙️ Powerful customization options are coming soon. Your preferences matter to us!
-          </p>
-        </motion.div>
+                    {/* Bio */}
+                    <div className="col-span-3">
+                      <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+                        About
+                      </label>
+                      <div className="mt-1">
+                        <textarea
+                          id="bio"
+                          name="bio"
+                          rows={4}
+                          value={profile.bio}
+                          onChange={handleInputChange}
+                          className="shadow-sm block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="A brief description for your profile."
+                        />
+                      </div>
+                      <p className="mt-2 text-sm text-gray-500">Brief description for your profile. URLs are hyperlinked.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-4 py-3 bg-gray-50 text-right sm:px-6 rounded-b-2xl">
+                  <button
+                    type="button"
+                    className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
