@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter?: nodemailer.Transporter;
 
   constructor(private configService: ConfigService) {
     this.createTransporter();
@@ -40,6 +40,9 @@ export class EmailService {
     this.transporter.verify((error) => {
       if (error) {
         this.logger.error('Email service configuration error:', error);
+        this.logger.warn('Falling back to console-only OTP logging. Set SMTP_* env vars correctly to enable real emails.');
+        // Disable transporter so sendOtpEmail uses console fallback
+        this.transporter = undefined;
       } else {
         this.logger.log('Email service is ready to send messages');
       }
@@ -85,6 +88,8 @@ export class EmailService {
         return 'Verify Your Email - Auralis Student Community';
       case 'login':
         return 'Your Login Code - Auralis Student Community';
+      case 'password-login':
+        return 'Secure Login Verification - Auralis Student Community';
       case 'password_reset':
         return 'Password Reset Code - Auralis Student Community';
       default:
@@ -242,6 +247,20 @@ export class EmailService {
           </div>
           <div class="warning">
             <strong>Security Alert:</strong> If you didn't request this login code, someone may be trying to access your account. Please secure your account immediately.
+          </div>
+        `;
+      
+      case 'password-login':
+        return `
+          <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">🔐 Secure Login Verification</h2>
+          <p class="message">Your password has been verified successfully! For additional security, please use the verification code below to complete your login.</p>
+          <div class="otp-container">
+            <p style="margin: 0; font-size: 18px; color: #4b5563;">Your security verification code is:</p>
+            <div class="otp-code">${otp}</div>
+            <p style="margin: 0; font-size: 14px; color: #6b7280;">This code expires in 5 minutes</p>
+          </div>
+          <div class="warning">
+            <strong>Enhanced Security:</strong> This extra step helps protect your account from unauthorized access. Never share this code with anyone.
           </div>
         `;
       
