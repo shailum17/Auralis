@@ -36,7 +36,7 @@ interface ProfileData {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -109,9 +109,6 @@ export default function OnboardingPage() {
       // Here you would save the profile data to the backend
       // For now, we'll simulate the API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update user context
-      await refreshUser();
       
       // Redirect to dashboard
       router.push('/dashboard');
