@@ -1,6 +1,7 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { Request } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,6 +9,11 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EnhancedLoginDto } from './dto/enhanced-login.dto';
+import { EnhancedRequestOtpDto } from './dto/enhanced-request-otp.dto';
+import { EnhancedVerifyOtpDto } from './dto/enhanced-verify-otp.dto';
+import { OtpRequestDto } from './dto/otp-request.dto';
+import { OtpVerifyDto } from './dto/otp-verify.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -111,6 +117,115 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  // Password verification + OTP endpoints
+  @Post('verify-password-request-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @ApiOperation({ summary: 'Verify password and request OTP for secure login' })
+  @ApiResponse({ status: 200, description: 'Password verified, OTP sent' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async verifyPasswordAndRequestOtp(@Body() loginDto: LoginDto) {
+    return this.authService.verifyPasswordAndRequestOtp(loginDto);
+  }
+
+  @Post('verify-password-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
+  @ApiOperation({ summary: 'Verify OTP after password verification and complete login' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  async verifyPasswordOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyPasswordOtp(verifyOtpDto);
+  }
+
+  // Enhanced endpoints that support both email and username authentication
+
+  @Post('enhanced/login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 900000 } }) // 10 attempts per 15 minutes
+  @ApiOperation({ summary: 'Login with email or username and password' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async enhancedLogin(@Body() enhancedLoginDto: EnhancedLoginDto) {
+    return this.authService.enhancedLogin(enhancedLoginDto);
+  }
+
+  @Post('enhanced/otp/request-login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 300000 } }) // 3 attempts per 5 minutes
+  @ApiOperation({ summary: 'Request OTP for login using email or username' })
+  @ApiResponse({ status: 200, description: 'Login OTP sent successfully' })
+  @ApiResponse({ status: 401, description: 'User not found' })
+  async enhancedRequestLoginOtp(@Body() enhancedRequestOtpDto: EnhancedRequestOtpDto) {
+    return this.authService.enhancedRequestLoginOtp(enhancedRequestOtpDto);
+  }
+
+  @Post('enhanced/verify-password-request-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @ApiOperation({ summary: 'Verify password (email or username) and request OTP for secure login' })
+  @ApiResponse({ status: 200, description: 'Password verified, OTP sent' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async enhancedVerifyPasswordAndRequestOtp(@Body() enhancedLoginDto: EnhancedLoginDto) {
+    return this.authService.enhancedVerifyPasswordAndRequestOtp(enhancedLoginDto);
+  }
+
+  @Post('enhanced/otp/verify-login')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
+  @ApiOperation({ summary: 'Verify OTP and login (supports email/username with session preferences)' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  async enhancedVerifyLoginOtp(@Body() enhancedVerifyOtpDto: EnhancedVerifyOtpDto) {
+    return this.authService.enhancedVerifyLoginOtp(enhancedVerifyOtpDto);
+  }
+
+  @Post('enhanced/verify-password-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
+  @ApiOperation({ summary: 'Verify OTP after password verification and complete login (supports session preferences)' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  async enhancedVerifyPasswordOtp(@Body() enhancedVerifyOtpDto: EnhancedVerifyOtpDto) {
+    return this.authService.enhancedVerifyPasswordOtp(enhancedVerifyOtpDto);
+  }
+
+  // New OTP System Endpoints
+
+  @Post('otp/request')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @ApiOperation({ summary: 'Request OTP using new system' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request or rate limited' })
+  @ApiResponse({ status: 401, description: 'User not found' })
+  async requestOtp(@Body() otpRequestDto: OtpRequestDto, @Req() req: Request) {
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    return this.authService.requestOtp(otpRequestDto, ipAddress, userAgent);
+  }
+
+  @Post('otp/verify')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 attempts per 5 minutes
+  @ApiOperation({ summary: 'Verify OTP using new system' })
+  @ApiResponse({ status: 200, description: 'OTP verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  @ApiResponse({ status: 401, description: 'User not found' })
+  async verifyOtp(@Body() otpVerifyDto: OtpVerifyDto, @Req() req: Request) {
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    return this.authService.verifyOtp(otpVerifyDto, ipAddress, userAgent);
+  }
+
+  @Get('otp/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get OTP status' })
+  @ApiResponse({ status: 200, description: 'OTP status retrieved' })
+  async getOtpStatus(@Query('email') email: string, @Query('type') type: string) {
+    return this.authService.getOtpStatus(email, type);
   }
 
   @Post('test-email')
