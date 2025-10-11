@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UpdateWellnessSettingsDto } from './dto/update-wellness-settings.dto';
+import { UpdateUserPreferencesDto } from './dto/update-user-preferences.dto';
+import { UpdateAcademicInfoDto } from './dto/update-academic-info.dto';
+import { UpdatePrivacySettingsDto } from './dto/update-privacy-settings.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,6 +23,9 @@ export class UsersService {
         createdAt: true,
         emailVerified: true,
         privacySettings: true,
+        wellnessSettings: true,
+        preferences: true,
+        academicInfo: true,
         lastActive: true,
         role: true,
       },
@@ -140,5 +147,169 @@ export class UsersService {
       commentsCount: commentIds.length,
       reactionsReceived,
     };
+  }
+
+  async updateWellnessSettings(userId: string, updateWellnessSettingsDto: UpdateWellnessSettingsDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        wellnessSettings: {
+          trackMood: updateWellnessSettingsDto.trackMood,
+          trackStress: updateWellnessSettingsDto.trackStress,
+          shareWellnessData: updateWellnessSettingsDto.shareWellnessData,
+          crisisAlertsEnabled: updateWellnessSettingsDto.crisisAlertsEnabled,
+          allowWellnessInsights: updateWellnessSettingsDto.allowWellnessInsights,
+        },
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        wellnessSettings: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getWellnessSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        wellnessSettings: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.wellnessSettings;
+  }
+
+  async updateUserPreferences(userId: string, updateUserPreferencesDto: UpdateUserPreferencesDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        preferences: {
+          feedAlgorithm: updateUserPreferencesDto.feedAlgorithm,
+          privacyLevel: updateUserPreferencesDto.privacyLevel,
+          theme: updateUserPreferencesDto.theme,
+          language: updateUserPreferencesDto.language,
+          timezone: updateUserPreferencesDto.timezone,
+          notifications: updateUserPreferencesDto.notifications ? {
+            emailNotifications: updateUserPreferencesDto.notifications.emailNotifications,
+            pushNotifications: updateUserPreferencesDto.notifications.pushNotifications,
+            messageNotifications: updateUserPreferencesDto.notifications.messageNotifications,
+            postReactions: updateUserPreferencesDto.notifications.postReactions,
+            commentReplies: updateUserPreferencesDto.notifications.commentReplies,
+            studyGroupInvites: updateUserPreferencesDto.notifications.studyGroupInvites,
+            sessionReminders: updateUserPreferencesDto.notifications.sessionReminders,
+            wellnessAlerts: updateUserPreferencesDto.notifications.wellnessAlerts,
+            moderationActions: updateUserPreferencesDto.notifications.moderationActions,
+            systemAnnouncements: updateUserPreferencesDto.notifications.systemAnnouncements,
+          } : undefined,
+        },
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        preferences: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getUserPreferences(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        preferences: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.preferences;
+  }
+
+  async updateAcademicInfo(userId: string, updateAcademicInfoDto: UpdateAcademicInfoDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        academicInfo: {
+          institution: updateAcademicInfoDto.institution,
+          major: updateAcademicInfoDto.major,
+          year: updateAcademicInfoDto.year,
+          courses: updateAcademicInfoDto.courses,
+          gpa: updateAcademicInfoDto.gpa,
+          graduationYear: updateAcademicInfoDto.graduationYear,
+        },
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        academicInfo: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getAcademicInfo(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        academicInfo: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.academicInfo;
+  }
+
+  async updatePrivacySettings(userId: string, updatePrivacySettingsDto: UpdatePrivacySettingsDto) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        privacySettings: {
+          allowDirectMessages: updatePrivacySettingsDto.allowDirectMessages,
+          showOnlineStatus: updatePrivacySettingsDto.showOnlineStatus,
+          allowProfileViewing: updatePrivacySettingsDto.allowProfileViewing,
+          dataCollection: updatePrivacySettingsDto.dataCollection,
+        },
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        privacySettings: true,
+        updatedAt: true,
+      },
+    });
+
+    return user;
+  }
+
+  async getPrivacySettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        privacySettings: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.privacySettings;
   }
 }
