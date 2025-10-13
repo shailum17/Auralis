@@ -53,7 +53,7 @@ export default function QuickActions() {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
       <div className="space-y-3">
         {actions.map((action, index) => (
@@ -62,7 +62,7 @@ export default function QuickActions() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-white transition-colors ${action.color}`}
+            className={`w-full flex items-center space-x-3 p-3 rounded-lg text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] ${action.color}`}
           >
             <div className="flex-shrink-0">
               {action.icon}

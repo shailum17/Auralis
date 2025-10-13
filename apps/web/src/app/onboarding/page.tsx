@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { userAPI, UserProfileData } from '@/lib/user-api';
 
 interface ProfileData {
   // Personal Information
@@ -36,9 +37,11 @@ interface ProfileData {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shouldSkipOnboarding, setShouldSkipOnboarding] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     // Personal Information
     fullName: '',
@@ -71,10 +74,28 @@ export default function OnboardingPage() {
 
   const totalSteps = 5;
 
-  // Redirect if user is not authenticated
+  // Check if user already has comprehensive profile data
   useEffect(() => {
     if (!user) {
       router.push('/auth/signin');
+      return;
+    }
+
+    // Check if user already has comprehensive profile data from enhanced registration
+    const hasComprehensiveData = !!(
+      user.fullName && 
+      (user.academicInfo?.institution || user.academicInfo?.major || 
+       user.interests?.length || user.bio || 
+       user.privacySettings || user.wellnessSettings)
+    );
+
+    if (hasComprehensiveData) {
+      console.log('User already has comprehensive profile data, skipping onboarding');
+      setShouldSkipOnboarding(true);
+      // Redirect to dashboard after a brief delay to show the skip message
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
     }
   }, [user, router]);
 
@@ -105,15 +126,63 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Here you would save the profile data to the backend
-      // For now, we'll simulate the API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Transform the profile data to match the API structure
+      const userProfileData: UserProfileData = {
+        fullName: profileData.fullName || undefined,
+        bio: profileData.bio || undefined,
+        dateOfBirth: profileData.dateOfBirth || undefined,
+        gender: profileData.gender || undefined,
+        interests: profileData.interests.length > 0 ? profileData.interests : undefined,
+        
+        academicInfo: (profileData.university || profileData.major || profileData.year || profileData.gpa) ? {
+          institution: profileData.university || undefined,
+          major: profileData.major || undefined,
+          year: profileData.year ? parseInt(profileData.year) : undefined,
+          gpa: profileData.gpa ? parseFloat(profileData.gpa) : undefined,
+        } : undefined,
+        
+        privacySettings: {
+          allowDirectMessages: profileData.allowDirectMessages,
+          showOnlineStatus: profileData.showOnlineStatus,
+          allowProfileViewing: profileData.allowProfileViewing,
+          dataCollection: profileData.dataCollection,
+        },
+        
+        wellnessSettings: {
+          trackMood: profileData.moodTracking,
+          trackStress: profileData.stressAlerts,
+          crisisAlertsEnabled: profileData.stressAlerts,
+          allowWellnessInsights: profileData.dataCollection,
+        },
+        
+        preferences: {
+          notifications: {
+            emailNotifications: true, // Default to true for new users
+            pushNotifications: true,
+            messageNotifications: profileData.allowDirectMessages,
+            wellnessAlerts: profileData.wellnessReminders,
+          }
+        }
+      };
+
+      // Save the profile data to the backend
+      const response = await userAPI.completeOnboarding(userProfileData);
       
-      // Redirect to dashboard
-      router.push('/dashboard');
+      if (response.success && response.data) {
+        // Update the user context with the new data
+        updateUser(response.data.user);
+        
+        // Redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        setError(response.error || 'Failed to save profile. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to save profile:', error);
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -436,6 +505,21 @@ export default function OnboardingPage() {
               </label>
             </div>
 
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="bg-green-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-green-900 mb-2">🎉 You're All Set!</h3>
               <p className="text-green-800 text-sm">
@@ -456,6 +540,42 @@ export default function OnboardingPage() {
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show skip message if user already has comprehensive data
+  if (shouldSkipOnboarding) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200"
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Welcome Back! 🎉
+            </h1>
+            
+            <p className="text-gray-600 mb-6">
+              Great news! You've already completed your profile setup during registration. 
+              We're taking you straight to your dashboard.
+            </p>
+            
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span>Redirecting to dashboard...</span>
+            </div>
+          </motion.div>
         </div>
       </div>
     );

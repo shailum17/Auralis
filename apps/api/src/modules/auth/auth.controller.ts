@@ -236,4 +236,24 @@ export class AuthController {
   async testEmail(@Body() testEmailDto: { email: string }) {
     return this.authService.testEmail(testEmailDto.email);
   }
+
+  @Post('register-enhanced')
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @ApiOperation({ summary: 'Register a new user with enhanced profile data' })
+  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiResponse({ status: 409, description: 'User already exists' })
+  async registerEnhanced(@Body() registerDto: any, @Req() req: Request) {
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    return this.authService.registerEnhanced(registerDto, ipAddress, userAgent);
+  }
+
+  @Post('send-otp-email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 attempts per 5 minutes
+  @ApiOperation({ summary: 'Send OTP via email' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  async sendOtpEmail(@Body() sendOtpDto: { email: string; otp: string; type: string }) {
+    return this.authService.sendOtpEmail(sendOtpDto.email, sendOtpDto.otp, sendOtpDto.type);
+  }
 }

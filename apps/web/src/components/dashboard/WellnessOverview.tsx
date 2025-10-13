@@ -70,7 +70,7 @@ export default function WellnessOverview() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -87,7 +87,7 @@ export default function WellnessOverview() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Wellness Overview</h2>
         <div className="flex items-center space-x-2">
@@ -109,7 +109,7 @@ export default function WellnessOverview() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-gray-50 rounded-lg p-4"
+            className="bg-gray-50 rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200"
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600">{metric.name}</span>
@@ -157,7 +157,7 @@ export default function WellnessOverview() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
+                className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
               >
                 <div className="flex-shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
@@ -184,7 +184,7 @@ export default function WellnessOverview() {
       </div>
 
       {/* Quick Mood Entry */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
         <h4 className="text-sm font-medium text-blue-900 mb-3">How are you feeling today?</h4>
         <div className="flex items-center space-x-2">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((mood) => (

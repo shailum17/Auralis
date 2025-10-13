@@ -60,9 +60,9 @@ const Navigation = () => {
             <a href="#features" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Features
             </a>
-            <a href="#wellness" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
+            <Link href="/wellness" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Wellness
-            </a>
+            </Link>
             <a href="#community" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Community
             </a>
@@ -118,9 +118,9 @@ const Navigation = () => {
                 <a href="#features" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Features
                 </a>
-                <a href="#wellness" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
+                <Link href="/wellness" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Wellness
-                </a>
+                </Link>
                 <a href="#community" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Community
                 </a>

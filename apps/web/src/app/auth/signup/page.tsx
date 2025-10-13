@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthNavigation from '@/components/AuthNavigation';
-import { RegistrationForm } from '@/components/auth/RegistrationForm';
+import { EnhancedRegistrationForm } from '@/components/auth/EnhancedRegistrationForm';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,7 +13,9 @@ export default function SignUpPage() {
 
   const handleRegistrationSuccess = (user: any, tokens: { accessToken: string; refreshToken: string }) => {
     login(user, tokens.accessToken, tokens.refreshToken);
-    router.push('/onboarding');
+    // Since the enhanced registration form already collects comprehensive user data,
+    // we can skip the onboarding process and go directly to the dashboard
+    router.push('/dashboard');
   };
 
   const handleRegistrationError = (error: string) => {
@@ -29,8 +31,8 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <AuthNavigation />
       
-      <div className="flex items-center justify-center px-4 pt-24 pb-12">
-        <div className="max-w-md w-full">
+      <div className="flex items-center justify-center px-4 pt-16 pb-12">
+        <div className="max-w-4xl w-full">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -68,28 +70,30 @@ export default function SignUpPage() {
             className="relative bg-white rounded-2xl shadow-xl p-8 border border-gray-200 z-10"
           >
             {/* Enhanced Registration Form */}
-            <RegistrationForm
+            <EnhancedRegistrationForm
               onSuccess={handleRegistrationSuccess}
               onError={handleRegistrationError}
             />
 
             {/* Social Authentication */}
-            <SocialAuthButtons
-              onSocialLogin={handleSocialSignup}
-              className="mt-6"
-            />
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <SocialAuthButtons
+                onSocialLogin={handleSocialSignup}
+                className="mb-6"
+              />
 
-            {/* Sign In Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link 
-                  href="/auth/signin" 
-                  className="text-blue-600 hover:text-blue-500 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded"
-                >
-                  Sign in here
-                </Link>
-              </p>
+              {/* Sign In Link */}
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <Link 
+                    href="/auth/signin" 
+                    className="text-blue-600 hover:text-blue-500 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded"
+                  >
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -46,7 +46,7 @@ export default function WellnessInsights() {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Wellness Insights</h3>
       
       {/* AI Insights */}
@@ -57,7 +57,7 @@ export default function WellnessInsights() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
-            className={`p-3 rounded-lg border ${insight.color}`}
+            className={`p-3 rounded-lg border shadow-md hover:shadow-lg transition-all duration-200 ${insight.color}`}
           >
             <div className="flex items-start space-x-2">
               <div className="flex-shrink-0 mt-0.5">
@@ -105,7 +105,7 @@ export default function WellnessInsights() {
       </div>
 
       {/* Quick Action */}
-      <div className="mt-6 p-3 bg-blue-50 rounded-lg">
+      <div className="mt-6 p-3 bg-blue-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-blue-900">Ready for your daily check-in?</p>

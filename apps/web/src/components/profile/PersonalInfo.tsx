@@ -30,17 +30,17 @@ export default function PersonalInfo() {
       // Simulate API call to get user profile data
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Set user-specific data
-      const nameParts = user.username?.split(' ') || user.email.split('@')[0].split('.');
+      // Use actual user data from registration
+      const nameParts = user.fullName?.split(' ') || user.username?.split(' ') || user.email.split('@')[0].split('.');
       setFormData({
         firstName: nameParts[0] || '',
         lastName: nameParts[1] || '',
         email: user.email,
         phone: '', // Not collected during registration
-        major: '', // Not collected during registration
-        year: '', // Not collected during registration
-        bio: 'Welcome to my profile! I\'m excited to be part of this community.',
-        interests: [] as string[], // Empty for new users
+        major: user.academicInfo?.major || '',
+        year: user.academicInfo?.year?.toString() || '',
+        bio: user.bio || 'Welcome to my profile! I\'m excited to be part of this community.',
+        interests: user.interests || [],
         pronouns: '', // Not collected during registration
         location: '' // Not collected during registration
       });
@@ -106,27 +106,51 @@ export default function PersonalInfo() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-4xl"
+      className="max-w-6xl"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Personal Information</h2>
+          <p className="text-gray-600 mt-1">Manage your personal details and preferences</p>
+        </div>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`mt-4 sm:mt-0 px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 ${
             isEditing
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg'
+              : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg'
           }`}
         >
-          {isEditing ? 'Save Changes' : 'Edit Profile'}
+          {isEditing ? (
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Save Changes</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <span>Edit Profile</span>
+            </div>
+          )}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         
         {/* Basic Information */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 space-y-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">Basic Information</h3>
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -138,10 +162,10 @@ export default function PersonalInfo() {
                   type="text"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all"
                 />
               ) : (
-                <p className="text-gray-900">{formData.firstName}</p>
+                <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.firstName || 'Not provided'}</p>
               )}
             </div>
             
@@ -154,10 +178,10 @@ export default function PersonalInfo() {
                   type="text"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all"
                 />
               ) : (
-                <p className="text-gray-900">{formData.lastName}</p>
+                <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.lastName || 'Not provided'}</p>
               )}
             </div>
           </div>
@@ -171,10 +195,15 @@ export default function PersonalInfo() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all"
               />
             ) : (
-              <p className="text-gray-900">{formData.email}</p>
+              <div className="flex items-center space-x-2 bg-white p-3 rounded-lg shadow-sm">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                </svg>
+                <p className="text-gray-900">{formData.email}</p>
+              </div>
             )}
           </div>
 
@@ -187,10 +216,11 @@ export default function PersonalInfo() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your phone number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all"
               />
             ) : (
-              <p className="text-gray-900">{formData.phone}</p>
+              <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.phone || 'Not provided'}</p>
             )}
           </div>
 
@@ -202,8 +232,9 @@ export default function PersonalInfo() {
               <select
                 value={formData.pronouns}
                 onChange={(e) => handleInputChange('pronouns', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-all"
               >
+                <option value="">Select pronouns</option>
                 <option value="She/Her">She/Her</option>
                 <option value="He/Him">He/Him</option>
                 <option value="They/Them">They/Them</option>
@@ -211,14 +242,21 @@ export default function PersonalInfo() {
                 <option value="Prefer not to say">Prefer not to say</option>
               </select>
             ) : (
-              <p className="text-gray-900">{formData.pronouns}</p>
+              <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.pronouns || 'Not specified'}</p>
             )}
           </div>
         </div>
 
         {/* Academic Information */}
-        <div className="space-y-6">
-          <h3 className="text-lg font-semibold text-gray-900">Academic Information</h3>
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 space-y-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">Academic Information</h3>
+          </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -229,10 +267,11 @@ export default function PersonalInfo() {
                 type="text"
                 value={formData.major}
                 onChange={(e) => handleInputChange('major', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Computer Science"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm transition-all"
               />
             ) : (
-              <p className="text-gray-900">{formData.major}</p>
+              <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.major || 'Not specified'}</p>
             )}
           </div>
 
@@ -244,8 +283,9 @@ export default function PersonalInfo() {
               <select
                 value={formData.year}
                 onChange={(e) => handleInputChange('year', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm transition-all"
               >
+                <option value="">Select academic year</option>
                 <option value="Freshman">Freshman</option>
                 <option value="Sophomore">Sophomore</option>
                 <option value="Junior">Junior</option>
@@ -253,7 +293,7 @@ export default function PersonalInfo() {
                 <option value="Graduate">Graduate</option>
               </select>
             ) : (
-              <p className="text-gray-900">{formData.year}</p>
+              <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.year || 'Not specified'}</p>
             )}
           </div>
 
@@ -266,63 +306,84 @@ export default function PersonalInfo() {
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., New York, NY"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm transition-all"
               />
             ) : (
-              <p className="text-gray-900">{formData.location}</p>
+              <p className="text-gray-900 bg-white p-3 rounded-lg shadow-sm">{formData.location || 'Not specified'}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Bio Section */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">About Me</h3>
+      <div className="mt-8 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900">About Me</h3>
+        </div>
         {isEditing ? (
           <textarea
             value={formData.bio}
             onChange={(e) => handleInputChange('bio', e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
             placeholder="Tell others about yourself..."
           />
         ) : (
-          <p className="text-gray-900 leading-relaxed">{formData.bio}</p>
+          <p className="text-gray-900 leading-relaxed bg-white p-4 rounded-lg shadow-sm">{formData.bio}</p>
         )}
       </div>
 
       {/* Interests Section */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Interests & Topics</h3>
-        <div className="flex flex-wrap gap-2">
-          {formData.interests.map((interest, index) => (
-            <motion.div
-              key={interest}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
-            >
-              <span>{interest}</span>
-              {isEditing && (
-                <button
-                  onClick={() => handleInterestRemove(interest)}
-                  className="text-blue-500 hover:text-blue-700"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </motion.div>
-          ))}
+      <div className="mt-8 bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900">Interests & Topics</h3>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          {formData.interests.length === 0 && !isEditing ? (
+            <div className="text-gray-500 italic bg-white p-4 rounded-lg shadow-sm w-full">
+              No interests added yet. Click "Edit Profile" to add your interests and connect with like-minded people! 🌟
+            </div>
+          ) : (
+            formData.interests.map((interest, index) => (
+              <motion.div
+                key={interest}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md"
+              >
+                <span>{interest}</span>
+                {isEditing && (
+                  <button
+                    onClick={() => handleInterestRemove(interest)}
+                    className="text-white/80 hover:text-white ml-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </motion.div>
+            ))
+          )}
           {isEditing && (
             <button
               onClick={() => {
                 const newInterest = prompt('Add a new interest:');
                 if (newInterest) handleInterestAdd(newInterest);
               }}
-              className="flex items-center space-x-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors"
+              className="flex items-center space-x-2 bg-white border-2 border-dashed border-gray-300 text-gray-600 px-4 py-2 rounded-full text-sm hover:border-gray-400 hover:bg-gray-50 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />

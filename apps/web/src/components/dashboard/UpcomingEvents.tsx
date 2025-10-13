@@ -71,7 +71,7 @@ export default function UpcomingEvents() {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
         <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
@@ -86,7 +86,7 @@ export default function UpcomingEvents() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
-            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            className="border border-gray-200 rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.01]"
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center space-x-2">

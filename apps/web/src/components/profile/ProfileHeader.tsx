@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserInitials, getUserDisplayName } from '@/lib/auth-utils';
+import { getDisplayName, getInitials, formatUserData } from '@/lib/profile-utils';
 
 export default function ProfileHeader() {
   const { user } = useAuth();
@@ -38,24 +39,27 @@ export default function ProfileHeader() {
       // Simulate API call to get user profile data
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Set user-specific data
+      // Get user data safely
+      const userData = formatUserData(user);
+      
+      // Set user-specific data (only use data that user has actually provided)
       setUserProfile({
-        name: getUserDisplayName(user),
+        name: getDisplayName(user),
         username: `@${user.username || user.email.split('@')[0]}`,
-        major: 'Not specified', // This would come from user profile data
-        year: 'Not specified',
-        bio: 'Welcome to my profile! I\'m excited to be part of this community.',
-        joinDate: new Date(Date.now()).toLocaleDateString('en-US', { 
+        major: userData?.major || '', // Only show if user provided it
+        year: userData?.year ? `Year ${userData.year}` : '', // Only show if user provided it
+        bio: user.bio || '', // Only show if user provided it
+        joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { 
           month: 'long', 
           year: 'numeric' 
-        }),
+        }) : 'Recently',
         stats: {
-          posts: 0,
+          posts: 0, // These would come from actual user activity
           helpfulVotes: 0,
           studyGroups: 0,
           wellnessStreak: 0
         },
-        badges: [] // New users start with no badges
+        badges: [] // Badges would be earned based on actual user activity
       });
       
       setLoading(false);
@@ -101,7 +105,7 @@ export default function ProfileHeader() {
               {/* Avatar */}
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-2xl">{getUserInitials(user)}</span>
+                  <span className="text-white font-bold text-2xl">{getInitials(user)}</span>
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -118,15 +122,29 @@ export default function ProfileHeader() {
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 </div>
                 
-                <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                  <span>{userProfile.major}</span>
-                  <span>•</span>
-                  <span>{userProfile.year}</span>
-                  <span>•</span>
+                <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
+                  {userProfile.major && (
+                    <>
+                      <span>{userProfile.major}</span>
+                      <span>•</span>
+                    </>
+                  )}
+                  {userProfile.year && (
+                    <>
+                      <span>{userProfile.year}</span>
+                      <span>•</span>
+                    </>
+                  )}
                   <span>Joined {userProfile.joinDate}</span>
                 </div>
 
-                <p className="text-gray-700 max-w-2xl mb-4">{userProfile.bio}</p>
+                {userProfile.bio ? (
+                  <p className="text-gray-700 max-w-2xl mb-4">{userProfile.bio}</p>
+                ) : (
+                  <p className="text-gray-500 italic max-w-2xl mb-4">
+                    No bio added yet. <button className="text-blue-600 hover:text-blue-700 underline">Add a bio</button> to tell others about yourself.
+                  </p>
+                )}
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2">
@@ -154,12 +172,12 @@ export default function ProfileHeader() {
 
             {/* Action Buttons */}
             <div className="mt-6 lg:mt-0 flex items-center space-x-3">
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              <Link
+                href="/profile/edit"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-block"
               >
                 Edit Profile
-              </button>
+              </Link>
               <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
                 Share Profile
               </button>

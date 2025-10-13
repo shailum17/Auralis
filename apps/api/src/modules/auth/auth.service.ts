@@ -937,5 +937,145 @@ export class AuthService {
     return typeMap[type] || 'LOGIN';
   }
 
+  async registerEnhanced(registerDto: any, ipAddress?: string, userAgent?: string) {
+    const { email, password, username, fullName, ...optionalData } = registerDto;
+
+    // Validate required fields
+    if (!email || !password || !username || !fullName) {
+      throw new BadRequestException('Missing required fields: email, password, username, and fullName are required');
+    }
+
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: email.toLowerCase() },
+          { username },
+        ],
+      },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email or username already exists');
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Prepare user data with defaults
+    const userData = {
+      email: email.toLowerCase(),
+      username,
+      passwordHash,
+      bio: optionalData.bio || null,
+      interests: optionalData.interests || [],
+      emailVerified: false, // Will be set to true after OTP verification
+      role: 'USER' as const,
+      
+      // Privacy settings with defaults
+      privacySettings: {
+        allowDirectMessages: true,
+        showOnlineStatus: true,
+        allowProfileViewing: true,
+        dataCollection: true,
+      },
+      
+      // Wellness settings with defaults
+      wellnessSettings: {
+        trackMood: false,
+        trackStress: false,
+        shareWellnessData: false,
+        crisisAlertsEnabled: true,
+        allowWellnessInsights: false,
+      },
+      
+      // User preferences with defaults
+      preferences: {
+        feedAlgorithm: 'personalized',
+        privacyLevel: 'public',
+        theme: 'light',
+        language: 'en',
+        timezone: 'UTC',
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          messageNotifications: true,
+          postReactions: true,
+          commentReplies: true,
+          studyGroupInvites: true,
+          sessionReminders: true,
+          wellnessAlerts: true,
+          moderationActions: true,
+          systemAnnouncements: true,
+        }
+      },
+      
+      // Academic information (only if provided)
+      ...(optionalData.academicInfo && { academicInfo: optionalData.academicInfo }),
+      
+      lastActive: new Date(),
+    };
+
+    try {
+      // Create user in database
+      const user = await this.prisma.user.create({
+        data: userData,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          bio: true,
+          interests: true,
+          emailVerified: true,
+          role: true,
+          academicInfo: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      console.log('✅ User created successfully in database:', {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        hasAcademicInfo: !!user.academicInfo,
+        interestsCount: user.interests?.length || 0
+      });
+
+      return {
+        success: true,
+        data: {
+          user,
+          message: 'Account created successfully. Please check your email for verification.'
+        }
+      };
+
+    } catch (error) {
+      console.error('Enhanced registration error:', error);
+      throw new BadRequestException('Failed to create user account. Please try again.');
+    }
+  }
+
+  async sendOtpEmail(email: string, otp: string, type: string) {
+    try {
+      const emailSent = await this.emailService.sendOtpEmail(email, otp, type);
+      
+      return {
+        success: true,
+        data: {
+          message: emailSent ? 'OTP sent successfully via email' : 'OTP generated (email service unavailable)',
+          emailSent
+        }
+      };
+    } catch (error) {
+      console.error('Send OTP email error:', error);
+      return {
+        success: false,
+        error: 'Failed to send OTP email'
+      };
+    }
+  }
+
 
 }

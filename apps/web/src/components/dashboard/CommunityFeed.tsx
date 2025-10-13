@@ -43,12 +43,12 @@ export default function CommunityFeed() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-6"></div>
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border border-gray-200 rounded-lg p-4">
+              <div key={i} className="border border-gray-200 rounded-lg p-4 shadow-md">
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                   <div className="flex-1">
@@ -101,7 +101,7 @@ export default function CommunityFeed() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Community Feed</h2>
@@ -154,7 +154,7 @@ export default function CommunityFeed() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="p-6 hover:bg-gray-50 transition-colors"
+            className="p-6 hover:bg-gray-50 transition-all duration-200 hover:shadow-md"
           >
             {/* Post Header */}
             <div className="flex items-center space-x-3 mb-4">

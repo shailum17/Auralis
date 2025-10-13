@@ -44,7 +44,7 @@ export default function AuthNavigation() {
             <Link href="/#features" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Features
             </Link>
-            <Link href="/#wellness" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
+            <Link href="/wellness" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               Wellness
             </Link>
             <Link href="/#community" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
@@ -94,7 +94,7 @@ export default function AuthNavigation() {
                 <Link href="/#features" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Features
                 </Link>
-                <Link href="/#wellness" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
+                <Link href="/wellness" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   Wellness
                 </Link>
                 <Link href="/#community" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
