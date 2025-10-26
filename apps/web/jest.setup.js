@@ -3,8 +3,10 @@ import '@testing-library/jest-dom'
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    button: ({ children, ...props }) => <button {...props}>{children}</button>,
-    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    button: ({ children, whileHover, whileTap, initial, animate, exit, transition, ...props }) => <button {...props}>{children}</button>,
+    div: ({ children, whileHover, whileTap, initial, animate, exit, transition, ...props }) => <div {...props}>{children}</div>,
+    span: ({ children, whileHover, whileTap, initial, animate, exit, transition, ...props }) => <span {...props}>{children}</span>,
+    label: ({ children, whileHover, whileTap, initial, animate, exit, transition, ...props }) => <label {...props}>{children}</label>,
   },
   AnimatePresence: ({ children }) => children,
 }))

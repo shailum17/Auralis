@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -34,6 +34,14 @@ export interface OtpVerificationData {
   email: string;
   otp: string;
 }
+
+// Re-export types from the new auth types for backward compatibility
+export type { 
+  User, 
+  AuthTokens, 
+  LoginData as EnhancedLoginData,
+  RegisterData as EnhancedRegisterData 
+} from '@/types/auth';
 
 class ApiClient {
   private baseUrl: string;

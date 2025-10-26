@@ -1,11 +1,30 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import { getProfileCompletionStatus, formatUserData } from '@/lib/profile-utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 
 export function ProfileDebugInfo() {
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = {
+    id: 'mock-user-id',
+    email: 'guest@example.com',
+    username: 'guest',
+    fullName: 'Guest User',
+    bio: 'This is a mock user profile',
+    interests: ['Technology', 'Learning'],
+    academicInfo: {
+      institution: 'Mock University',
+      major: 'Computer Science'
+    },
+    privacySettings: {
+      allowDirectMessages: true,
+      showOnlineStatus: true
+    },
+    wellnessSettings: {
+      trackMood: false,
+      trackStress: false
+    }
+  };
 
   if (!user) {
     return (

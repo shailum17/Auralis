@@ -95,7 +95,7 @@ const Navigation = () => {
                 }}
               />
               <Link
-                href="/auth/signin"
+                href="/auth/signup"
                 className="relative inline-flex items-center justify-center px-6 py-2 sm:py-2.5 text-base font-semibold text-black transition-all duration-200 bg-white rounded-lg sm:text-sm hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-400 z-10"
                 role="button"
               >
@@ -137,7 +137,7 @@ const Navigation = () => {
                     }}
                   />
                   <Link
-                    href="/auth/signin"
+                    href="/auth/signup"
                     className="relative inline-flex items-center justify-center px-6 py-2 text-base font-semibold leading-7 text-black transition-all duration-200 bg-white border border-transparent rounded-lg hover:shadow-lg hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-400 z-10"
                     role="button"
                   >

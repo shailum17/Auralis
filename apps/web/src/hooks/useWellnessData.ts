@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 
 export interface MoodEntry {
@@ -50,7 +49,8 @@ interface UseWellnessDataReturn {
 }
 
 export function useWellnessData(): UseWellnessDataReturn {
-  const { user } = useAuth();
+  // Mock user data since auth is removed
+  const user = null;
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [wellnessGoals, setWellnessGoals] = useState<WellnessGoal[]>([]);
   const [wellnessStats, setWellnessStats] = useState<WellnessStats | null>(null);
@@ -62,11 +62,8 @@ export function useWellnessData(): UseWellnessDataReturn {
   }, []);
 
   const hasWellnessTrackingEnabled = useCallback(() => {
-    return !!(
-      user?.wellnessSettings?.trackMood || 
-      user?.wellnessSettings?.trackStress ||
-      user?.wellnessSettings?.allowWellnessInsights
-    );
+    // Always return false since user is null (auth removed)
+    return false;
   }, [user]);
 
   const fetchWellnessData = useCallback(async () => {

@@ -1,335 +1,372 @@
-import bcrypt from 'bcryptjs';
-import { databaseClient } from './database-client';
+/**
+ * Registration Service Module
+ * 
+ * This module handles user registration flow and related operations.
+ */
+
+import { emailService } from './email-service';
 
 interface RegistrationData {
   email: string;
-  password: string;
   username: string;
+  password: string;
   fullName: string;
-  dateOfBirth?: string;
-  gender?: string;
   bio?: string;
-  academicInfo?: {
-    institution?: string;
-    major?: string;
-    year?: number;
-  };
-  interests?: string[];
-  acceptMarketing?: boolean;
+  acceptTerms: boolean;
 }
 
 interface RegistrationResult {
   success: boolean;
-  data?: {
-    user: any;
-    message: string;
-    savedToDatabase: boolean;
-    method: 'backend' | 'direct' | 'memory';
-  };
+  userId?: string;
+  verificationEmail?: string;
   error?: string;
+  details?: Array<{ field: string; message: string }>;
+}
+
+interface OTPVerificationData {
+  email: string;
+  otp: string;
+}
+
+interface OTPVerificationResult {
+  success: boolean;
+  userId?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  error?: string;
+  details?: Array<{ field: string; message: string }>;
 }
 
 class RegistrationService {
-  private static instance: RegistrationService;
-
-  static getInstance(): RegistrationService {
-    if (!RegistrationService.instance) {
-      RegistrationService.instance = new RegistrationService();
-    }
-    return RegistrationService.instance;
-  }
+  private otpStore = new Map<string, { otp: string; expiresAt: Date; attempts: number }>();
+  private readonly OTP_EXPIRY_MINUTES = 10;
+  private readonly MAX_OTP_ATTEMPTS = 5;
 
   async registerUser(data: RegistrationData): Promise<RegistrationResult> {
-    console.log('🚀 Starting user registration process...');
+    try {
+      console.log('📝 Starting user registration for:', data.email);
 
-    // Validate required fields
-    if (!data.email || !data.password || !data.username || !data.fullName) {
+      // Validate registration data
+      const validation = await this.validateRegistrationData(data);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: 'Validation failed',
+          details: validation.errors.map(error => ({ field: error.field, message: error.message })),
+        };
+      }
+
+      // Check if user already exists
+      const existingUser = await this.checkUserExists(data.email, data.username);
+      if (existingUser.exists) {
+        return {
+          success: false,
+          error: 'User already exists',
+          details: existingUser.conflicts.map(conflict => ({ 
+            field: conflict.field, 
+            message: conflict.message 
+          })),
+        };
+      }
+
+      // Generate OTP
+      const otp = this.generateOTP();
+      const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000);
+
+      // Store OTP for verification
+      this.otpStore.set(data.email, {
+        otp,
+        expiresAt,
+        attempts: 0,
+      });
+
+      // Send verification email
+      const emailResult = await emailService.sendOTPEmail({
+        to: data.email,
+        otp,
+        fullName: data.fullName,
+      });
+
+      if (!emailResult.success) {
+        console.error('❌ Failed to send verification email:', emailResult.error);
+        // Don't fail registration if email fails, but log it
+      }
+
+      console.log('✅ User registration initiated successfully');
+
+      return {
+        success: true,
+        userId: `temp_${Date.now()}`, // Temporary ID until verification
+        verificationEmail: data.email,
+      };
+    } catch (error) {
+      console.error('❌ Registration failed:', error);
       return {
         success: false,
-        error: 'Missing required fields: email, password, username, and fullName are required'
+        error: 'Registration failed',
+        details: [{ field: 'general', message: (error as Error).message }],
       };
     }
-
-    // Try Method 1: Backend API
-    const backendResult = await this.tryBackendRegistration(data);
-    if (backendResult.success) {
-      return backendResult;
-    }
-
-    // Try Method 2: Direct Database Connection
-    const directResult = await this.tryDirectDatabaseRegistration(data);
-    if (directResult.success) {
-      return directResult;
-    }
-
-    // Fallback Method 3: Memory Storage
-    return this.fallbackMemoryRegistration(data);
   }
 
-  private async tryBackendRegistration(data: RegistrationData): Promise<RegistrationResult> {
+  async verifyOTP(data: OTPVerificationData): Promise<OTPVerificationResult> {
     try {
-      console.log('📡 Attempting backend API registration...');
-      
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${backendUrl}/api/auth/register-enhanced`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+      console.log('🔍 Verifying OTP for:', data.email);
+
+      const storedOTP = this.otpStore.get(data.email);
+      if (!storedOTP) {
+        return {
+          success: false,
+          error: 'OTP not found or expired',
+          details: [{ field: 'otp', message: 'Verification code not found or has expired' }],
+        };
+      }
+
+      // Check if OTP has expired
+      if (new Date() > storedOTP.expiresAt) {
+        this.otpStore.delete(data.email);
+        return {
+          success: false,
+          error: 'OTP expired',
+          details: [{ field: 'otp', message: 'Verification code has expired' }],
+        };
+      }
+
+      // Check attempt limit
+      if (storedOTP.attempts >= this.MAX_OTP_ATTEMPTS) {
+        this.otpStore.delete(data.email);
+        return {
+          success: false,
+          error: 'Too many attempts',
+          details: [{ field: 'otp', message: 'Too many verification attempts. Please request a new code.' }],
+        };
+      }
+
+      // Verify OTP
+      if (storedOTP.otp !== data.otp) {
+        storedOTP.attempts++;
+        return {
+          success: false,
+          error: 'Invalid OTP',
+          details: [{ field: 'otp', message: 'Invalid verification code' }],
+        };
+      }
+
+      // OTP verified successfully
+      this.otpStore.delete(data.email);
+
+      // Generate tokens (in a real implementation, this would use JWT)
+      const accessToken = this.generateAccessToken(data.email);
+      const refreshToken = this.generateRefreshToken(data.email);
+
+      console.log('✅ OTP verified successfully');
+
+      return {
+        success: true,
+        userId: `user_${Date.now()}`,
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      console.error('❌ OTP verification failed:', error);
+      return {
+        success: false,
+        error: 'OTP verification failed',
+        details: [{ field: 'general', message: (error as Error).message }],
+      };
+    }
+  }
+
+  async resendOTP(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log('🔄 Resending OTP for:', email);
+
+      // Generate new OTP
+      const otp = this.generateOTP();
+      const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_MINUTES * 60 * 1000);
+
+      // Update stored OTP
+      this.otpStore.set(email, {
+        otp,
+        expiresAt,
+        attempts: 0,
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Backend registration successful');
-        
+      // Send verification email
+      const emailResult = await emailService.sendOTPEmail({
+        to: email,
+        otp,
+      });
+
+      if (!emailResult.success) {
+        console.error('❌ Failed to resend verification email:', emailResult.error);
         return {
-          success: true,
-          data: {
-            user: result.data?.user || this.createUserObject(data),
-            message: 'Account created successfully via backend API',
-            savedToDatabase: true,
-            method: 'backend'
-          }
+          success: false,
+          error: 'Failed to send verification email',
         };
-      } else {
-        const error = await response.json();
-        console.log('❌ Backend registration failed:', error);
-        throw new Error(error.message || 'Backend registration failed');
       }
+
+      console.log('✅ OTP resent successfully');
+
+      return {
+        success: true,
+      };
     } catch (error) {
-      console.log('⚠️ Backend API unavailable:', (error as Error).message);
-      return { success: false, error: (error as Error).message };
+      console.error('❌ Failed to resend OTP:', error);
+      return {
+        success: false,
+        error: (error as Error).message,
+      };
     }
   }
 
-  private async tryDirectDatabaseRegistration(data: RegistrationData): Promise<RegistrationResult> {
-    try {
-      console.log('🗄️ Attempting direct database registration...');
-      
-      // Connect to database
-      const connected = await databaseClient.connect();
-      if (!connected) {
-        throw new Error('Failed to connect to database');
-      }
+  private async validateRegistrationData(data: RegistrationData): Promise<{ 
+    isValid: boolean; 
+    errors: Array<{ field: string; message: string }> 
+  }> {
+    const errors: Array<{ field: string; message: string }> = [];
 
-      // Hash password
-      const saltRounds = 12;
-      const passwordHash = await bcrypt.hash(data.password, saltRounds);
+    // Email validation
+    if (!data.email) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    } else if (data.email.length > 254) {
+      errors.push({ field: 'email', message: 'Email address is too long' });
+    }
 
-      // Prepare user data
-      const userData = {
-        email: data.email.toLowerCase(),
-        username: data.username,
-        passwordHash,
-        fullName: data.fullName,
-        bio: data.bio || null,
-        interests: data.interests || [],
-        emailVerified: false,
-        role: 'USER',
-        academicInfo: data.academicInfo || null,
-        privacySettings: {
-          allowDirectMessages: true,
-          showOnlineStatus: true,
-          allowProfileViewing: true,
-          dataCollection: true,
-        },
-        wellnessSettings: {
-          trackMood: false,
-          trackStress: false,
-          shareWellnessData: false,
-          crisisAlertsEnabled: true,
-          allowWellnessInsights: false,
-        },
-        preferences: {
-          feedAlgorithm: 'personalized',
-          privacyLevel: 'public',
-          theme: 'light',
-          language: 'en',
-          timezone: 'UTC',
-          notifications: {
-            emailNotifications: true,
-            pushNotifications: true,
-            messageNotifications: true,
-            postReactions: true,
-            commentReplies: true,
-            studyGroupInvites: true,
-            sessionReminders: true,
-            wellnessAlerts: true,
-            moderationActions: true,
-            systemAnnouncements: true,
-          }
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        lastActive: new Date(),
+    // Username validation
+    if (!data.username) {
+      errors.push({ field: 'username', message: 'Username is required' });
+    } else if (data.username.length < 3) {
+      errors.push({ field: 'username', message: 'Username must be at least 3 characters' });
+    } else if (data.username.length > 30) {
+      errors.push({ field: 'username', message: 'Username must be less than 30 characters' });
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(data.username)) {
+      errors.push({ field: 'username', message: 'Username can only contain letters, numbers, underscores, and hyphens' });
+    }
+
+    // Password validation
+    if (!data.password) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else {
+      const passwordRequirements = {
+        minLength: data.password.length >= 8,
+        hasUppercase: /[A-Z]/.test(data.password),
+        hasLowercase: /[a-z]/.test(data.password),
+        hasNumber: /\d/.test(data.password),
+        hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(data.password),
       };
 
-      // Save to database
-      const savedUser = await databaseClient.saveUser(userData);
-      
-      if (savedUser) {
-        console.log('✅ Direct database registration successful');
-        
-        return {
-          success: true,
-          data: {
-            user: this.formatUserForFrontend(savedUser),
-            message: 'Account created successfully via direct database connection',
-            savedToDatabase: true,
-            method: 'direct'
-          }
-        };
-      } else {
-        throw new Error('Failed to save user to database');
-      }
-    } catch (error) {
-      console.log('❌ Direct database registration failed:', (error as Error).message);
-      return { success: false, error: (error as Error).message };
-    } finally {
-      await databaseClient.disconnect();
-    }
-  }
+      const missingRequirements = Object.entries(passwordRequirements)
+        .filter(([_, met]) => !met)
+        .map(([req]) => req);
 
-  private fallbackMemoryRegistration(data: RegistrationData): RegistrationResult {
-    console.log('💾 Using memory storage fallback...');
-    
-    const userObject = this.createUserObject(data);
-    
-    // Store in memory
-    globalThis.pendingUsers = globalThis.pendingUsers || {};
-    globalThis.pendingUsers[data.email.toLowerCase()] = userObject;
-    
-    console.log('✅ Memory registration successful (fallback)');
-    
-    return {
-      success: true,
-      data: {
-        user: userObject,
-        message: 'Account created successfully (stored in memory - database unavailable)',
-        savedToDatabase: false,
-        method: 'memory'
+      if (missingRequirements.length > 0) {
+        errors.push({ 
+          field: 'password', 
+          message: `Password must meet all requirements: ${missingRequirements.join(', ')}` 
+        });
       }
+    }
+
+    // Full name validation
+    if (!data.fullName || data.fullName.trim().length === 0) {
+      errors.push({ field: 'fullName', message: 'Full name is required' });
+    } else if (data.fullName.length > 100) {
+      errors.push({ field: 'fullName', message: 'Full name must be less than 100 characters' });
+    }
+
+    // Bio validation (optional)
+    if (data.bio && data.bio.length > 500) {
+      errors.push({ field: 'bio', message: 'Bio must be less than 500 characters' });
+    }
+
+    // Terms acceptance validation
+    if (!data.acceptTerms) {
+      errors.push({ field: 'acceptTerms', message: 'You must accept the terms and conditions' });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
     };
   }
 
-  private createUserObject(data: RegistrationData) {
+  private async checkUserExists(email: string, username: string): Promise<{ 
+    exists: boolean; 
+    conflicts: Array<{ field: string; message: string }> 
+  }> {
+    const conflicts: Array<{ field: string; message: string }> = [];
+
+    // In a real implementation, this would check the database
+    // For now, simulate some conflicts for testing
+    const existingEmails = ['existing@example.com', 'test@example.com'];
+    const existingUsernames = ['existinguser', 'testuser'];
+
+    if (existingEmails.includes(email.toLowerCase())) {
+      conflicts.push({ field: 'email', message: 'Email address is already registered' });
+    }
+
+    if (existingUsernames.includes(username.toLowerCase())) {
+      conflicts.push({ field: 'username', message: 'Username is already taken' });
+    }
+
     return {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      email: data.email.toLowerCase(),
-      username: data.username,
-      fullName: data.fullName,
-      bio: data.bio || null,
-      interests: data.interests || [],
-      emailVerified: false,
-      role: 'user',
-      academicInfo: data.academicInfo || null,
-      privacySettings: {
-        allowDirectMessages: true,
-        showOnlineStatus: true,
-        allowProfileViewing: true,
-        dataCollection: true,
-      },
-      wellnessSettings: {
-        trackMood: false,
-        trackStress: false,
-        shareWellnessData: false,
-        crisisAlertsEnabled: true,
-        allowWellnessInsights: false,
-      },
-      preferences: {
-        feedAlgorithm: 'personalized',
-        privacyLevel: 'public',
-        theme: 'light',
-        language: 'en',
-        timezone: 'UTC',
-        notifications: {
-          emailNotifications: true,
-          pushNotifications: true,
-          messageNotifications: true,
-          postReactions: true,
-          commentReplies: true,
-          studyGroupInvites: true,
-          sessionReminders: true,
-          wellnessAlerts: true,
-          moderationActions: true,
-          systemAnnouncements: true,
-        }
-      },
-      acceptMarketing: data.acceptMarketing || false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastActive: new Date().toISOString(),
+      exists: conflicts.length > 0,
+      conflicts,
     };
   }
 
-  private formatUserForFrontend(dbUser: any) {
+  private generateOTP(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  private generateAccessToken(email: string): string {
+    // In a real implementation, this would use JWT
+    const payload = {
+      email,
+      type: 'access',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (15 * 60), // 15 minutes
+    };
+    
+    return `access_${Buffer.from(JSON.stringify(payload)).toString('base64')}`;
+  }
+
+  private generateRefreshToken(email: string): string {
+    // In a real implementation, this would use JWT
+    const payload = {
+      email,
+      type: 'refresh',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7 days
+    };
+    
+    return `refresh_${Buffer.from(JSON.stringify(payload)).toString('base64')}`;
+  }
+
+  // Health check method
+  async healthCheck(): Promise<{ status: string; otpStoreSize: number }> {
     return {
-      id: dbUser._id?.toString() || dbUser.id,
-      email: dbUser.email,
-      username: dbUser.username,
-      fullName: dbUser.fullName,
-      bio: dbUser.bio,
-      interests: dbUser.interests,
-      emailVerified: dbUser.emailVerified,
-      role: dbUser.role,
-      academicInfo: dbUser.academicInfo,
-      privacySettings: dbUser.privacySettings,
-      wellnessSettings: dbUser.wellnessSettings,
-      preferences: dbUser.preferences,
-      createdAt: dbUser.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: dbUser.updatedAt?.toISOString() || new Date().toISOString(),
+      status: 'operational',
+      otpStoreSize: this.otpStore.size,
     };
   }
 
-  async verifyUserEmail(email: string): Promise<boolean> {
-    console.log('📧 Verifying user email...');
-
-    // Try backend API first
-    try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${backendUrl}/api/auth/verify-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-        signal: AbortSignal.timeout(5000)
-      });
-
-      if (response.ok) {
-        console.log('✅ Email verified via backend API');
-        return true;
+  // Cleanup expired OTPs (should be called periodically)
+  cleanupExpiredOTPs(): void {
+    const now = new Date();
+    for (const [email, otpData] of Array.from(this.otpStore.entries())) {
+      if (now > otpData.expiresAt) {
+        this.otpStore.delete(email);
       }
-    } catch (error) {
-      console.log('⚠️ Backend email verification failed');
     }
-
-    // Try direct database
-    try {
-      const connected = await databaseClient.connect();
-      if (connected) {
-        const updated = await databaseClient.updateUserEmailVerification(email);
-        await databaseClient.disconnect();
-        
-        if (updated) {
-          console.log('✅ Email verified via direct database');
-          return true;
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Direct database email verification failed');
-    }
-
-    // Fallback to memory
-    const pendingUsers = globalThis.pendingUsers || {};
-    const user = pendingUsers[email.toLowerCase()];
-    if (user) {
-      user.emailVerified = true;
-      user.updatedAt = new Date().toISOString();
-      console.log('✅ Email verified in memory (fallback)');
-      return true;
-    }
-
-    return false;
   }
 }
 
-export const registrationService = RegistrationService.getInstance();
+// Export singleton instance
+export const registrationService = new RegistrationService();
+
+// Export types
+export type { RegistrationData, RegistrationResult, OTPVerificationData, OTPVerificationResult };

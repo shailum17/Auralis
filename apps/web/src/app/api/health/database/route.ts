@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { databaseClient } from '@/lib/database-client';
+import { databaseServer } from '@/lib/database-server';
 
 export async function GET() {
   try {
     // Test direct database connection
-    const connected = await databaseClient.connect();
+    const connected = await databaseServer.connect();
     
     if (connected) {
-      await databaseClient.disconnect();
+      await databaseServer.disconnect();
       
       return NextResponse.json({
         success: true,

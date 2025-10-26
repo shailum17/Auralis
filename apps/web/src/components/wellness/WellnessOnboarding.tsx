@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 
@@ -11,7 +10,14 @@ interface WellnessOnboardingProps {
 }
 
 export function WellnessOnboarding({ onComplete }: WellnessOnboardingProps) {
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = {
+    wellnessSettings: {
+      trackMood: false,
+      trackStress: false,
+      allowWellnessInsights: false
+    }
+  };
   const { updateWellnessSettings, loading, error } = useUserProfile();
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 

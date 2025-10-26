@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function QuickActions() {
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = null;
   const actions = [
     {
       name: 'Log Mood',

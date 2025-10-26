@@ -247,7 +247,7 @@ export default function ForgotPasswordPage() {
                   </svg>
                 </div>
                 <p className="text-gray-600 text-sm">
-                  Enter your email address and we'll send you a code to reset your password
+                  Enter your email address and we&apos;ll send you a code to reset your password
                 </p>
               </div>
 
@@ -340,7 +340,7 @@ export default function ForgotPasswordPage() {
 
               <div className="text-center">
                 <p className="text-sm text-gray-600">
-                  Didn't receive the code?{' '}
+                  Didn&apos;t receive the code?{' '}
                   <button
                     type="button"
                     onClick={resendOtp}

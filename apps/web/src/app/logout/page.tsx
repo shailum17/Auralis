@@ -2,12 +2,12 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function LogoutPage() {
   const [countdown, setCountdown] = useState(5);
-  const { logout } = useAuth();
+  // Mock logout function since auth is removed
+  const logout = () => {};
   const router = useRouter();
 
   useEffect(() => {

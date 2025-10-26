@@ -5,19 +5,233 @@
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-secondary-900 bg-white antialiased;
+  }
+  
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  button, input, select, textarea, a {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Consistent heading styles */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-secondary-900 leading-tight;
+  }
+  
+  h1 { @apply text-3xl sm:text-4xl; }
+  h2 { @apply text-2xl sm:text-3xl; }
+  h3 { @apply text-xl sm:text-2xl; }
+  h4 { @apply text-lg sm:text-xl; }
+  h5 { @apply text-base sm:text-lg; }
+  h6 { @apply text-sm sm:text-base; }
+  
+  /* Consistent paragraph styles */
+  p {
+    @apply text-secondary-700 leading-relaxed;
+  }
+  
+  /* Link styles */
+  a {
+    @apply text-primary-600 hover:text-primary-700 focus:text-primary-700;
+  }
+  
+  /* Form element consistency */
+  input, select, textarea {
+    @apply text-secondary-900 placeholder:text-secondary-400;
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary-100;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-secondary-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-secondary-400;
   }
 }
 
 @layer components {
+  /* Enhanced button styles */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
   .btn-secondary {
-    @apply bg-secondary-200 hover:bg-secondary-300 text-secondary-800 font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply bg-secondary-100 hover:bg-secondary-200 active:bg-secondary-300 text-secondary-800 font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   
+  .btn-outline {
+    @apply border border-secondary-300 hover:border-secondary-400 bg-white hover:bg-secondary-50 active:bg-secondary-100 text-secondary-700 font-medium py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-ghost {
+    @apply text-secondary-700 hover:bg-secondary-100 active:bg-secondary-200 font-medium py-2 px-4 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  /* Enhanced card styles */
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-xl shadow-lg border border-secondary-200 p-6 transition-all duration-300 hover:shadow-xl;
+  }
+  
+  .card-elevated {
+    @apply bg-white rounded-xl shadow-xl border border-secondary-200 p-6 transition-all duration-300 hover:shadow-2xl;
+  }
+  
+  .card-interactive {
+    @apply cursor-pointer hover:scale-[1.02] active:scale-[0.98] hover:-translate-y-1;
+  }
+  
+  /* Form styles */
+  .form-input {
+    @apply w-full rounded-lg border border-secondary-300 bg-white px-4 py-2 text-sm transition-all duration-200 placeholder:text-secondary-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-secondary-50;
+  }
+  
+  .form-input-error {
+    @apply border-error-300 bg-error-50 focus:border-error-500 focus:ring-error-500;
+  }
+  
+  .form-input-success {
+    @apply border-success-300 bg-success-50 focus:border-success-500 focus:ring-success-500;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-secondary-700 mb-2;
+  }
+  
+  .form-error {
+    @apply text-sm text-error-600 mt-1;
+  }
+  
+  .form-helper {
+    @apply text-sm text-secondary-500 mt-1;
+  }
+  
+  /* Loading states */
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-secondary-200 border-t-primary-600;
+  }
+  
+  .loading-shimmer {
+    @apply animate-pulse bg-gradient-to-r from-secondary-200 via-secondary-100 to-secondary-200 bg-[length:200%_100%];
+  }
+  
+  /* Status indicators */
+  .status-success {
+    @apply bg-success-100 text-success-800 border border-success-200 rounded-lg px-3 py-2 text-sm;
+  }
+  
+  .status-error {
+    @apply bg-error-100 text-error-800 border border-error-200 rounded-lg px-3 py-2 text-sm;
+  }
+  
+  .status-warning {
+    @apply bg-warning-100 text-warning-800 border border-warning-200 rounded-lg px-3 py-2 text-sm;
+  }
+  
+  .status-info {
+    @apply bg-info-100 text-info-800 border border-info-200 rounded-lg px-3 py-2 text-sm;
+  }
+  
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight 0.6s ease-out;
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+  
+  .animate-stripes {
+    animation: stripes 1s linear infinite;
+  }
+  
+  /* Responsive containers */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .container-auth {
+    @apply w-full max-w-md mx-auto px-4;
+  }
+  
+  .container-form {
+    @apply w-full max-w-2xl mx-auto px-4;
+  }
+  
+  /* Accessibility helpers */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  }
+  
+  .focus-trap {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+}
+
+@layer utilities {
+  /* Animation delays */
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+  
+  .animation-delay-800 {
+    animation-delay: 800ms;
+  }
+  
+  /* Background patterns */
+  .bg-stripes {
+    background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+    background-size: 1rem 1rem;
+  }
+  
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Gradient backgrounds */
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-primary-50 to-white;
+  }
+  
+  .bg-gradient-secondary {
+    @apply bg-gradient-to-br from-secondary-50 to-white;
+  }
+  
+  .bg-gradient-wellness {
+    @apply bg-gradient-to-br from-white via-primary-50/30 to-white;
   }
 }

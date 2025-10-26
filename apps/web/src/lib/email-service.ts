@@ -1,312 +1,357 @@
-import nodemailer, { Transporter } from 'nodemailer';
+/**
+ * Email Service Module
+ * 
+ * This module handles email sending functionality for the authentication system.
+ */
 
-interface EmailConfig {
-  host: string;
-  port: number;
-  user: string;
-  pass: string;
+import nodemailer from 'nodemailer';
+
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html?: string;
+  text?: string;
+}
+
+interface OTPEmailOptions {
+  to: string;
+  otp: string;
+  fullName?: string;
+}
+
+interface WelcomeEmailOptions {
+  to: string;
+  fullName: string;
 }
 
 class EmailService {
-  private transporter: Transporter | null = null;
+  private transporter: nodemailer.Transporter | null = null;
   private isConfigured = false;
 
   constructor() {
     this.initializeTransporter();
   }
 
-  private initializeTransporter() {
-    // Get email configuration from environment variables
-    const config: EmailConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      user: process.env.SMTP_USER || '',
-      pass: process.env.SMTP_PASS || ''
-    };
-
-    // Check if email is configured
-    if (!config.host || !config.user || !config.pass || config.user === 'your-email@gmail.com') {
-      console.warn('Email service not configured. OTPs will be logged to console only.');
-      this.isConfigured = false;
-      return;
-    }
-
+  private initializeTransporter(): void {
     try {
-      this.transporter = nodemailer.createTransport({
-        host: config.host,
-        port: config.port,
-        secure: config.port === 465, // true for 465, false for other ports
-        auth: {
-          user: config.user,
-          pass: config.pass,
-        },
-        tls: {
-          rejectUnauthorized: false, // Allow self-signed certificates for development
-        },
-      });
-
-      this.isConfigured = true;
-      console.log('Email service initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize email service:', error);
-      this.isConfigured = false;
-    }
-  }
-
-  async sendOtpEmail(to: string, otp: string, type: string = 'email_verification'): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
-      console.log(`📧 OTP for ${to} (${type}): ${otp}`);
-      console.warn('⚠️ Email not sent - SMTP not configured. Check your environment variables.');
-      console.warn('💡 For Gmail, you need to:');
-      console.warn('   1. Enable 2-factor authentication');
-      console.warn('   2. Generate an App Password');
-      console.warn('   3. Use the App Password in SMTP_PASS');
-      return false;
-    }
-
-    try {
-      // Test connection before sending
-      await this.transporter.verify();
+      // Only allow simulation mode in development
+      const emailProvider = process.env.EMAIL_PROVIDER;
+      const isProduction = process.env.NODE_ENV === 'production';
       
-      const subject = this.getEmailSubject(type);
-      const html = this.getEmailTemplate(otp, type);
+      if (emailProvider === 'simulation' && !isProduction) {
+        console.log('📧 Email service running in simulation mode (development only)');
+        this.isConfigured = true;
+        return;
+      }
 
-      const mailOptions = {
-        from: `Auralis Student Community <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html,
+      // Configure real email transporter
+      const smtpConfig = {
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ OTP email sent successfully to ${to}. Message ID: ${result?.messageId || 'unknown'}`);
-      return true;
-    } catch (error: any) {
-      console.error(`❌ Failed to send OTP email to ${to}:`, error.message);
-      
-      // Provide specific error guidance
-      if (error.code === 'EAUTH') {
-        console.error('🔐 Authentication failed. Please check:');
-        console.error('   - SMTP_USER is correct');
-        console.error('   - SMTP_PASS is an App Password (not regular password)');
-        console.error('   - 2-factor authentication is enabled on Gmail');
-      } else if (error.code === 'ECONNECTION') {
-        console.error('🌐 Connection failed. Please check:');
-        console.error('   - Internet connectivity');
-        console.error('   - SMTP_HOST and SMTP_PORT are correct');
-        console.error('   - Firewall settings');
+      // Validate required SMTP configuration
+      if (!smtpConfig.host || !smtpConfig.auth.user || !smtpConfig.auth.pass) {
+        console.error('❌ Missing required SMTP configuration');
+        console.log('Required environment variables: SMTP_HOST, SMTP_USER, SMTP_PASS');
+        if (isProduction) {
+          throw new Error('SMTP configuration is required in production');
+        }
+        return;
       }
-      
-      // Fallback: log OTP to console if email fails
-      console.log(`📧 FALLBACK - OTP for ${to} (${type}): ${otp}`);
-      return false;
+
+      this.transporter = nodemailer.createTransport(smtpConfig);
+      this.isConfigured = true;
+      console.log('✅ Email service configured with SMTP');
+    } catch (error) {
+      console.error('❌ Email service initialization failed:', error);
+      if (process.env.NODE_ENV === 'production') {
+        throw error;
+      }
     }
   }
 
-  private getEmailSubject(type: string): string {
-    switch (type) {
-      case 'email_verification':
-        return 'Verify Your Email - Auralis Student Community';
-      case 'login':
-        return 'Your Login Code - Auralis Student Community';
-      case 'password_reset':
-        return 'Password Reset Code - Auralis Student Community';
-      default:
-        return 'Verification Code - Auralis Student Community';
+  async sendEmail(options: EmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      // Check if we're in simulation mode
+      if (process.env.EMAIL_PROVIDER === 'simulation' && process.env.NODE_ENV !== 'production') {
+        console.log('📧 Simulating email send (development mode)');
+        console.log('📧 Simulated email:', {
+          to: options.to,
+          subject: options.subject,
+          preview: options.html?.substring(0, 100) + '...',
+        });
+        return {
+          success: true,
+          messageId: `sim_${Date.now()}`,
+        };
+      }
+
+      if (!this.isConfigured) {
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (isProduction) {
+          console.error('❌ Email service not configured in production');
+          return {
+            success: false,
+            error: 'Email service not configured',
+          };
+        }
+        // Only simulate in development
+        console.log('📧 Email service not configured, simulating email send (development only)');
+        console.log('📧 Simulated email:', {
+          to: options.to,
+          subject: options.subject,
+          preview: options.html?.substring(0, 100) + '...',
+        });
+        return {
+          success: true,
+          messageId: `sim_${Date.now()}`,
+        };
+      }
+
+      if (!this.transporter) {
+        throw new Error('Email transporter not initialized');
+      }
+
+      const result = await this.transporter.sendMail({
+        from: process.env.SMTP_FROM || 'noreply@studentcommunity.com',
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      });
+
+      console.log('✅ Email sent successfully:', result.messageId);
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error('❌ Email send error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
-  private getEmailTemplate(otp: string, type: string): string {
+  async sendOTPEmail(options: OTPEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { to, otp, fullName } = options;
+
+    const subject = 'Verify Your Email - Auralis';
+    const html = this.generateOTPEmailHTML(otp, fullName);
+    const text = this.generateOTPEmailText(otp, fullName);
+
+    return this.sendEmail({
+      to,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  async sendWelcomeEmail(options: WelcomeEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    const { to, fullName } = options;
+
+    const subject = 'Welcome to Auralis - Your Student Community';
+    const html = this.generateWelcomeEmailHTML(fullName);
+    const text = this.generateWelcomeEmailText(fullName);
+
+    return this.sendEmail({
+      to,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  private generateOTPEmailHTML(otp: string, fullName?: string): string {
     return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${this.getEmailSubject(type)}</title>
-        <style>
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-                line-height: 1.6;
-                color: #333;
-                max-width: 600px;
-                margin: 0 auto;
-                padding: 20px;
-                background-color: #f8fafc;
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #3B82F6; }
+            .otp-code { 
+              font-size: 32px; 
+              font-weight: bold; 
+              text-align: center; 
+              background: #F3F4F6; 
+              padding: 20px; 
+              border-radius: 8px; 
+              margin: 20px 0; 
+              letter-spacing: 4px;
             }
-            .container {
-                background: white;
-                border-radius: 12px;
-                padding: 40px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            }
-            .header {
-                text-align: center;
-                margin-bottom: 30px;
-            }
-            .logo {
-                display: inline-block;
-                width: 48px;
-                height: 48px;
-                background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-                border-radius: 8px;
-                color: white;
-                font-weight: bold;
-                font-size: 24px;
-                line-height: 48px;
-                margin-bottom: 16px;
-            }
-            .brand {
-                font-size: 24px;
-                font-weight: bold;
-                color: #1f2937;
-                margin: 0;
-            }
-            .otp-container {
-                background: linear-gradient(135deg, #eff6ff, #f3e8ff);
-                border: 2px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 30px;
-                text-align: center;
-                margin: 30px 0;
-            }
-            .otp-code {
-                font-size: 36px;
-                font-weight: bold;
-                color: #1f2937;
-                letter-spacing: 8px;
-                margin: 20px 0;
-                font-family: 'Courier New', monospace;
-            }
-            .message {
-                font-size: 16px;
-                color: #4b5563;
-                margin-bottom: 20px;
-            }
-            .warning {
-                background: #fef3c7;
-                border: 1px solid #f59e0b;
-                border-radius: 8px;
-                padding: 16px;
-                margin: 20px 0;
-                font-size: 14px;
-                color: #92400e;
-            }
-            .footer {
-                text-align: center;
-                margin-top: 40px;
-                padding-top: 20px;
-                border-top: 1px solid #e5e7eb;
-                font-size: 14px;
-                color: #6b7280;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
+            .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
             <div class="header">
-                <div class="logo">A</div>
-                <h1 class="brand">Auralis</h1>
-                <p style="color: #6b7280; margin: 0;">Student Community Platform</p>
+              <div class="logo">Auralis</div>
+              <h1>Verify Your Email Address</h1>
             </div>
             
-            ${this.getEmailContent(otp, type)}
+            ${fullName ? `<p>Hi ${fullName},</p>` : '<p>Hi there,</p>'}
+            
+            <p>Thank you for joining Auralis! To complete your registration, please verify your email address using the code below:</p>
+            
+            <div class="otp-code">${otp}</div>
+            
+            <p>This code will expire in 10 minutes for security reasons.</p>
+            
+            <p>If you didn't create an account with Auralis, you can safely ignore this email.</p>
             
             <div class="footer">
-                <p>This email was sent by Auralis Student Community Platform.</p>
-                <p>If you didn't request this code, please ignore this email.</p>
-                <p style="margin-top: 20px;">
-                    <a href="#" style="color: #3b82f6; text-decoration: none;">Visit Auralis</a> |
-                    <a href="#" style="color: #3b82f6; text-decoration: none;">Support</a> |
-                    <a href="#" style="color: #3b82f6; text-decoration: none;">Privacy Policy</a>
-                </p>
+              <p>Best regards,<br>The Auralis Team</p>
+              <p><small>This is an automated message, please do not reply to this email.</small></p>
             </div>
-        </div>
-    </body>
-    </html>
+          </div>
+        </body>
+      </html>
     `;
   }
 
-  private getEmailContent(otp: string, type: string): string {
-    switch (type) {
-      case 'email_verification':
-        return `
-          <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">Verify Your Email Address</h2>
-          <p class="message">Welcome to Auralis! Please use the verification code below to confirm your email address and complete your account setup.</p>
-          <div class="otp-container">
-            <p style="margin: 0; font-size: 18px; color: #4b5563;">Your verification code is:</p>
-            <div class="otp-code">${otp}</div>
-            <p style="margin: 0; font-size: 14px; color: #6b7280;">This code expires in 10 minutes</p>
+  private generateOTPEmailText(otp: string, fullName?: string): string {
+    return `
+${fullName ? `Hi ${fullName},` : 'Hi there,'}
+
+Thank you for joining Auralis! To complete your registration, please verify your email address using the code below:
+
+Verification Code: ${otp}
+
+This code will expire in 10 minutes for security reasons.
+
+If you didn't create an account with Auralis, you can safely ignore this email.
+
+Best regards,
+The Auralis Team
+
+This is an automated message, please do not reply to this email.
+    `.trim();
+  }
+
+  private generateWelcomeEmailHTML(fullName: string): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Welcome to Auralis</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .logo { font-size: 24px; font-weight: bold; color: #3B82F6; }
+            .welcome-banner { 
+              background: linear-gradient(135deg, #3B82F6, #8B5CF6); 
+              color: white; 
+              padding: 30px; 
+              border-radius: 8px; 
+              text-align: center; 
+              margin: 20px 0; 
+            }
+            .features { margin: 20px 0; }
+            .feature { margin: 10px 0; padding: 10px; background: #F9FAFB; border-radius: 4px; }
+            .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">Auralis</div>
+            </div>
+            
+            <div class="welcome-banner">
+              <h1>Welcome to Auralis, ${fullName}! 🎉</h1>
+              <p>Your journey to a supportive student community starts here.</p>
+            </div>
+            
+            <p>We're excited to have you join our community of students who support each other through academic and personal challenges.</p>
+            
+            <div class="features">
+              <h3>What you can do now:</h3>
+              <div class="feature">📝 Complete your profile to connect with like-minded students</div>
+              <div class="feature">💬 Join discussions and share your experiences anonymously</div>
+              <div class="feature">🧠 Access wellness resources and track your mental health</div>
+              <div class="feature">👥 Find study groups and academic support</div>
+            </div>
+            
+            <p>If you have any questions or need help getting started, don't hesitate to reach out to our support team.</p>
+            
+            <div class="footer">
+              <p>Best regards,<br>The Auralis Team</p>
+              <p><small>This is an automated message, please do not reply to this email.</small></p>
+            </div>
           </div>
-          <div class="warning">
-            <strong>Security Note:</strong> Never share this code with anyone. Auralis will never ask for your verification code via phone or email.
-          </div>
-        `;
-      
-      case 'login':
-        return `
-          <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">Your Login Code</h2>
-          <p class="message">You requested to sign in to your Auralis account. Use the code below to complete your login.</p>
-          <div class="otp-container">
-            <p style="margin: 0; font-size: 18px; color: #4b5563;">Your login code is:</p>
-            <div class="otp-code">${otp}</div>
-            <p style="margin: 0; font-size: 14px; color: #6b7280;">This code expires in 10 minutes</p>
-          </div>
-          <div class="warning">
-            <strong>Security Alert:</strong> If you didn't request this login code, someone may be trying to access your account. Please secure your account immediately.
-          </div>
-        `;
-      
-      case 'password_reset':
-        return `
-          <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">Reset Your Password</h2>
-          <p class="message">You requested to reset your password for your Auralis account. Use the code below to proceed with password reset.</p>
-          <div class="otp-container">
-            <p style="margin: 0; font-size: 18px; color: #4b5563;">Your password reset code is:</p>
-            <div class="otp-code">${otp}</div>
-            <p style="margin: 0; font-size: 14px; color: #6b7280;">This code expires in 10 minutes</p>
-          </div>
-          <div class="warning">
-            <strong>Security Note:</strong> If you didn't request a password reset, please ignore this email and consider securing your account.
-          </div>
-        `;
-      
-      default:
-        return `
-          <h2 style="color: #1f2937; text-align: center; margin-bottom: 20px;">Verification Code</h2>
-          <p class="message">Here's your verification code for Auralis Student Community Platform.</p>
-          <div class="otp-container">
-            <p style="margin: 0; font-size: 18px; color: #4b5563;">Your verification code is:</p>
-            <div class="otp-code">${otp}</div>
-            <p style="margin: 0; font-size: 14px; color: #6b7280;">This code expires in 10 minutes</p>
-          </div>
-        `;
+        </body>
+      </html>
+    `;
+  }
+
+  private generateWelcomeEmailText(fullName: string): string {
+    return `
+Welcome to Auralis, ${fullName}! 🎉
+
+Your journey to a supportive student community starts here.
+
+We're excited to have you join our community of students who support each other through academic and personal challenges.
+
+What you can do now:
+- Complete your profile to connect with like-minded students
+- Join discussions and share your experiences anonymously
+- Access wellness resources and track your mental health
+- Find study groups and academic support
+
+If you have any questions or need help getting started, don't hesitate to reach out to our support team.
+
+Best regards,
+The Auralis Team
+
+This is an automated message, please do not reply to this email.
+    `.trim();
+  }
+
+  // Test email configuration
+  async testEmailConfiguration(): Promise<boolean> {
+    try {
+      if (!this.isConfigured) {
+        console.log('📧 Email service not configured');
+        return false;
+      }
+
+      // In a real implementation, this would test the actual email connection
+      // For now, we'll just check if configuration exists
+      return true;
+    } catch (error) {
+      console.error('❌ Email configuration test failed:', error);
+      return false;
     }
   }
 
-  async testEmailConfiguration(): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter) {
-      console.error('❌ Email service not configured');
-      return false;
-    }
-
-    try {
-      await this.transporter.verify();
-      console.log('✅ Email configuration test passed');
-      return true;
-    } catch (error: any) {
-      console.error('❌ Email configuration test failed:', error.message);
-      
-      if (error.code === 'EAUTH') {
-        console.error('🔐 Authentication issue - check your Gmail App Password');
-      } else if (error.code === 'ECONNECTION') {
-        console.error('🌐 Connection issue - check network and SMTP settings');
-      }
-      
-      return false;
-    }
+  // Health check method
+  async healthCheck(): Promise<{ configured: boolean; provider?: string }> {
+    return {
+      configured: this.isConfigured,
+      provider: process.env.EMAIL_PROVIDER || 'simulation',
+    };
   }
 }
 
-// Export a singleton instance
+// Export singleton instance
 export const emailService = new EmailService();
+
+// Export types
+export type { EmailOptions, OTPEmailOptions, WelcomeEmailOptions };

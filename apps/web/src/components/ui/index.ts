@@ -13,6 +13,20 @@ export {
   skeletonVariants 
 } from './Skeleton';
 
+// Accessible Components
+export { AccessibleButton, accessibleButtonVariants } from './AccessibleButton';
+export { AccessibleInput, accessibleInputVariants } from './AccessibleInput';
+export { 
+  AccessibleModal, 
+  ModalHeader, 
+  ModalTitle, 
+  ModalDescription, 
+  ModalContent, 
+  ModalFooter 
+} from './AccessibleModal';
+export { SkipLink } from './SkipLink';
+export { FocusTrap } from './FocusTrap';
+
 // Chart Components
 export {
   ChartContainer,
@@ -22,6 +36,27 @@ export {
   chartColors,
   chartConfig,
 } from './charts';
+
+// Error Handling and Feedback Components
+export { ToastProvider, useToast } from './ToastProvider';
+export { Toast } from './Toast';
+export type { ToastProps, ToastType } from './Toast';
+
+export { ErrorBoundary, useErrorBoundary } from './ErrorBoundary';
+
+export { LoadingSpinner, LoadingOverlay, LoadingState } from './LoadingSpinner';
+
+export { ErrorDisplay, createError } from './ErrorDisplay';
+export type { ErrorType, ErrorInfo } from './ErrorDisplay';
+
+export { ProgressIndicator, LinearProgress, CircularProgressIndicator } from './ProgressIndicator';
+export type { Step, StepStatus } from './ProgressIndicator';
+
+export { SuccessMessage } from './SuccessMessage';
+export type { SuccessAction, SuccessMessageProps } from './SuccessMessage';
+
+export { FeedbackMessage, MultiStepFeedback, RecoverySuggestions } from './FeedbackMessage';
+export type { FeedbackType, FeedbackAction, FeedbackMessageProps, StepFeedback, RecoverySuggestion } from './FeedbackMessage';
 
 // Types
 export type { ButtonProps } from './Button';
@@ -37,3 +72,10 @@ export type {
   BarChartProps,
   PieChartProps,
 } from './charts';
+
+// Accessible Component Types
+export type { AccessibleButtonProps } from './AccessibleButton';
+export type { AccessibleInputProps } from './AccessibleInput';
+export type { AccessibleModalProps } from './AccessibleModal';
+export type { SkipLinkProps } from './SkipLink';
+export type { FocusTrapProps } from './FocusTrap';

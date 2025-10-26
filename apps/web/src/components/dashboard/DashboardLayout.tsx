@@ -14,7 +14,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  // Use actual auth context
+  const { user, isLoading: loading, isAuthenticated, logout } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -48,8 +49,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return email.substring(0, 2).toUpperCase();
   };
 
-  const userInitials = getUserInitials(user.username, user.email);
-  const displayName = user.username || user.email.split('@')[0];
+  const userInitials = getUserInitials(user.fullName, user.email);
+  const displayName = user.fullName || user.email.split('@')[0];
 
   const handleLogout = () => {
     logout();
@@ -211,7 +212,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
               <div className="flex-shrink-0">
-                <div className={`w-2 h-2 rounded-full ${user.emailVerified ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
+                <div className="w-2 h-2 rounded-full bg-green-400"></div>
               </div>
             </div>
             

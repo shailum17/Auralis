@@ -1,4 +1,21 @@
-import { User } from '@/contexts/AuthContext';
+// Mock User type since auth context is removed
+interface User {
+  id?: string;
+  email?: string;
+  username?: string;
+  fullName?: string;
+  role?: string;
+  emailVerified?: boolean;
+  bio?: string;
+  academicInfo?: {
+    institution?: string;
+    major?: string;
+    year?: number;
+  };
+  interests?: string[];
+  privacySettings?: any;
+  wellnessSettings?: any;
+}
 
 export interface ProfileCompletionStatus {
   isComplete: boolean;

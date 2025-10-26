@@ -1,369 +1,347 @@
-// Enhanced authentication API utilities for username/email support
+import { 
+  LoginData, 
+  RegisterData, 
+  EmailVerificationData,
+  OTPRequest,
+  OTPVerification,
+  PasswordResetData,
+  AuthResponse,
+  RegisterResponse,
+  EmailVerificationResponse,
+  OTPResponse,
+  PasswordResetResponse,
+  APIResponse
+} from '@/types/auth';
 
-export interface LoginCredentials {
-  email?: string;
-  username?: string;
-  password: string;
-}
+// API configuration
+const API_BASE_URL = ''; // Empty for same-origin requests to frontend API routes
+const AUTH_ENDPOINTS = {
+  login: '/api/auth/signin',
+  register: '/api/auth/register',
+  logout: '/api/auth/logout',
+  verifyEmail: '/api/auth/verify-email',
+  requestOTP: '/api/auth/request-otp',
+  verifyOTP: '/api/auth/verify-otp',
+  refreshToken: '/api/auth/refresh-token',
+  resetPassword: '/api/auth/reset-password',
+  validateToken: '/api/auth/validate-token',
+} as const;
 
-export interface OTPRequest {
-  email?: string;
-  username?: string;
-  type: 'EMAIL_VERIFICATION' | 'LOGIN' | 'PASSWORD_RESET' | 'PASSWORD_LOGIN' | 'REGISTRATION';
-}
+class AuthAPI {
+  private async request<T = any>(
+    endpoint: string, 
+    options: RequestInit = {}
+  ): Promise<APIResponse<T>> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    
+    try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('accessToken');
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+        ...options,
+      });
 
-export interface OTPVerification {
-  email?: string;
-  username?: string;
-  otp: string;
-  type: 'EMAIL_VERIFICATION' | 'LOGIN' | 'PASSWORD_RESET' | 'PASSWORD_LOGIN' | 'REGISTRATION';
-  rememberMe?: boolean;
-  sessionDuration?: number;
-}
+      const data = await response.json();
 
-export interface OTPStatus {
-  exists: boolean;
-  status?: string;
-  attemptsRemaining?: number;
-  expiresAt?: string;
-}
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.error || data.message || `HTTP error! status: ${response.status}`,
+        };
+      }
 
-export interface AuthResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  email?: string; // Returned email even when username is used
-  message?: string; // Optional success message
-}
-
-export interface UserData {
-  id: string;
-  email: string;
-  username: string;
-  fullName: string;
-  role: string;
-  emailVerified: boolean;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface LoginResponse {
-  user: UserData;
-  accessToken: string;
-  refreshToken: string;
-}
-
-/**
- * Enhanced authentication API client with username/email support
- * Falls back to existing API endpoints with username resolution
- */
-export class AuthAPI {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1') {
-    this.baseUrl = baseUrl;
+      return {
+        success: true,
+        data,
+        ...data, // Spread to maintain backward compatibility
+      };
+    } catch (error) {
+      console.error('API request failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Network error',
+      };
+    }
   }
 
-  /**
-   * Resolve username to email if needed (mock implementation for demo)
-   */
-  private async resolveIdentifierToEmail(identifier: string): Promise<string> {
-    // In a real implementation, this would query the backend to resolve username to email
-    // For demo purposes, we'll use mock data
-    const usernameToEmailMap: Record<string, string> = {
-      'john_doe': 'john.doe@example.com',
-      'student123': 'student123@example.com',
-      'jane_smith': 'jane.smith@example.com',
-      'demo_user': 'demo@example.com'
+  // Authentication methods
+  async login(data: LoginData): Promise<AuthResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.login, {
+      method: 'POST',
+      body: JSON.stringify({
+        identifier: data.identifier,
+        password: data.password,
+        rememberMe: data.rememberMe,
+        sessionDuration: data.sessionDuration,
+      }),
+    });
+
+    return {
+      success: response.success,
+      user: response.data?.user,
+      accessToken: response.data?.accessToken,
+      refreshToken: response.data?.refreshToken,
+      message: response.data?.message || response.message,
+      error: response.error,
+      requiresVerification: response.data?.requiresVerification,
     };
-
-    return usernameToEmailMap[identifier] || identifier;
   }
 
-  /**
-   * Verify password and request OTP (supports both email and username)
-   */
-  async verifyPasswordAndRequestOtp(credentials: LoginCredentials): Promise<AuthResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/enhanced/verify-password-request-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
-      return {
-        success: true,
+  async register(data: RegisterData): Promise<RegisterResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.register, {
+      method: 'POST',
+      body: JSON.stringify({
         email: data.email,
-        message: data.message
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
+        bio: data.bio,
+        interests: data.interests,
+        academicInfo: data.academicInfo,
+        acceptTerms: data.acceptTerms,
+      }),
+    });
+
+    return {
+      success: response.success,
+      user: response.data?.user,
+      accessToken: response.data?.accessToken,
+      refreshToken: response.data?.refreshToken,
+      message: response.data?.message || response.message,
+      error: response.error,
+      requiresVerification: response.data?.requiresVerification || true,
+    };
   }
 
-  /**
-   * Request OTP for login (supports both email and username)
-   */
-  async requestLoginOtp(request: OTPRequest): Promise<AuthResponse> {
+  async logout(): Promise<APIResponse> {
+    return this.request(AUTH_ENDPOINTS.logout, {
+      method: 'POST',
+    });
+  }
+
+  // Email verification methods
+  async verifyEmail(data: EmailVerificationData): Promise<EmailVerificationResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.verifyEmail, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    return {
+      success: response.success,
+      user: response.data?.user,
+      accessToken: response.data?.accessToken,
+      refreshToken: response.data?.refreshToken,
+      message: response.data?.message || response.message,
+      error: response.error,
+    };
+  }
+
+  // OTP methods
+  async requestOTP(data: OTPRequest): Promise<OTPResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.requestOTP, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    return {
+      success: response.success,
+      message: response.data?.message || response.message || '',
+      email: response.data?.email,
+      otpId: response.data?.otpId,
+      error: response.error,
+    };
+  }
+
+  async verifyOTP(data: OTPVerification): Promise<AuthResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.verifyOTP, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    return {
+      success: response.success,
+      user: response.data?.user,
+      accessToken: response.data?.accessToken,
+      refreshToken: response.data?.refreshToken,
+      message: response.data?.message || response.message,
+      error: response.error,
+    };
+  }
+
+  // Token management
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.refreshToken, {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    return {
+      success: response.success,
+      accessToken: response.data?.accessToken,
+      refreshToken: response.data?.refreshToken,
+      message: response.data?.message || response.message,
+      error: response.error,
+    };
+  }
+
+  async validateToken(token: string): Promise<boolean> {
+    const response = await this.request(AUTH_ENDPOINTS.validateToken, {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+
+    return response.success;
+  }
+
+  // Password reset methods
+  async resetPassword(data: PasswordResetData): Promise<PasswordResetResponse> {
+    const response = await this.request<any>(AUTH_ENDPOINTS.resetPassword, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+    return {
+      success: response.success,
+      message: response.data?.message || response.message || '',
+      error: response.error,
+    };
+  }
+
+  // Utility methods
+  async checkEmailAvailability(email: string): Promise<{ available: boolean; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/enhanced/otp/request-login`, {
+      const response = await this.request('/auth/check-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+        body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
       return {
-        success: true,
-        ...data
+        available: response.success && response.data?.available,
+        error: response.error,
       };
     } catch (error) {
       return {
-        success: false,
-        error: 'Network error. Please try again.'
+        available: false,
+        error: error instanceof Error ? error.message : 'Check failed',
       };
     }
   }
 
-  /**
-   * Verify OTP for password-based login
-   */
-  async verifyPasswordOtp(verification: OTPVerification): Promise<AuthResponse<LoginResponse>> {
+  async checkUsernameAvailability(username: string): Promise<{ available: boolean; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/enhanced/verify-password-otp`, {
+      const response = await this.request('/auth/check-username', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verification)
+        body: JSON.stringify({ username }),
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
       return {
-        success: true,
-        data: data
+        available: response.success && response.data?.available,
+        error: response.error,
       };
     } catch (error) {
       return {
-        success: false,
-        error: 'Network error. Please try again.'
+        available: false,
+        error: error instanceof Error ? error.message : 'Check failed',
       };
     }
   }
 
-  /**
-   * Verify OTP for OTP-only login
-   */
-  async verifyLoginOtp(verification: OTPVerification): Promise<AuthResponse<LoginResponse>> {
+  // Development/testing methods
+  async testEmail(email: string): Promise<OTPResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/auth/enhanced/otp/verify-login`, {
+      const response = await this.request<any>('/auth/test-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verification)
+        body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
       return {
-        success: true,
-        data: data
+        success: response.success,
+        message: response.data?.message || response.message || '',
+        error: response.error,
       };
     } catch (error) {
       return {
         success: false,
-        error: 'Network error. Please try again.'
+        message: '',
+        error: error instanceof Error ? error.message : 'Test email failed',
       };
     }
   }
 
-  // New OTP System Methods
+  // Get current user profile
+  async getCurrentUser(): Promise<AuthResponse> {
+    const response = await this.request<any>('/auth/me');
 
-  /**
-   * Request OTP using new system
-   */
-  async requestOtpNew(request: OTPRequest): Promise<AuthResponse<{ otpId: string; email: string }>> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/otp/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
-      return {
-        success: true,
-        data: data,
-        email: data.email
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+    return {
+      success: response.success,
+      user: response.data?.user,
+      error: response.error,
+    };
   }
 
-  /**
-   * Verify OTP using new system
-   */
-  async verifyOtpNew(verification: OTPVerification): Promise<AuthResponse<LoginResponse>> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/otp/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verification)
-      });
+  // Email communication methods
+  async sendWelcomeEmail(email: string, recipientName?: string, otp?: string): Promise<{ success: boolean; message: string; error?: string }> {
+    const response = await this.request<any>('/auth/email/send-welcome', {
+      method: 'POST',
+      body: JSON.stringify({ email, recipientName, otp }),
+    });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
-      return {
-        success: true,
-        data: data
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+    return {
+      success: response.success,
+      message: response.data?.message || response.message || '',
+      error: response.error,
+    };
   }
 
-  /**
-   * Get OTP status
-   */
-  async getOtpStatus(email: string, type: string): Promise<AuthResponse<OTPStatus>> {
-    try {
-      const response = await fetch(`${this.baseUrl}/auth/otp/status?email=${encodeURIComponent(email)}&type=${encodeURIComponent(type)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+  async resendVerificationEmail(email: string, recipientName?: string): Promise<{ success: boolean; message: string; otpId?: string; error?: string }> {
+    const response = await this.request<any>('/auth/email/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email, recipientName }),
+    });
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        return {
-          success: false,
-          error: data.message || data.error || `HTTP ${response.status}: ${response.statusText}`
-        };
-      }
-
-      return {
-        success: true,
-        data: data
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+    return {
+      success: response.success,
+      message: response.data?.message || response.message || '',
+      otpId: response.data?.otpId,
+      error: response.error,
+    };
   }
 
-  /**
-   * Check if identifier is available (for registration)
-   */
-  async checkAvailability(identifier: string, type: 'email' | 'username'): Promise<AuthResponse<{ available: boolean }>> {
-    try {
-      const response = await fetch(`${this.baseUrl}/check-availability`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [type]: identifier })
-      });
+  async resendOTPEmail(email: string, type: string, recipientName?: string): Promise<{ success: boolean; message: string; otpId?: string; error?: string }> {
+    const response = await this.request<any>('/auth/email/resend-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, type, recipientName }),
+    });
 
-      return await response.json();
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+    return {
+      success: response.success,
+      message: response.data?.message || response.message || '',
+      otpId: response.data?.otpId,
+      error: response.error,
+    };
   }
 
-  /**
-   * Get user profile by identifier (email or username)
-   */
-  async getUserProfile(identifier: string): Promise<AuthResponse<UserData>> {
-    try {
-      const response = await fetch(`${this.baseUrl}/profile/${encodeURIComponent(identifier)}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+  async getEmailDeliveryStatus(emailId: string): Promise<{ 
+    success: boolean; 
+    status?: 'pending' | 'delivered' | 'failed' | 'bounced';
+    deliveredAt?: string;
+    error?: string;
+  }> {
+    const response = await this.request<any>(`/auth/email/delivery-status/${emailId}`);
 
-      return await response.json();
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Network error. Please try again.'
-      };
-    }
+    return {
+      success: response.success,
+      status: response.data?.status,
+      deliveredAt: response.data?.deliveredAt,
+      error: response.error,
+    };
   }
 }
 
-// Default instance
 export const authAPI = new AuthAPI();
-
-// Utility functions
-export const isEmail = (identifier: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
-};
-
-export const isUsername = (identifier: string): boolean => {
-  return /^[a-zA-Z0-9_-]+$/.test(identifier) && identifier.length >= 3;
-};
-
-export const detectIdentifierType = (identifier: string): 'email' | 'username' | 'invalid' => {
-  if (isEmail(identifier)) return 'email';
-  if (isUsername(identifier)) return 'username';
-  return 'invalid';
-};

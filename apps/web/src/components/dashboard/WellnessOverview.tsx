@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
 interface WellnessMetric {
@@ -25,7 +24,8 @@ interface WellnessData {
 }
 
 export default function WellnessOverview() {
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = null;
   const [wellnessData, setWellnessData] = useState<WellnessData>({
     overallScore: 0,
     trend: '+0.0',

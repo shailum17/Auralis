@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { getDisplayName, formatUserData } from '@/lib/profile-utils';
 import { Button } from '@/components/ui/Button';
@@ -31,7 +30,15 @@ interface ProfileFormData {
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = {
+    fullName: 'Guest User',
+    email: 'guest@example.com',
+    bio: '',
+    academicInfo: { institution: '', major: '', year: 0 },
+    interests: [],
+    privacySettings: {}
+  };
   const { 
     loading, 
     error, 
@@ -72,12 +79,12 @@ export default function ProfileEditPage() {
         institution: user.academicInfo?.institution || '',
         major: user.academicInfo?.major || '',
         year: user.academicInfo?.year?.toString() || '',
-        gpa: user.academicInfo?.gpa?.toString() || '',
+        gpa: '', // GPA not available in mock user
         interests: user.interests || [],
         allowDirectMessages: userData?.allowDirectMessages ?? true,
         showOnlineStatus: userData?.showOnlineStatus ?? true,
         allowProfileViewing: userData?.allowProfileViewing ?? true,
-        dataCollection: user.privacySettings?.dataCollection ?? true,
+        dataCollection: true, // Default value since auth is removed
         trackMood: userData?.trackMood ?? false,
         trackStress: userData?.trackStress ?? false,
         crisisAlertsEnabled: userData?.crisisAlertsEnabled ?? true,
@@ -107,7 +114,10 @@ export default function ProfileEditPage() {
   };
 
   const handleSave = async () => {
+    if (!user) return;
+    
     const profileData = {
+      email: user.email, // Include email for proper identification
       fullName: formData.fullName || undefined,
       bio: formData.bio || undefined,
       interests: formData.interests.length > 0 ? formData.interests : undefined,
@@ -134,9 +144,14 @@ export default function ProfileEditPage() {
       },
     };
 
+    console.log('💾 Saving profile data:', profileData);
+    
     const success = await updateProfile(profileData);
     if (success) {
+      console.log('✅ Profile save successful, redirecting to profile page');
       router.push('/profile');
+    } else {
+      console.log('❌ Profile save failed, staying on edit page');
     }
   };
 

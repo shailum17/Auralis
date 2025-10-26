@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
 import { useWellnessData } from '@/hooks/useWellnessData';
 import { WellnessOnboarding } from '@/components/wellness/WellnessOnboarding';
 import {
@@ -119,7 +118,14 @@ const wellnessTips = [
 export default function WellnessPage() {
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = {
+    wellnessSettings: {
+      trackMood: false,
+      trackStress: false,
+      allowWellnessInsights: false
+    }
+  };
   const { 
     moodEntries, 
     wellnessGoals, 

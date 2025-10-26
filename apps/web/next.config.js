@@ -7,6 +7,20 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  webpack: (config, { isServer }) => {
+    // Exclude MongoDB from client-side bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        dns: false,
+        child_process: false,
+        tls: false,
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig

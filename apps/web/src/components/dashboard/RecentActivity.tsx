@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
 interface Activity {
@@ -16,7 +15,8 @@ interface Activity {
 }
 
 export default function RecentActivity() {
-  const { user } = useAuth();
+  // Mock user since auth is removed
+  const user = null;
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 

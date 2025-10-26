@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { userAPI, UserProfileData } from '@/lib/user-api';
 
 interface UseUserProfileReturn {
@@ -20,7 +19,10 @@ interface UseUserProfileReturn {
 }
 
 export function useUserProfile(): UseUserProfileReturn {
-  const { user, updateUser, refreshUserData } = useAuth();
+  // Mock user data since auth is removed
+  const user = null;
+  const updateUser = () => {};
+  const refreshUserData = () => {};
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +41,8 @@ export function useUserProfile(): UseUserProfileReturn {
       const response = await apiCall();
       
       if (response.success && response.data) {
-        // Update user context with new data
-        updateUser(response.data.user);
+        // Update user context with new data (disabled since auth is removed)
+        // updateUser(response.data.user);
         return true;
       } else {
         setError(response.error || 'Operation failed');
