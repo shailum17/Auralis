@@ -1,11 +1,15 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { getProfileCompletionStatus, formatUserData } from '@/lib/profile-utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 
 export function ProfileDebugInfo() {
-  // Mock user since auth is removed
-  const user = {
+  // Use actual auth context
+  const { user } = useAuth();
+  
+  // Fallback data for debugging
+  const fallbackUser = {
     id: 'mock-user-id',
     email: 'guest@example.com',
     username: 'guest',

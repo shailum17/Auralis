@@ -42,15 +42,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   // Get user initials for avatar
-  const getUserInitials = (username: string, email: string) => {
-    if (username) {
-      return username.substring(0, 2).toUpperCase();
+  const getUserInitials = () => {
+    if (user.fullName) {
+      // Get initials from full name (e.g., "John Doe" -> "JD")
+      const names = user.fullName.trim().split(' ');
+      if (names.length >= 2) {
+        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+      }
+      return user.fullName.substring(0, 2).toUpperCase();
     }
-    return email.substring(0, 2).toUpperCase();
+    if (user.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return user.email.substring(0, 2).toUpperCase();
   };
 
-  const userInitials = getUserInitials(user.fullName, user.email);
-  const displayName = user.fullName || user.email.split('@')[0];
+  const userInitials = getUserInitials();
+  const displayName = user.fullName || user.username || user.email.split('@')[0];
 
   const handleLogout = () => {
     logout();

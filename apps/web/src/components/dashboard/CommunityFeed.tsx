@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Post {
   id: number;
@@ -17,8 +18,8 @@ interface Post {
 }
 
 export default function CommunityFeed() {
-  // Mock user since auth is removed
-  const user = null;
+  // Use actual auth context
+  const { user } = useAuth();
   const [filter, setFilter] = useState('all');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);

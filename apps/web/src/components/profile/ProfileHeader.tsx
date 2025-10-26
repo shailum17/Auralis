@@ -3,16 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { getDisplayName, getInitials, formatUserData } from '@/lib/profile-utils';
 
 export default function ProfileHeader() {
-  // Mock user since auth is removed
-  const user = {
-    username: 'guest',
-    email: 'guest@example.com',
-    bio: 'This is a mock user profile',
-    createdAt: new Date().toISOString()
-  };
+  // Use actual auth context
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: '',

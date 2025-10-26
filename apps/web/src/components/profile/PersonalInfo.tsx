@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+
 // Mock profile client inline since import is having issues
 const profileClient = {
   async updatePersonalInfo(data: any) {
@@ -20,23 +22,8 @@ const profileClient = {
 };
 
 export default function PersonalInfo() {
-  // Mock user and functions since auth is removed
-  const user = {
-    id: 'mock-user-id',
-    fullName: 'Guest User',
-    username: 'guest',
-    email: 'guest@example.com',
-    bio: 'This is a mock user profile',
-    academicInfo: {
-      institution: 'Mock University',
-      major: 'Computer Science',
-      year: 2024
-    },
-    interests: ['Technology', 'Learning'],
-    role: 'user',
-    emailVerified: true
-  };
-  const updateUser = () => {};
+  // Use actual auth context
+  const { user, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '@/components/ui';
 
@@ -10,8 +11,11 @@ interface WellnessOnboardingProps {
 }
 
 export function WellnessOnboarding({ onComplete }: WellnessOnboardingProps) {
-  // Mock user since auth is removed
-  const user = {
+  // Use actual auth context
+  const { user } = useAuth();
+  
+  // Fallback data if user doesn't have wellness settings yet
+  const fallbackUser = {
     wellnessSettings: {
       trackMood: false,
       trackStress: false,

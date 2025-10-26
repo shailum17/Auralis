@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Activity {
   id: number;
@@ -15,8 +16,8 @@ interface Activity {
 }
 
 export default function RecentActivity() {
-  // Mock user since auth is removed
-  const user = null;
+  // Use actual auth context
+  const { user } = useAuth();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { getProfileCompletionStatus, getNextProfileStep } from '@/lib/profile-utils';
 import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
@@ -15,8 +16,8 @@ export function ProfileCompletionBanner({
   className = '', 
   showDismiss = true 
 }: ProfileCompletionBannerProps) {
-  // Mock user since auth is removed
-  const user = null;
+  // Use actual auth context
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
   if (!user || dismissed) return null;
@@ -115,8 +116,8 @@ export function ProfileCompletionBanner({
 
 // Compact version for smaller spaces
 export function ProfileCompletionIndicator({ className = '' }: { className?: string }) {
-  // Mock user since auth is removed
-  const user = null;
+  // Use actual auth context
+  const { user } = useAuth();
 
   if (!user) return null;
 
