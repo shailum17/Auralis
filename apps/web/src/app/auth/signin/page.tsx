@@ -17,7 +17,7 @@ import { SecurityStatusDisplay } from '@/components/auth/SecurityStatusDisplay';
 
 export default function SignInPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuth();
+  const { login, verifyOTP, isLoading, error, clearError } = useAuth();
 
   // Form state
   const [formData, setFormData] = useState<LoginData>({
@@ -218,33 +218,18 @@ export default function SignInPage() {
       setOtpStep(prev => ({ ...prev, isVerifying: true }));
       setValidationErrors({});
 
-      const response = await fetch('/api/auth/verify-login-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: isEmail ? formData.identifier : undefined,
-          username: !isEmail ? formData.identifier : undefined,
-          otp: otpStep.otp,
-        }),
+      // Use AuthContext's verifyOTP method to properly update authentication state
+      const result = await verifyOTP({
+        email: isEmail ? formData.identifier : undefined,
+        username: !isEmail ? formData.identifier : undefined,
+        otp: otpStep.otp,
+        type: 'LOGIN',
+        rememberMe: formData.rememberMe,
+        sessionDuration: formData.sessionDuration,
       });
 
-      const result = await response.json();
-
       if (result.success) {
-        // Store authentication data manually since we bypassed the AuthContext login
-        const tokens = {
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        };
-
-        // Store tokens and user data
-        localStorage.setItem('accessToken', tokens.accessToken);
-        localStorage.setItem('refreshToken', tokens.refreshToken);
-        localStorage.setItem('user', JSON.stringify(result.user));
-
-        // Redirect to dashboard
+        // Redirect to dashboard - AuthContext will handle state updates
         const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
         router.push(redirectTo);
       } else {
@@ -260,7 +245,7 @@ export default function SignInPage() {
     } finally {
       setOtpStep(prev => ({ ...prev, isVerifying: false }));
     }
-  }, [formData, otpStep.otp, isEmail, router]);
+  }, [formData, otpStep.otp, isEmail, router, verifyOTP]);
 
   // Handle OTP input change
   const handleOtpChange = useCallback((value: string) => {
