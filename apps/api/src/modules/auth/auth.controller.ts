@@ -14,6 +14,7 @@ import { EnhancedRequestOtpDto } from './dto/enhanced-request-otp.dto';
 import { EnhancedVerifyOtpDto } from './dto/enhanced-verify-otp.dto';
 import { OtpRequestDto } from './dto/otp-request.dto';
 import { OtpVerifyDto } from './dto/otp-verify.dto';
+import { RegisterEnhancedDto } from './dto/register-enhanced.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -242,7 +243,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user with enhanced profile data' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   @ApiResponse({ status: 409, description: 'User already exists' })
-  async registerEnhanced(@Body() registerDto: any, @Req() req: Request) {
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  async registerEnhanced(@Body() registerDto: RegisterEnhancedDto, @Req() req: Request) {
     const ipAddress = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
     return this.authService.registerEnhanced(registerDto, ipAddress, userAgent);
@@ -255,5 +257,47 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'OTP sent successfully' })
   async sendOtpEmail(@Body() sendOtpDto: { email: string; otp: string; type: string }) {
     return this.authService.sendOtpEmail(sendOtpDto.email, sendOtpDto.otp, sendOtpDto.type);
+  }
+
+  // Email communication endpoints
+  @Post('email/send-welcome')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
+  @ApiOperation({ summary: 'Send welcome email with verification' })
+  @ApiResponse({ status: 200, description: 'Welcome email sent successfully' })
+  async sendWelcomeEmail(@Body() welcomeEmailDto: { email: string; recipientName?: string; otp?: string }) {
+    return this.authService.sendWelcomeEmail(welcomeEmailDto.email, welcomeEmailDto.recipientName, welcomeEmailDto.otp);
+  }
+
+  @Post('email/resend-verification')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 300000 } }) // 3 attempts per 5 minutes
+  @ApiOperation({ summary: 'Resend email verification OTP' })
+  @ApiResponse({ status: 200, description: 'Verification email resent successfully' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
+  async resendVerificationEmail(@Body() resendDto: { email: string; recipientName?: string }, @Req() req: Request) {
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    return this.authService.resendVerificationEmail(resendDto.email, resendDto.recipientName, ipAddress, userAgent);
+  }
+
+  @Post('email/resend-otp')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 300000 } }) // 3 attempts per 5 minutes
+  @ApiOperation({ summary: 'Resend OTP email' })
+  @ApiResponse({ status: 200, description: 'OTP email resent successfully' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
+  async resendOTPEmail(@Body() resendDto: { email: string; type: string; recipientName?: string }, @Req() req: Request) {
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.get('User-Agent');
+    return this.authService.resendOTPEmail(resendDto.email, resendDto.type, resendDto.recipientName, ipAddress, userAgent);
+  }
+
+  @Get('email/delivery-status/:emailId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get email delivery status' })
+  @ApiResponse({ status: 200, description: 'Email delivery status retrieved' })
+  async getEmailDeliveryStatus(@Query('emailId') emailId: string) {
+    return this.authService.getEmailDeliveryStatus(emailId);
   }
 }

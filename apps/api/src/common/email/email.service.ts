@@ -1,14 +1,31 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
+import { 
+  EmailTemplateFactory, 
+  WelcomeEmailTemplate, 
+  OTPEmailTemplate, 
+  PasswordResetEmailTemplate,
+  OTPType 
+} from './templates';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private transporter?: nodemailer.Transporter;
+  private welcomeTemplate: WelcomeEmailTemplate;
+  private otpTemplate: OTPEmailTemplate;
+  private passwordResetTemplate: PasswordResetEmailTemplate;
 
   constructor(private configService: ConfigService) {
     this.createTransporter();
+    this.initializeTemplates();
+  }
+
+  private initializeTemplates() {
+    this.welcomeTemplate = EmailTemplateFactory.createWelcomeTemplate();
+    this.otpTemplate = EmailTemplateFactory.createOTPTemplate();
+    this.passwordResetTemplate = EmailTemplateFactory.createPasswordResetTemplate();
   }
 
   private createTransporter() {
@@ -36,13 +53,12 @@ export class EmailService {
       },
     });
 
-    // Verify connection configuration
+    // Verify connection configuration (non-blocking)
     this.transporter.verify((error) => {
       if (error) {
         this.logger.error('Email service configuration error:', error);
-        this.logger.warn('Falling back to console-only OTP logging. Set SMTP_* env vars correctly to enable real emails.');
-        // Disable transporter so sendOtpEmail uses console fallback
-        this.transporter = undefined;
+        this.logger.warn('Email service will attempt to send emails despite verification error. Check SMTP configuration if emails fail.');
+        // Don't disable transporter - let individual send attempts handle errors
       } else {
         this.logger.log('Email service is ready to send messages');
       }
@@ -79,6 +95,145 @@ export class EmailService {
       // Fallback: log OTP to console if email fails
       this.logger.log(`FALLBACK - OTP for ${to} (${type}): ${otp}`);
       return false;
+    }
+  }
+
+  /**
+   * Send welcome email with verification instructions using new template system
+   */
+  async sendWelcomeEmail(to: string, recipientName?: string, otp?: string): Promise<boolean> {
+    const template = this.welcomeTemplate.generate({
+      recipientEmail: to,
+      recipientName,
+      otp
+    });
+
+    const result = await this.sendTemplatedEmail(to, template, `welcome-${Date.now()}`);
+    return result.success;
+  }
+
+  /**
+   * Send OTP email using new template system
+   */
+  async sendOTPEmail(to: string, otp: string, otpType: OTPType, recipientName?: string): Promise<boolean> {
+    const template = this.otpTemplate.generate({
+      recipientEmail: to,
+      recipientName,
+      otp,
+      otpType
+    });
+
+    const result = await this.sendTemplatedEmail(to, template, `otp-${otpType}-${Date.now()}`);
+    return result.success;
+  }
+
+  /**
+   * Send password reset email using new template system
+   */
+  async sendPasswordResetEmail(to: string, otp?: string, resetLink?: string, recipientName?: string): Promise<boolean> {
+    const template = this.passwordResetTemplate.generate({
+      recipientEmail: to,
+      recipientName,
+      otp,
+      resetLink
+    });
+
+    const result = await this.sendTemplatedEmail(to, template, `password-reset-${Date.now()}`);
+    return result.success;
+  }
+
+  /**
+   * Send templated email with full response details
+   */
+  async sendTemplatedEmailWithDetails(
+    to: string, 
+    template: { subject: string; html: string; text: string },
+    trackingId?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    return this.sendTemplatedEmail(to, template, trackingId);
+  }
+
+  /**
+   * Generic method to send templated emails with delivery tracking
+   */
+  private async sendTemplatedEmail(
+    to: string, 
+    template: { subject: string; html: string; text: string },
+    trackingId?: string
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    // If transporter is not configured, just log the email details
+    if (!this.transporter) {
+      this.logger.log(`Email for ${to}: ${template.subject}`);
+      this.logger.warn('Email not sent - SMTP not configured. Check your .env file.');
+      return { success: true, messageId: 'dev-mode-' + Date.now() }; // Return success for development
+    }
+
+    try {
+      const mailOptions = {
+        from: {
+          name: 'Auralis Student Community',
+          address: this.configService.get<string>('SMTP_USER'),
+        },
+        to,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+        headers: trackingId ? { 'X-Tracking-ID': trackingId } : undefined,
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Email sent successfully to ${to}. Subject: ${template.subject}. Message ID: ${result.messageId}`);
+      
+      return { 
+        success: true, 
+        messageId: result.messageId 
+      };
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${to}:`, error);
+      this.logger.log(`FALLBACK - Email details for ${to}: ${template.subject}`);
+      
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown email error' 
+      };
+    }
+  }
+
+  /**
+   * Check email delivery status (mock implementation)
+   */
+  async getDeliveryStatus(messageId: string): Promise<{
+    status: 'pending' | 'delivered' | 'failed' | 'bounced';
+    deliveredAt?: Date;
+    error?: string;
+  }> {
+    // In a real implementation, this would integrate with your email provider's API
+    // For now, return a mock successful delivery
+    return {
+      status: 'delivered',
+      deliveredAt: new Date()
+    };
+  }
+
+  /**
+   * Verify email service configuration
+   */
+  async verifyConfiguration(): Promise<{ configured: boolean; error?: string }> {
+    if (!this.transporter) {
+      return { 
+        configured: false, 
+        error: 'SMTP not configured. Check your environment variables.' 
+      };
+    }
+
+    try {
+      await this.transporter.verify();
+      return { configured: true };
+    } catch (error) {
+      return { 
+        configured: false, 
+        error: error instanceof Error ? error.message : 'SMTP verification failed' 
+      };
     }
   }
 

@@ -108,11 +108,11 @@ export class OtpService {
 
             const otpId = otpInsertResult.insertedIds?.[0];
 
-            // Send OTP via email
-            const emailSent = await this.emailService.sendOtpEmail(
+            // Send OTP via email using new template system
+            const emailSent = await this.emailService.sendOTPEmail(
                 options.email,
                 otp,
-                this.mapOtpTypeForEmail(options.type)
+                options.type as any
             );
 
             if (!emailSent) {

@@ -938,11 +938,31 @@ export class AuthService {
   }
 
   async registerEnhanced(registerDto: any, ipAddress?: string, userAgent?: string) {
-    const { email, password, username, fullName, ...optionalData } = registerDto;
+    const { 
+      email, 
+      password, 
+      confirmPassword, 
+      username, 
+      fullName, 
+      bio, 
+      interests, 
+      academicInfo, 
+      acceptTerms 
+    } = registerDto;
 
     // Validate required fields
-    if (!email || !password || !username || !fullName) {
-      throw new BadRequestException('Missing required fields: email, password, username, and fullName are required');
+    if (!email || !password || !username || !fullName || !acceptTerms) {
+      throw new BadRequestException('Missing required fields: email, password, username, fullName, and acceptTerms are required');
+    }
+
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      throw new BadRequestException('Password and confirm password do not match');
+    }
+
+    // Validate terms acceptance
+    if (!acceptTerms) {
+      throw new BadRequestException('You must accept the terms and conditions to register');
     }
 
     // Check if user already exists
@@ -968,8 +988,9 @@ export class AuthService {
       email: email.toLowerCase(),
       username,
       passwordHash,
-      bio: optionalData.bio || null,
-      interests: optionalData.interests || [],
+      fullName,
+      bio: bio || null,
+      interests: interests || [],
       emailVerified: false, // Will be set to true after OTP verification
       role: 'USER' as const,
       
@@ -1012,7 +1033,7 @@ export class AuthService {
       },
       
       // Academic information (only if provided)
-      ...(optionalData.academicInfo && { academicInfo: optionalData.academicInfo }),
+      ...(academicInfo && { academicInfo }),
       
       lastActive: new Date(),
     };
@@ -1043,11 +1064,33 @@ export class AuthService {
         interestsCount: user.interests?.length || 0
       });
 
+      // Generate and send OTP for email verification
+      try {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        // Store OTP in database
+        await this.storeOtp(user.email, otp, expiresAt, 'email_verification');
+
+        // Send OTP via email
+        const emailSent = await this.emailService.sendOtpEmail(user.email, otp, 'email_verification');
+        
+        if (emailSent) {
+          console.log('✅ Verification email sent successfully to:', user.email);
+        } else {
+          console.log('⚠️ Email sending failed, but OTP stored for manual verification');
+        }
+
+      } catch (emailError) {
+        console.error('❌ Failed to send verification email:', emailError);
+        // Don't fail registration if email fails - user can still verify manually
+      }
+
       return {
         success: true,
         data: {
           user,
-          message: 'Account created successfully. Please check your email for verification.'
+          message: 'Account created successfully. Please check your email for verification code.'
         }
       };
 
@@ -1073,6 +1116,153 @@ export class AuthService {
       return {
         success: false,
         error: 'Failed to send OTP email'
+      };
+    }
+  }
+
+  // Email communication methods
+  async sendWelcomeEmail(email: string, recipientName?: string, otp?: string) {
+    try {
+      const emailSent = await this.emailService.sendWelcomeEmail(email, recipientName, otp);
+      
+      return {
+        success: true,
+        data: {
+          message: emailSent ? 'Welcome email sent successfully' : 'Welcome email generated (email service unavailable)',
+          emailSent,
+          email
+        }
+      };
+    } catch (error) {
+      console.error('Send welcome email error:', error);
+      return {
+        success: false,
+        error: 'Failed to send welcome email'
+      };
+    }
+  }
+
+  async resendVerificationEmail(email: string, recipientName?: string, ipAddress?: string, userAgent?: string) {
+    try {
+      // Check if user exists and needs verification
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true, email: true, emailVerified: true }
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.emailVerified) {
+        throw new BadRequestException('Email already verified');
+      }
+
+      // Check rate limiting using OTP service
+      const canRequest = await this.otpService.checkRateLimit(email, 'EMAIL_VERIFICATION');
+      if (!canRequest) {
+        throw new BadRequestException('Too many verification requests. Please try again later.');
+      }
+
+      // Generate new OTP and send welcome email
+      const result = await this.otpService.generateAndSendOtp({
+        email,
+        userId: user.id,
+        type: 'EMAIL_VERIFICATION',
+        ipAddress,
+        userAgent
+      });
+
+      if (!result.success) {
+        throw new BadRequestException(result.error || 'Failed to send verification email');
+      }
+
+      return {
+        success: true,
+        data: {
+          message: 'Verification email resent successfully',
+          email,
+          otpId: result.otpId
+        }
+      };
+    } catch (error) {
+      console.error('Resend verification email error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to resend verification email'
+      };
+    }
+  }
+
+  async resendOTPEmail(email: string, type: string, recipientName?: string, ipAddress?: string, userAgent?: string) {
+    try {
+      // Find user by email
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: { id: true, email: true }
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Map type to OTP service type
+      const otpType = this.mapOtpType(type);
+
+      // Check rate limiting
+      const canRequest = await this.otpService.checkRateLimit(email, otpType);
+      if (!canRequest) {
+        throw new BadRequestException('Too many OTP requests. Please try again later.');
+      }
+
+      // Generate and send new OTP
+      const result = await this.otpService.generateAndSendOtp({
+        email,
+        userId: user.id,
+        type: otpType as any,
+        ipAddress,
+        userAgent
+      });
+
+      if (!result.success) {
+        throw new BadRequestException(result.error || 'Failed to resend OTP email');
+      }
+
+      return {
+        success: true,
+        data: {
+          message: 'OTP email resent successfully',
+          email,
+          otpId: result.otpId
+        }
+      };
+    } catch (error) {
+      console.error('Resend OTP email error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to resend OTP email'
+      };
+    }
+  }
+
+  async getEmailDeliveryStatus(emailId: string) {
+    try {
+      // In a real implementation, this would check with the email service provider
+      // For now, we'll return a mock status
+      return {
+        success: true,
+        data: {
+          emailId,
+          status: 'delivered', // delivered, pending, failed, bounced
+          deliveredAt: new Date(),
+          attempts: 1
+        }
+      };
+    } catch (error) {
+      console.error('Get email delivery status error:', error);
+      return {
+        success: false,
+        error: 'Failed to get email delivery status'
       };
     }
   }
