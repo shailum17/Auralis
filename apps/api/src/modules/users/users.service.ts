@@ -42,21 +42,32 @@ export class UsersService {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
+        fullName: updateProfileDto.fullName,
         bio: updateProfileDto.bio,
         avatarUrl: updateProfileDto.avatarUrl,
         interests: updateProfileDto.interests || undefined,
         privacySettings: updateProfileDto.privacySettings || undefined,
+        wellnessSettings: updateProfileDto.wellnessSettings || undefined,
+        academicInfo: updateProfileDto.academicInfo || undefined,
         updatedAt: new Date(),
       },
       select: {
         id: true,
         email: true,
         username: true,
+        fullName: true,
         bio: true,
         avatarUrl: true,
         interests: true,
-        updatedAt: true,
+        role: true,
+        emailVerified: true,
+        academicInfo: true,
+        preferences: true,
+        wellnessSettings: true,
         privacySettings: true,
+        createdAt: true,
+        lastActive: true,
+        updatedAt: true,
       },
     });
 
