@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { getDisplayName, formatUserData } from '@/lib/profile-utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -30,21 +30,9 @@ interface ProfileFormData {
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  // Mock user since auth is removed
-  const user = {
-    fullName: 'Guest User',
-    email: 'guest@example.com',
-    bio: '',
-    academicInfo: { institution: '', major: '', year: 0 },
-    interests: [],
-    privacySettings: {}
-  };
-  const { 
-    loading, 
-    error, 
-    updateProfile, 
-    clearError 
-  } = useUserProfile();
+  // Use actual auth context
+  const { user, updateUser } = useAuth();
+  // Remove the useUserProfile hook since we're implementing the API call directly
 
   const [formData, setFormData] = useState<ProfileFormData>({
     fullName: '',
@@ -79,15 +67,15 @@ export default function ProfileEditPage() {
         institution: user.academicInfo?.institution || '',
         major: user.academicInfo?.major || '',
         year: user.academicInfo?.year?.toString() || '',
-        gpa: '', // GPA not available in mock user
+        gpa: user.academicInfo?.gpa?.toString() || '',
         interests: user.interests || [],
-        allowDirectMessages: userData?.allowDirectMessages ?? true,
-        showOnlineStatus: userData?.showOnlineStatus ?? true,
-        allowProfileViewing: userData?.allowProfileViewing ?? true,
-        dataCollection: true, // Default value since auth is removed
-        trackMood: userData?.trackMood ?? false,
-        trackStress: userData?.trackStress ?? false,
-        crisisAlertsEnabled: userData?.crisisAlertsEnabled ?? true,
+        allowDirectMessages: user.privacySettings?.allowDirectMessages ?? true,
+        showOnlineStatus: user.privacySettings?.showOnlineStatus ?? true,
+        allowProfileViewing: user.privacySettings?.allowProfileViewing ?? true,
+        dataCollection: user.privacySettings?.dataCollection ?? true,
+        trackMood: user.wellnessSettings?.trackMood ?? false,
+        trackStress: user.wellnessSettings?.trackStress ?? false,
+        crisisAlertsEnabled: user.wellnessSettings?.crisisAlertsEnabled ?? true,
       });
     }
   }, [user]);
@@ -101,7 +89,7 @@ export default function ProfileEditPage() {
 
   const handleInputChange = (field: keyof ProfileFormData, value: string | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) clearError();
+    if (saveError) setSaveError(null);
   };
 
   const handleInterestToggle = (interest: string) => {
@@ -113,45 +101,81 @@ export default function ProfileEditPage() {
     }));
   };
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const handleSave = async () => {
     if (!user) return;
     
-    const profileData = {
-      email: user.email, // Include email for proper identification
-      fullName: formData.fullName || undefined,
-      bio: formData.bio || undefined,
-      interests: formData.interests.length > 0 ? formData.interests : undefined,
-      
-      academicInfo: (formData.institution || formData.major || formData.year || formData.gpa) ? {
-        institution: formData.institution || undefined,
-        major: formData.major || undefined,
-        year: formData.year ? parseInt(formData.year) : undefined,
-        gpa: formData.gpa ? parseFloat(formData.gpa) : undefined,
-      } : undefined,
-      
-      privacySettings: {
-        allowDirectMessages: formData.allowDirectMessages,
-        showOnlineStatus: formData.showOnlineStatus,
-        allowProfileViewing: formData.allowProfileViewing,
-        dataCollection: formData.dataCollection,
-      },
-      
-      wellnessSettings: {
-        trackMood: formData.trackMood,
-        trackStress: formData.trackStress,
-        crisisAlertsEnabled: formData.crisisAlertsEnabled,
-        allowWellnessInsights: formData.dataCollection,
-      },
-    };
-
-    console.log('💾 Saving profile data:', profileData);
+    setSaving(true);
+    setSaveError(null);
     
-    const success = await updateProfile(profileData);
-    if (success) {
-      console.log('✅ Profile save successful, redirecting to profile page');
-      router.push('/profile');
-    } else {
-      console.log('❌ Profile save failed, staying on edit page');
+    try {
+      const profileData = {
+        fullName: formData.fullName || undefined,
+        bio: formData.bio || undefined,
+        interests: formData.interests.length > 0 ? formData.interests : undefined,
+        
+        academicInfo: (formData.institution || formData.major || formData.year || formData.gpa) ? {
+          institution: formData.institution || undefined,
+          major: formData.major || undefined,
+          year: formData.year ? parseInt(formData.year) : undefined,
+          gpa: formData.gpa ? parseFloat(formData.gpa) : undefined,
+        } : undefined,
+        
+        privacySettings: {
+          allowDirectMessages: formData.allowDirectMessages,
+          showOnlineStatus: formData.showOnlineStatus,
+          allowProfileViewing: formData.allowProfileViewing,
+          dataCollection: formData.dataCollection,
+        },
+        
+        wellnessSettings: {
+          trackMood: formData.trackMood,
+          trackStress: formData.trackStress,
+          crisisAlertsEnabled: formData.crisisAlertsEnabled,
+          allowWellnessInsights: formData.dataCollection,
+        },
+      };
+
+      console.log('💾 Saving profile data:', profileData);
+      
+      // Get access token for API call
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        throw new Error('No access token found. Please log in again.');
+      }
+
+      // Call the profile update API
+      const response = await fetch('/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ Profile save successful:', result.user);
+        
+        // Update the user in AuthContext
+        if (updateUser && result.user) {
+          await updateUser(result.user);
+        }
+        
+        // Redirect to profile page
+        router.push('/profile');
+      } else {
+        throw new Error(result.error || 'Failed to save profile');
+      }
+    } catch (error) {
+      console.error('❌ Profile save failed:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -202,7 +226,7 @@ export default function ProfileEditPage() {
         </div>
 
         {/* Error Display */}
-        {error && (
+        {saveError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -211,7 +235,7 @@ export default function ProfileEditPage() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-600">{error}</p>
+                <p className="text-sm text-red-600">{saveError}</p>
               </div>
             </div>
           </div>
@@ -395,14 +419,14 @@ export default function ProfileEditPage() {
                 <Button
                   variant="ghost"
                   onClick={() => router.push('/profile')}
-                  disabled={loading}
+                  disabled={saving}
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="primary"
                   onClick={handleSave}
-                  loading={loading}
+                  loading={saving}
                   loadingText="Saving..."
                 >
                   Save Changes
