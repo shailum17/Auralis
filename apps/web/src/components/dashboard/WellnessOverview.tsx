@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 interface WellnessMetric {
   name: string;
@@ -50,18 +51,9 @@ export default function WellnessOverview() {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // For now, show placeholder data that indicates it's user-specific
-      setWellnessData({
-        overallScore: 0,
-        trend: '+0.0',
-        metrics: [
-          { name: 'Mood', value: 0, change: '+0.0', color: 'bg-green-500' },
-          { name: 'Stress', value: 0, change: '+0.0', color: 'bg-yellow-500' },
-          { name: 'Sleep', value: 0, change: '+0.0', color: 'bg-blue-500' },
-          { name: 'Social', value: 0, change: '+0.0', color: 'bg-purple-500' },
-        ],
-        recentEntries: []
-      });
+      // Get dynamic wellness data for the user
+      const userWellnessData = DynamicProfileService.getUserWellnessData(user);
+      setWellnessData(userWellnessData);
       
       setLoading(false);
     };

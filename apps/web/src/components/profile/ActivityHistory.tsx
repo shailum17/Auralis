@@ -1,134 +1,48 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 export default function ActivityHistory() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('30days');
+  const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState<Array<{
+    id: number;
+    type: string;
+    action: string;
+    title: string;
+    timestamp: string;
+    engagement?: any;
+    isAnonymous?: boolean;
+    icon: React.ReactNode;
+    color: string;
+  }>>([]);
 
-  const activities = [
-    {
-      id: 1,
-      type: 'post',
-      action: 'Created a post',
-      title: 'Just finished my first therapy session...',
-      timestamp: '2024-01-15T14:30:00Z',
-      engagement: { likes: 24, comments: 8, shares: 3 },
-      isAnonymous: true,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      ),
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      id: 2,
-      type: 'comment',
-      action: 'Commented on a post',
-      title: 'Thanks for sharing this resource! It really helped me...',
-      timestamp: '2024-01-15T10:15:00Z',
-      engagement: { likes: 12, replies: 3 },
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      id: 3,
-      type: 'mood',
-      action: 'Logged mood entry',
-      title: 'Feeling good today - 8/10',
-      timestamp: '2024-01-14T20:45:00Z',
-      engagement: null,
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      color: 'bg-pink-100 text-pink-600'
-    },
-    {
-      id: 4,
-      type: 'study_group',
-      action: 'Joined study group',
-      title: 'PSYC 301 - Final Exam Preparation',
-      timestamp: '2024-01-14T16:20:00Z',
-      engagement: { members: 8 },
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      id: 5,
-      type: 'wellness',
-      action: 'Completed wellness check-in',
-      title: 'Weekly wellness assessment',
-      timestamp: '2024-01-13T09:30:00Z',
-      engagement: null,
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      color: 'bg-yellow-100 text-yellow-600'
-    },
-    {
-      id: 6,
-      type: 'message',
-      action: 'Sent direct message',
-      title: 'Reached out to a peer for support',
-      timestamp: '2024-01-12T15:45:00Z',
-      engagement: null,
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-      ),
-      color: 'bg-indigo-100 text-indigo-600'
-    },
-    {
-      id: 7,
-      type: 'event',
-      action: 'Attended event',
-      title: 'Mindfulness Workshop - Stress Reduction Techniques',
-      timestamp: '2024-01-11T14:00:00Z',
-      engagement: { attendees: 25 },
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      ),
-      color: 'bg-teal-100 text-teal-600'
-    },
-    {
-      id: 8,
-      type: 'reaction',
-      action: 'Reacted to posts',
-      title: 'Gave 5 supportive reactions to community posts',
-      timestamp: '2024-01-10T18:20:00Z',
-      engagement: null,
-      isAnonymous: false,
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      ),
-      color: 'bg-red-100 text-red-600'
-    }
-  ];
+  // Load user's actual activity data
+  useEffect(() => {
+    const loadActivityData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Get dynamic activity data for the user
+      const userActivities = DynamicProfileService.getUserActivityHistory(user);
+      setActivities(userActivities);
+      
+      setLoading(false);
+    };
+
+    loadActivityData();
+  }, [user, timeRange]);
+
+
 
   const filters = [
     { id: 'all', name: 'All Activity', count: activities.length },
@@ -171,6 +85,23 @@ export default function ActivityHistory() {
     return parts.join(' • ');
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-4xl animate-pulse">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded w-32"></div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-gray-200 rounded-lg h-20"></div>
+          ))}
+        </div>
+        <div className="bg-gray-200 rounded-lg h-64"></div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -195,22 +126,22 @@ export default function ActivityHistory() {
         </select>
       </div>
 
-      {/* Activity Stats */}
+      {/* Activity Stats - Dynamic based on actual user data */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">127</div>
+          <div className="text-2xl font-bold text-gray-900">{activities.length}</div>
           <div className="text-sm text-gray-600">Total Activities</div>
         </div>
         <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">45</div>
+          <div className="text-2xl font-bold text-gray-900">{activities.filter(a => a.type === 'post').length}</div>
           <div className="text-sm text-gray-600">Posts Created</div>
         </div>
         <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">89</div>
+          <div className="text-2xl font-bold text-gray-900">{activities.filter(a => a.type === 'comment').length}</div>
           <div className="text-sm text-gray-600">Comments Made</div>
         </div>
         <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">234</div>
+          <div className="text-2xl font-bold text-gray-900">{activities.filter(a => a.type === 'reaction').length}</div>
           <div className="text-sm text-gray-600">Reactions Given</div>
         </div>
       </div>
@@ -238,7 +169,39 @@ export default function ActivityHistory() {
 
         {/* Activity List */}
         <div className="divide-y divide-gray-200">
-          {filteredActivities.map((activity, index) => (
+          {filteredActivities.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {activities.length === 0 
+                  ? "No activities yet" 
+                  : `No ${filter === 'all' ? '' : filter} activities yet`
+                }
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {activities.length === 0 
+                  ? "Start engaging with the community to see your activity history here."
+                  : filter === 'all' 
+                    ? "No activities match your current filter."
+                    : `You haven't ${filter === 'post' ? 'created any posts' : 
+                        filter === 'comment' ? 'made any comments' :
+                        filter === 'wellness' ? 'logged any wellness activities' :
+                        filter === 'social' ? 'participated in social activities' : 
+                        'done this type of activity'} yet.`
+                }
+              </p>
+              {activities.length === 0 && (
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  Explore Community
+                </button>
+              )}
+            </div>
+          ) : (
+            filteredActivities.map((activity, index) => (
             <motion.div
               key={activity.id}
               initial={{ opacity: 0, y: 10 }}
@@ -277,15 +240,18 @@ export default function ActivityHistory() {
                 </button>
               </div>
             </motion.div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Load More */}
-        <div className="p-4 border-t border-gray-200">
-          <button className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
-            Load more activities
-          </button>
-        </div>
+        {/* Load More - Only show if there are activities */}
+        {filteredActivities.length > 0 && (
+          <div className="p-4 border-t border-gray-200">
+            <button className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
+              Load more activities
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Export Activity Data */}

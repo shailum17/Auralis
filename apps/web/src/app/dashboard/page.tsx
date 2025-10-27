@@ -9,6 +9,7 @@ import QuickActions from '@/components/dashboard/QuickActions';
 import UpcomingEvents from '@/components/dashboard/UpcomingEvents';
 import WellnessInsights from '@/components/dashboard/WellnessInsights';
 import UserDebugInfo from '@/components/UserDebugInfo';
+import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 export default function Dashboard() {
   // Use actual auth context
@@ -46,7 +47,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    Wellness Score: 0.0/10
+                    Wellness Score: {DynamicProfileService.getUserWellnessScore(user).toFixed(1)}/10
                   </div>
                   <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     New Post

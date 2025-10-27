@@ -1,47 +1,93 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function WellnessData() {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState('30days');
+  const [loading, setLoading] = useState(true);
 
-  const wellnessStats = {
-    averageMood: 7.8,
-    moodTrend: '+0.5',
-    stressLevel: 6.2,
-    stressTrend: '-0.8',
-    sleepQuality: 7.5,
-    sleepTrend: '+1.2',
-    socialConnection: 8.1,
-    socialTrend: '+0.3'
-  };
+  // Dynamic wellness data - no hardcoded values
+  const [wellnessStats, setWellnessStats] = useState({
+    averageMood: 0,
+    moodTrend: '+0.0',
+    stressLevel: 0,
+    stressTrend: '+0.0',
+    sleepQuality: 0,
+    sleepTrend: '+0.0',
+    socialConnection: 0,
+    socialTrend: '+0.0'
+  });
 
-  const moodHistory = [
-    { date: '2024-01-15', mood: 8, note: 'Great day with friends!' },
-    { date: '2024-01-14', mood: 6, note: 'Stressed about upcoming exam' },
-    { date: '2024-01-13', mood: 9, note: 'Aced my presentation!' },
-    { date: '2024-01-12', mood: 7, note: 'Normal day, feeling okay' },
-    { date: '2024-01-11', mood: 5, note: 'Feeling overwhelmed with coursework' },
-    { date: '2024-01-10', mood: 8, note: 'Study group was really helpful' },
-    { date: '2024-01-09', mood: 7, note: 'Good workout session' },
-    { date: '2024-01-08', mood: 6, note: 'Missing home a bit' }
-  ];
+  const [moodHistory, setMoodHistory] = useState<Array<{
+    date: string;
+    mood: number;
+    note: string;
+  }>>([]);
 
-  const stressFactors = [
-    { factor: 'Academic Workload', level: 8, color: 'bg-red-500' },
-    { factor: 'Social Situations', level: 4, color: 'bg-yellow-500' },
-    { factor: 'Financial Concerns', level: 6, color: 'bg-orange-500' },
-    { factor: 'Family Expectations', level: 7, color: 'bg-red-400' },
-    { factor: 'Future Career', level: 5, color: 'bg-yellow-400' }
-  ];
+  const [stressFactors, setStressFactors] = useState<Array<{
+    factor: string;
+    level: number;
+    color: string;
+  }>>([]);
 
-  const wellnessGoals = [
-    { goal: 'Daily Mood Check-in', current: 25, target: 30, unit: 'days' },
-    { goal: 'Stress Management', current: 18, target: 20, unit: 'sessions' },
-    { goal: 'Social Activities', current: 12, target: 15, unit: 'events' },
-    { goal: 'Sleep Quality', current: 7.5, target: 8.0, unit: 'avg rating' }
-  ];
+  const [wellnessGoals, setWellnessGoals] = useState<Array<{
+    goal: string;
+    current: number;
+    target: number;
+    unit: string;
+  }>>([]);
+
+  // Load user's actual wellness data
+  useEffect(() => {
+    const loadWellnessData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // In a real implementation, this would fetch user's actual wellness data
+      // For now, show empty state to indicate no hardcoded data
+      setWellnessStats({
+        averageMood: 0, // Would be: await getUserAverageMood(user.id, timeRange)
+        moodTrend: '+0.0', // Would be: await getMoodTrend(user.id, timeRange)
+        stressLevel: 0, // Would be: await getUserStressLevel(user.id, timeRange)
+        stressTrend: '+0.0', // Would be: await getStressTrend(user.id, timeRange)
+        sleepQuality: 0, // Would be: await getUserSleepQuality(user.id, timeRange)
+        sleepTrend: '+0.0', // Would be: await getSleepTrend(user.id, timeRange)
+        socialConnection: 0, // Would be: await getUserSocialConnection(user.id, timeRange)
+        socialTrend: '+0.0' // Would be: await getSocialTrend(user.id, timeRange)
+      });
+      
+      setMoodHistory([]); // Would be: await getUserMoodHistory(user.id, timeRange)
+      setStressFactors([]); // Would be: await getUserStressFactors(user.id)
+      setWellnessGoals([]); // Would be: await getUserWellnessGoals(user.id)
+      
+      setLoading(false);
+    };
+
+    loadWellnessData();
+  }, [user, timeRange]);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl animate-pulse">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded w-32"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-gray-200 rounded-lg h-32"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const getMoodColor = (mood: number) => {
     if (mood >= 8) return 'bg-green-500';

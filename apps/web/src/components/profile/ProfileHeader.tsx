@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDisplayName, getInitials, formatUserData } from '@/lib/profile-utils';
+import { getDisplayName, getInitials, formatUserData, getProfileCompletionStatus, getNextProfileStep } from '@/lib/profile-utils';
+import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 export default function ProfileHeader() {
   // Use actual auth context
@@ -43,7 +44,10 @@ export default function ProfileHeader() {
       // Get user data safely
       const userData = formatUserData(user);
       
-      // Set user-specific data (only use data that user has actually provided)
+      // Get dynamic user data instead of hardcoded values
+      const userStats = DynamicProfileService.getUserStats(user);
+      const userBadges = DynamicProfileService.getUserBadges(user);
+      
       setUserProfile({
         name: getDisplayName(user),
         username: `@${user.username || user.email.split('@')[0]}`,
@@ -54,13 +58,8 @@ export default function ProfileHeader() {
           month: 'long', 
           year: 'numeric' 
         }) : 'Recently',
-        stats: {
-          posts: 0, // These would come from actual user activity
-          helpfulVotes: 0,
-          studyGroups: 0,
-          wellnessStreak: 0
-        },
-        badges: [] // Badges would be earned based on actual user activity
+        stats: userStats, // Dynamic stats based on actual user activity
+        badges: userBadges // Dynamic badges based on actual achievements
       });
       
       setLoading(false);

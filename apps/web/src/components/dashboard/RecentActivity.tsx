@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 interface Activity {
   id: number;
@@ -31,8 +32,9 @@ export default function RecentActivity() {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // For now, show empty state to indicate it's user-specific
-      setActivities([]);
+      // Get dynamic activity data for the user
+      const userActivities = DynamicProfileService.getUserActivityHistory(user);
+      setActivities(userActivities);
       setLoading(false);
     };
 

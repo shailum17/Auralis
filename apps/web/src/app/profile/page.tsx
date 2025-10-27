@@ -12,6 +12,7 @@ import ActivityHistory from '@/components/profile/ActivityHistory';
 import AccountSettings from '@/components/profile/AccountSettings';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
 import { ProfileDebugInfo } from '@/components/profile/ProfileDebugInfo';
+import DynamicDataInfo from '@/components/profile/DynamicDataInfo';
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('personal');
@@ -44,6 +45,9 @@ export default function Profile() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Debug Info - Remove this in production */}
           <ProfileDebugInfo />
+
+          {/* Dynamic Data Information */}
+          <DynamicDataInfo />
 
           {/* Profile Completion Banner */}
           <ProfileCompletionBanner className="mb-8" />
@@ -90,13 +94,13 @@ export default function Profile() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Progress</span>
-                      <span className="font-medium text-gray-900">75%</span>
+                      <span className="font-medium text-gray-900">Dynamic</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                      <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style={{ width: 'Dynamic%' }}></div>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Add your academic info and interests to complete your profile!
+                      Complete your profile to connect better with the community!
                     </p>
                   </div>
                 </div>

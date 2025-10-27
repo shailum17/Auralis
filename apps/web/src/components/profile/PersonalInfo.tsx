@@ -62,7 +62,7 @@ export default function PersonalInfo() {
         phone: '', // Not collected during registration
         major: user.academicInfo?.major || '',
         year: user.academicInfo?.year?.toString() || '',
-        bio: user.bio || 'Welcome to my profile! I\'m excited to be part of this community.',
+        bio: user.bio || '',
         interests: user.interests || [],
         pronouns: '', // Not collected during registration
         location: '' // Not collected during registration
@@ -227,7 +227,7 @@ export default function PersonalInfo() {
                   phone: '',
                   major: user?.academicInfo?.major || '',
                   year: user?.academicInfo?.year?.toString() || '',
-                  bio: user?.bio || 'Welcome to my profile! I\'m excited to be part of this community.',
+                  bio: user?.bio || '',
                   interests: user?.interests || [],
                   pronouns: '',
                   location: ''
@@ -499,7 +499,15 @@ export default function PersonalInfo() {
             placeholder="Tell others about yourself..."
           />
         ) : (
-          <p className="text-gray-900 leading-relaxed bg-white p-4 rounded-lg shadow-sm">{formData.bio}</p>
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            {formData.bio ? (
+              <p className="text-gray-900 leading-relaxed">{formData.bio}</p>
+            ) : (
+              <p className="text-gray-500 italic">
+                No bio added yet. Click "Edit Profile" to add information about yourself and connect better with the community.
+              </p>
+            )}
+          </div>
         )}
       </div>
 
