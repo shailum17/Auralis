@@ -11,8 +11,8 @@ import WellnessData from '@/components/profile/WellnessData';
 import ActivityHistory from '@/components/profile/ActivityHistory';
 import AccountSettings from '@/components/profile/AccountSettings';
 import { ProfileCompletionBanner } from '@/components/profile/ProfileCompletionBanner';
-import { ProfileDebugInfo } from '@/components/profile/ProfileDebugInfo';
-import DynamicDataInfo from '@/components/profile/DynamicDataInfo';
+
+
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('personal');
@@ -43,11 +43,9 @@ export default function Profile() {
 
         {/* Profile Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Debug Info - Remove this in production */}
-          <ProfileDebugInfo />
 
-          {/* Dynamic Data Information */}
-          <DynamicDataInfo />
+
+
 
           {/* Profile Completion Banner */}
           <ProfileCompletionBanner className="mb-8" />

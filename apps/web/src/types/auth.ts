@@ -25,6 +25,11 @@ export interface User {
   gender?: string;
   avatarUrl?: string;
   
+  // Contact information
+  phone?: string;
+  location?: string;
+  pronouns?: string;
+  
   // Verification status
   emailVerified: boolean;
   phoneVerified?: boolean;

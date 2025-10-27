@@ -174,6 +174,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Update local state immediately for better UX
       const updatedUser = { ...state.user, ...userData };
+      
       setState(prev => ({
         ...prev,
         user: updatedUser,

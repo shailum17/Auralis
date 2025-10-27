@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import DebugMenu from '@/components/debug/DebugMenu';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -171,6 +172,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             ))}
           </nav>
+          
+          {/* Debug Menu for Mobile */}
+          <div className="px-4 pb-4 border-t border-gray-200">
+            <div className="text-xs text-gray-500 mb-2 px-3 pt-2">
+              ENV: {process.env.NODE_ENV || 'undefined'}
+            </div>
+            <DebugMenu />
+          </div>
         </motion.div>
       </div>
 
@@ -245,6 +254,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 )
               ))}
+              
+              {/* Debug Menu - Show in development or when not in production */}
+              <div className="pt-2 border-t border-gray-200">
+                {/* Environment indicator */}
+                <div className="text-xs text-gray-500 mb-2 px-3">
+                  ENV: {process.env.NODE_ENV || 'undefined'}
+                </div>
+                <DebugMenu />
+              </div>
             </div>
           </div>
         </div>

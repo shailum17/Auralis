@@ -25,9 +25,7 @@ export function ProfileCompletionBanner({
   const status = getProfileCompletionStatus(user);
   const nextStep = getNextProfileStep(user);
 
-  // Debug: Let's see what the status is
-  console.log('Profile completion status:', status);
-  console.log('User data:', user);
+
 
   // Show different content based on completion status
   if (status.isComplete) {

@@ -3,23 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { profileClient } from '@/lib/profile-client';
 
-// Mock profile client inline since import is having issues
-const profileClient = {
-  async updatePersonalInfo(data: any) {
-    console.log('Mock: updatePersonalInfo called with:', data);
-    return {
-      success: true,
-      data: { 
-        message: 'Profile updated successfully (mock)',
-        user: data,
-        savedToDatabase: true,
-        method: 'mock'
-      },
-      error: null
-    };
-  }
-};
 
 export default function PersonalInfo() {
   // Use actual auth context
@@ -53,19 +38,19 @@ export default function PersonalInfo() {
       // Simulate API call to get user profile data
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Use actual user data from registration
+      // Use actual user data from registration and any saved profile data
       const nameParts = user.fullName?.split(' ') || user.username?.split(' ') || user.email?.split('@')[0].split('.') || [];
       setFormData({
         firstName: nameParts[0] || '',
         lastName: nameParts[1] || '',
         email: user.email,
-        phone: '', // Not collected during registration
+        phone: user.phone || '', // Load existing phone if available
         major: user.academicInfo?.major || '',
         year: user.academicInfo?.year?.toString() || '',
         bio: user.bio || '',
         interests: user.interests || [],
-        pronouns: '', // Not collected during registration
-        location: '' // Not collected during registration
+        pronouns: user.pronouns || '', // Load existing pronouns if available
+        location: user.location || '' // Load existing location if available
       });
       
       setLoading(false);
@@ -145,13 +130,16 @@ export default function PersonalInfo() {
         interests: formData.interests,
       };
 
+
+
       // Save via profile client
       const result = await profileClient.updatePersonalInfo(updateData);
       
       if (result.success && result.data) {
         // Update the auth context with new user data
         const updatedUserData = {
-          ...result.data.user,
+          ...user, // Start with current user data
+          ...updateData, // Apply the updates
           // Ensure we preserve the current user's authentication info
           id: user.id,
           email: user.email,
@@ -160,7 +148,8 @@ export default function PersonalInfo() {
           emailVerified: user.emailVerified
         };
         
-        // updateUser(updatedUserData); // Disabled since auth is removed
+        // Update the user in auth context to persist changes
+        updateUser(updatedUserData);
         
         setSaveStatus({
           type: 'success',
@@ -224,13 +213,13 @@ export default function PersonalInfo() {
                   firstName: nameParts[0] || '',
                   lastName: nameParts[1] || '',
                   email: user?.email || '',
-                  phone: '',
+                  phone: user?.phone || '', // Reset to actual saved value
                   major: user?.academicInfo?.major || '',
                   year: user?.academicInfo?.year?.toString() || '',
                   bio: user?.bio || '',
                   interests: user?.interests || [],
-                  pronouns: '',
-                  location: ''
+                  pronouns: user?.pronouns || '', // Reset to actual saved value
+                  location: user?.location || '' // Reset to actual saved value
                 });
               }}
               className="px-4 py-2 rounded-lg font-medium transition-colors bg-gray-500 hover:bg-gray-600 text-white"
@@ -275,6 +264,8 @@ export default function PersonalInfo() {
           </button>
         </div>
       </div>
+
+
 
       {/* Save Status Message */}
       {saveStatus.type && (

@@ -3,9 +3,21 @@
 export const profileClient = {
   async updatePersonalInfo(data: any) {
     console.log('Mock: updatePersonalInfo called with:', data);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // In a real implementation, this would save to database
+    // For now, we'll simulate success and return the updated data
     return {
       success: true,
-      data: { message: 'Profile updated successfully (mock)' }
+      data: { 
+        message: 'Profile updated successfully (mock)',
+        user: data, // Return the updated data
+        savedToDatabase: true,
+        method: 'mock-api'
+      },
+      error: null
     };
   },
 

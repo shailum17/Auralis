@@ -8,7 +8,7 @@ import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import QuickActions from '@/components/dashboard/QuickActions';
 import UpcomingEvents from '@/components/dashboard/UpcomingEvents';
 import WellnessInsights from '@/components/dashboard/WellnessInsights';
-import UserDebugInfo from '@/components/UserDebugInfo';
+
 import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 export default function Dashboard() {
@@ -127,9 +127,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        
-        {/* Debug Info */}
-        <UserDebugInfo />
+
       </div>
     </DashboardLayout>
   );

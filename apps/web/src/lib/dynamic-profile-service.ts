@@ -29,6 +29,21 @@ export interface WellnessMetrics {
   }>;
 }
 
+export interface WellnessInsight {
+  title: string;
+  description: string;
+  type: 'warning' | 'success' | 'info';
+  icon: React.ReactNode;
+  color: string;
+}
+
+export interface WeeklyGoal {
+  name: string;
+  progress: number;
+  target: number;
+  current: number;
+}
+
 export interface ActivityEntry {
   id: number;
   type: string;
@@ -230,5 +245,88 @@ export class DynamicProfileService {
     }
     
     return suggestions;
+  }
+
+  /**
+   * Get user-specific wellness insights
+   */
+  static getUserWellnessInsights(user: User | null): WellnessInsight[] {
+    if (!user) return [];
+    
+    // In a real implementation, this would analyze user's wellness data
+    // and generate personalized insights using AI/ML
+    return []; // Would be: await generateWellnessInsights(user.id)
+  }
+
+  /**
+   * Get user's weekly wellness goals
+   */
+  static getUserWeeklyGoals(user: User | null): WeeklyGoal[] {
+    if (!user) return [];
+    
+    // In a real implementation, this would fetch user's actual goals and progress
+    return []; // Would be: await getUserWeeklyGoals(user.id)
+  }
+
+  /**
+   * Check if user should see daily check-in prompt
+   */
+  static shouldShowDailyCheckIn(user: User | null): boolean {
+    if (!user) return false;
+    
+    // In a real implementation, check if user has done today's check-in
+    return true; // Would be: await hasCompletedTodaysCheckIn(user.id)
+  }
+
+  /**
+   * Get user's upcoming events (events they've joined or are relevant to them)
+   */
+  static getUserEvents(user: User | null): Array<{
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    location: string;
+    type: string;
+    attendees: number;
+    color: string;
+    icon: React.ReactNode;
+  }> {
+    if (!user) return [];
+    
+    // In a real implementation, this would fetch events the user has joined
+    // or events relevant to their interests/academic info
+    return []; // Would be: await getUserRelevantEvents(user.id)
+  }
+
+  /**
+   * Check if user can create events (admin/moderator only)
+   */
+  static canCreateEvents(user: User | null): boolean {
+    if (!user) return false;
+    
+    return user.role === 'ADMIN' || user.role === 'MODERATOR';
+  }
+
+  /**
+   * Get all community events (for admins to manage)
+   */
+  static getAllEvents(user: User | null): Array<{
+    id: number;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    location: string;
+    type: string;
+    attendees: number;
+    createdBy: string;
+    status: 'active' | 'cancelled' | 'completed';
+  }> {
+    if (!user || !this.canCreateEvents(user)) return [];
+    
+    // In a real implementation, this would fetch all community events for admin management
+    return []; // Would be: await getAllCommunityEvents()
   }
 }
