@@ -154,11 +154,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === item.href
+                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   {item.icon}
@@ -172,7 +171,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             ))}
           </nav>
-          
+
           {/* Debug Menu for Mobile */}
           <div className="px-4 pb-4 border-t border-gray-200">
             <div className="text-xs text-gray-500 mb-2 px-3 pt-2">
@@ -199,11 +198,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === item.href
+                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <div className="flex items-center space-x-3">
                   {item.icon}
@@ -217,7 +215,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
             ))}
           </nav>
-          
+
           {/* User Profile Section */}
           <div className="p-4 border-t">
             <div className="flex items-center space-x-3">
@@ -232,7 +230,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="w-2 h-2 rounded-full bg-green-400"></div>
               </div>
             </div>
-            
+
             {/* User Menu Dropdown */}
             <div className="mt-3 space-y-1">
               {userNavigation.map((item) => (
@@ -254,7 +252,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Link>
                 )
               ))}
-              
+
               {/* Debug Menu - Show in development or when not in production */}
               <div className="pt-2 border-t border-gray-200">
                 {/* Environment indicator */}

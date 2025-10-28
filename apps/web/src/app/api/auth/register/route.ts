@@ -35,10 +35,10 @@ const mockUsers = [
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate request body
     const validationResult = registerSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       const errors = validationResult.error.errors.map(err => ({
         field: err.path.join('.'),
@@ -58,10 +58,10 @@ export async function POST(request: NextRequest) {
     const { email, username, password, confirmPassword, fullName, bio, acceptTerms } = validationResult.data;
 
     // Check for duplicate email
-    const existingEmailUser = mockUsers.find(user => 
+    const existingEmailUser = mockUsers.find(user =>
       user.email.toLowerCase() === email.toLowerCase()
     );
-    
+
     if (existingEmailUser) {
       return NextResponse.json(
         {
@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate username
-    const existingUsernameUser = mockUsers.find(user => 
+    const existingUsernameUser = mockUsers.find(user =>
       user.username.toLowerCase() === username.toLowerCase()
     );
-    
+
     if (existingUsernameUser) {
       return NextResponse.json(
         {
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 
     // Call backend API for enhanced registration
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    
+
     try {
       const backendResponse = await fetch(`${backendUrl}/api/v1/auth/register-enhanced`, {
         method: 'POST',
@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
           confirmPassword,
           fullName,
           bio: bio || null,
-          interests: validationResult.data.interests || [],
-          academicInfo: validationResult.data.academicInfo || null,
+          interests: [],
+          academicInfo: null,
           acceptTerms
         }),
       });
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
             { status: 409 }
           );
         }
-        
+
         throw new Error(backendResult.message || 'Backend registration failed');
       }
 
@@ -181,12 +181,12 @@ export async function POST(request: NextRequest) {
 
     } catch (backendError) {
       console.error('Backend registration error:', backendError);
-      
+
       // Fallback to local registration logic
       const otp = generateOTP();
-      
+
       console.log(`Email verification OTP for ${email}: ${otp}`);
-      
+
       // Return success response (don't include sensitive data)
       const userResponse = {
         id: userId,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Registration error:', error);
-    
+
     return NextResponse.json(
       {
         success: false,

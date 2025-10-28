@@ -1358,5 +1358,134 @@ export class AuthService {
     }
   }
 
+  // Admin Management Methods
+  async createAdminUser(userData: {
+    username: string;
+    email: string;
+    password: string;
+    fullName: string;
+    role: 'ADMIN' | 'MODERATOR';
+  }) {
+    console.log('👤 Creating admin user:', userData.username);
+    
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: userData.email },
+          { username: userData.username }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email or username already exists');
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(userData.password, saltRounds);
+
+    // Create admin user
+    const adminUserData = {
+      username: userData.username,
+      email: userData.email,
+      passwordHash,
+      fullName: userData.fullName,
+      role: userData.role as any, // Cast to match Prisma enum
+      emailVerified: true, // Admin accounts are pre-verified
+      lastActive: new Date(),
+    };
+
+    const user = await this.prisma.user.create({
+      data: adminUserData,
+    });
+
+    console.log('✅ Admin user created successfully:', user.id);
+    
+    // Return user without password hash
+    const { passwordHash: _, ...safeUser } = user;
+    return safeUser;
+  }
+
+  async hasAdminUsers(): Promise<boolean> {
+    const count = await this.prisma.user.count({
+      where: {
+        role: {
+          in: ['ADMIN', 'MODERATOR']
+        }
+      }
+    });
+    return count > 0;
+  }
+
+  async listAdminUsers() {
+    const admins = await this.prisma.user.findMany({
+      where: {
+        role: {
+          in: ['ADMIN', 'MODERATOR']
+        }
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        fullName: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+        lastActive: true
+      }
+    });
+    return admins;
+  }
+
+  async authenticateAdmin(identifier: string, password: string) {
+    console.log('🔍 Authenticating admin:', identifier);
+    
+    // Find user by username or email
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier }
+        ]
+      }
+    });
+
+    if (!user) {
+      console.log('❌ Admin user not found');
+      return { success: false, error: 'INVALID_CREDENTIALS', message: 'Invalid credentials' };
+    }
+
+    // Check if user has admin privileges
+    if (user.role !== 'ADMIN' && user.role !== 'MODERATOR') {
+      console.log('❌ User does not have admin privileges');
+      return { success: false, error: 'INSUFFICIENT_PRIVILEGES', message: 'User does not have admin privileges' };
+    }
+
+    // Note: No isActive field in schema, so we skip this check
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      console.log('❌ Invalid password for admin');
+      return { success: false, error: 'INVALID_CREDENTIALS', message: 'Invalid credentials' };
+    }
+
+    console.log('✅ Admin authentication successful');
+    
+    // Update last active
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastActive: new Date() }
+    });
+
+    // Return user without password hash
+    const { passwordHash: _, ...safeUser } = user;
+    return { success: true, user: safeUser };
+  }
+
 
 }

@@ -671,7 +671,7 @@ export default function SignInPage() {
               </form>
 
               {/* Sign Up Link */}
-              <div className="mt-6 text-center">
+              <div className="mt-6 text-center space-y-2">
                 <p className="text-sm text-secondary-600">
                   Don&apos;t have an account?{' '}
                   <Link
@@ -679,6 +679,17 @@ export default function SignInPage() {
                     className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
                   >
                     Sign up
+                  </Link>
+                </p>
+                
+                {/* Admin Login Link */}
+                <p className="text-xs text-gray-500">
+                  Administrator?{' '}
+                  <Link
+                    href="/admin/login"
+                    className="text-red-600 hover:text-red-700 font-medium transition-colors"
+                  >
+                    Admin Login
                   </Link>
                 </p>
               </div>

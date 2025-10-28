@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import AdminAccountCreator from './AdminAccountCreator';
 import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 import { getProfileCompletionStatus, getNextProfileStep } from '@/lib/profile-utils';
 
@@ -22,6 +23,7 @@ export default function DebugMenu() {
     { id: 'user', name: 'User Data', icon: '👤' },
     { id: 'profile', name: 'Profile Status', icon: '📋' },
     { id: 'auth', name: 'Auth State', icon: '🔐' },
+    { id: 'admin', name: 'Admin Tools', icon: '🛡️' },
     { id: 'wellness', name: 'Wellness Data', icon: '💚' },
     { id: 'system', name: 'System Info', icon: '⚙️' }
   ];
@@ -462,6 +464,7 @@ export default function DebugMenu() {
       case 'user': return renderUserData();
       case 'profile': return renderProfileStatus();
       case 'auth': return renderAuthState();
+      case 'admin': return <AdminAccountCreator />;
       case 'wellness': return renderWellnessData();
       case 'system': return renderSystemInfo();
       default: return renderUserData();

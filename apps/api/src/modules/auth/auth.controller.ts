@@ -1,7 +1,8 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Req, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, Get, Query, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -19,7 +20,10 @@ import { RegisterEnhancedDto } from './dto/register-enhanced.dto';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private jwtService: JwtService
+  ) {}
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
@@ -299,5 +303,130 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Email delivery status retrieved' })
   async getEmailDeliveryStatus(@Query('emailId') emailId: string) {
     return this.authService.getEmailDeliveryStatus(emailId);
+  }
+
+  // Admin Management Endpoints
+  @Post('admin/setup')
+  @ApiOperation({ summary: 'Create admin user' })
+  @ApiResponse({ status: 201, description: 'Admin user created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request or user already exists' })
+  async createAdminUser(@Body() createAdminDto: {
+    username: string;
+    email: string;
+    password: string;
+    fullName: string;
+    role: 'ADMIN' | 'MODERATOR';
+  }) {
+    console.log('🔧 Admin setup request received');
+    
+    try {
+      const admin = await this.authService.createAdminUser(createAdminDto);
+      console.log('✅ Admin user created successfully');
+      
+      return {
+        success: true,
+        message: 'Admin user created successfully',
+        admin: {
+          id: admin.id,
+          username: admin.username,
+          email: admin.email,
+          fullName: admin.fullName,
+          role: admin.role,
+          createdAt: admin.createdAt
+        }
+      };
+    } catch (error) {
+      console.error('❌ Admin creation failed:', error);
+      throw new BadRequestException(error.message || 'Failed to create admin user');
+    }
+  }
+
+  @Get('admin/setup')
+  @ApiOperation({ summary: 'Check if admin users exist' })
+  @ApiResponse({ status: 200, description: 'Admin users check completed' })
+  async checkAdminUsers() {
+    console.log('🔍 Checking for existing admin users');
+    
+    try {
+      const hasAdmins = await this.authService.hasAdminUsers();
+      console.log('📊 Has admin users:', hasAdmins);
+      
+      return {
+        success: true,
+        hasAdmins,
+        message: hasAdmins ? 'Admin users exist' : 'No admin users found'
+      };
+    } catch (error) {
+      console.error('❌ Admin check failed:', error);
+      throw new BadRequestException('Failed to check admin users');
+    }
+  }
+
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin login' })
+  @ApiResponse({ status: 200, description: 'Admin login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials or insufficient privileges' })
+  async adminLogin(@Body() loginDto: { username: string; password: string }) {
+    console.log('🔐 Admin login attempt:', loginDto.username);
+    
+    try {
+      const authResult = await this.authService.authenticateAdmin(loginDto.username, loginDto.password);
+      
+      if (!authResult.success) {
+        throw new UnauthorizedException(authResult.message || 'Admin login failed');
+      }
+      
+      // Generate JWT token
+      const payload = { 
+        email: authResult.user.email, 
+        sub: authResult.user.id,
+        role: authResult.user.role 
+      };
+      
+      const access_token = this.jwtService.sign(payload);
+      console.log('✅ Admin login successful');
+      
+      return {
+        success: true,
+        message: 'Admin login successful',
+        access_token,
+        user: {
+          id: authResult.user.id,
+          email: authResult.user.email,
+          username: authResult.user.username,
+          fullName: authResult.user.fullName,
+          role: authResult.user.role,
+          emailVerified: authResult.user.emailVerified,
+        }
+      };
+    } catch (error) {
+      console.error('❌ Admin login failed:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException(error.message || 'Admin login failed');
+    }
+  }
+
+  @Get('admin/users')
+  @ApiOperation({ summary: 'List admin users' })
+  @ApiResponse({ status: 200, description: 'Admin users listed successfully' })
+  async listAdminUsers() {
+    console.log('📋 Listing admin users');
+    
+    try {
+      const admins = await this.authService.listAdminUsers();
+      console.log('✅ Admin users listed:', admins.length);
+      
+      return {
+        success: true,
+        admins,
+        count: admins.length
+      };
+    } catch (error) {
+      console.error('❌ Failed to list admin users:', error);
+      throw new BadRequestException('Failed to list admin users');
+    }
   }
 }

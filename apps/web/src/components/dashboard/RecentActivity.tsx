@@ -9,11 +9,12 @@ interface Activity {
   id: number;
   type: string;
   action: string;
-  content: string;
+  title: string;
   timestamp: string;
-  reactions: number | null;
+  engagement?: any;
   icon: React.ReactNode;
   color: string;
+  isAnonymous?: boolean;
 }
 
 export default function RecentActivity() {
@@ -103,12 +104,12 @@ export default function RecentActivity() {
               <p className="text-sm text-gray-900">
                 You <span className="font-medium">{activity.action}</span>
               </p>
-              <p className="text-sm text-gray-600 truncate mt-1">{activity.content}</p>
+              <p className="text-sm text-gray-600 truncate mt-1">{activity.title}</p>
               <div className="flex items-center space-x-4 mt-2">
                 <span className="text-xs text-gray-500">{activity.timestamp}</span>
-                {activity.reactions && (
+                {activity.engagement && (
                   <span className="text-xs text-gray-500">
-                    {activity.reactions} reactions
+                    {activity.engagement} engagement
                   </span>
                 )}
               </div>
