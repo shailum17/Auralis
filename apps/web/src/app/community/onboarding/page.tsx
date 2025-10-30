@@ -118,12 +118,45 @@ export default function CommunityOnboarding() {
       return;
     }
 
-    // Check if user has already completed onboarding
-    const hasCompletedOnboarding = localStorage.getItem('communityOnboardingCompleted');
-    if (hasCompletedOnboarding) {
-      router.push('/community');
-    }
+    // Load existing interests if user has any
+    loadExistingInterests();
   }, [user, router]);
+
+  const loadExistingInterests = async () => {
+    try {
+      // First try to load from backend
+      const accessToken = localStorage.getItem('accessToken');
+      if (accessToken) {
+        const response = await fetch('/api/community/preferences', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data.interests) {
+            setSelectedInterests(data.data.interests);
+            return;
+          }
+        }
+      }
+
+      // Fallback to localStorage
+      const localInterests = localStorage.getItem('userInterests');
+      if (localInterests) {
+        setSelectedInterests(JSON.parse(localInterests));
+      }
+    } catch (error) {
+      console.error('Error loading existing interests:', error);
+      
+      // Fallback to localStorage
+      const localInterests = localStorage.getItem('userInterests');
+      if (localInterests) {
+        setSelectedInterests(JSON.parse(localInterests));
+      }
+    }
+  };
 
   const handleInterestToggle = (categoryId: string) => {
     setSelectedInterests(prev => 
@@ -131,6 +164,11 @@ export default function CommunityOnboarding() {
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId]
     );
+  };
+
+  const handleSelectAll = () => {
+    const allForumIds = forumCategories.map(forum => forum.id);
+    setSelectedInterests(allForumIds);
   };
 
   const handleComplete = async () => {
@@ -142,20 +180,53 @@ export default function CommunityOnboarding() {
     setIsCompleting(true);
     
     try {
-      // Save user interests (in a real app, this would be an API call)
-      localStorage.setItem('userInterests', JSON.stringify(selectedInterests));
-      localStorage.setItem('communityOnboardingCompleted', 'true');
+      const accessToken = localStorage.getItem('accessToken');
       
-      // Set flag to show welcome banner
-      sessionStorage.setItem('justCompletedOnboarding', 'true');
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Redirect to community
-      router.push('/community');
+      if (!accessToken) {
+        router.push('/auth/signin');
+        return;
+      }
+
+      // Save to backend database
+      const response = await fetch('/api/community/onboarding', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          interests: selectedInterests
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Also save to localStorage as backup
+        localStorage.setItem('userInterests', JSON.stringify(selectedInterests));
+        localStorage.setItem('communityOnboardingCompleted', 'true');
+        
+        // Set flag to show welcome banner
+        sessionStorage.setItem('justCompletedOnboarding', 'true');
+        
+        console.log('✅ Onboarding completed and saved to database');
+        
+        // Redirect to community
+        router.push('/community');
+      } else {
+        throw new Error(result.error || 'Failed to complete onboarding');
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
+      
+      // Fallback to localStorage if API fails
+      localStorage.setItem('userInterests', JSON.stringify(selectedInterests));
+      localStorage.setItem('communityOnboardingCompleted', 'true');
+      sessionStorage.setItem('justCompletedOnboarding', 'true');
+      
+      alert('Onboarding completed (saved locally). You can update your preferences later.');
+      router.push('/community');
+    } finally {
       setIsCompleting(false);
     }
   };
@@ -303,12 +374,30 @@ export default function CommunityOnboarding() {
                 </p>
               </div>
 
-              {/* Selected Count */}
+              {/* Selected Count and Controls */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-4 py-2">
+                <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-4 py-2 mb-4">
                   <span className="text-blue-700 font-medium">
                     {selectedInterests.length} forum{selectedInterests.length !== 1 ? 's' : ''} selected
                   </span>
+                </div>
+                
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={handleSelectAll}
+                    disabled={selectedInterests.length === forumCategories.length}
+                    className="text-blue-600 hover:text-blue-700 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => setSelectedInterests([])}
+                    disabled={selectedInterests.length === 0}
+                    className="text-red-600 hover:text-red-700 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Clear All
+                  </button>
                 </div>
               </div>
 
@@ -388,6 +477,16 @@ export default function CommunityOnboarding() {
                 >
                   Back
                 </button>
+                
+                {selectedInterests.length === 0 && (
+                  <button
+                    onClick={handleSelectAll}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    Select All Forums
+                  </button>
+                )}
+                
                 <button
                   onClick={handleComplete}
                   disabled={selectedInterests.length === 0 || isCompleting}
@@ -399,7 +498,7 @@ export default function CommunityOnboarding() {
                       <span>Setting up your dashboard...</span>
                     </>
                   ) : (
-                    <span>Join Selected Forums</span>
+                    <span>{selectedInterests.length === 0 ? 'Select at least one forum' : `Join ${selectedInterests.length} Selected Forum${selectedInterests.length !== 1 ? 's' : ''}`}</span>
                   )}
                 </button>
               </div>
