@@ -20,7 +20,7 @@ export default function CommunityPage() {
     }
 
     checkUserPreferences();
-  }, [user, router]);
+  }, [user, router]); // checkUserPreferences is called inside useEffect
 
   const checkUserPreferences = async () => {
     try {
@@ -133,7 +133,16 @@ export default function CommunityPage() {
                 <p className="text-gray-600 mt-1">Connect, share, and learn with fellow students</p>
               </div>
               <div className="flex items-center space-x-4">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                <button 
+                  onClick={() => router.push('/community/forum')}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <span>Go to Forum</span>
+                </button>
+                <button className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-2 rounded-lg font-medium transition-colors">
                   Create Post
                 </button>
               </div>
@@ -264,6 +273,13 @@ export default function CommunityPage() {
               <span>Quick Actions</span>
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <button 
+                onClick={() => router.push('/community/forum')}
+                className="bg-white hover:bg-gray-50 p-4 rounded-lg border border-gray-200 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">💬</div>
+                <div className="text-sm font-medium text-gray-900">Browse Forum</div>
+              </button>
               <button className="bg-white hover:bg-gray-50 p-4 rounded-lg border border-gray-200 transition-colors text-center">
                 <div className="text-2xl mb-2">✍️</div>
                 <div className="text-sm font-medium text-gray-900">Create Post</div>
@@ -278,10 +294,6 @@ export default function CommunityPage() {
               >
                 <div className="text-2xl mb-2">⚙️</div>
                 <div className="text-sm font-medium text-gray-900">Manage Interests</div>
-              </button>
-              <button className="bg-white hover:bg-gray-50 p-4 rounded-lg border border-gray-200 transition-colors text-center">
-                <div className="text-2xl mb-2">📊</div>
-                <div className="text-sm font-medium text-gray-900">View Analytics</div>
               </button>
             </div>
           </div>

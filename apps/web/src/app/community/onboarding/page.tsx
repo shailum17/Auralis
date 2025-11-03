@@ -370,7 +370,7 @@ export default function CommunityOnboarding() {
                   What interests you most?
                 </h2>
                 <p className="text-gray-600 text-lg">
-                  Select the forums you'd like to join. You can always change this later.
+                  Select the forums you&apos;d like to join. You can always change this later.
                 </p>
               </div>
 

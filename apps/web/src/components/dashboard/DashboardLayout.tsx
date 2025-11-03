@@ -13,10 +13,65 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [isResizing, setIsResizing] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   // Use actual auth context
   const { user, isLoading: loading, isAuthenticated, logout } = useAuth();
+
+  // Check screen size for responsive behavior and remember user preference
+  useEffect(() => {
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    const savedWidth = localStorage.getItem('sidebarWidth');
+    
+    const checkScreenSize = () => {
+      const shouldCollapse = window.innerWidth < 1280;
+      if (savedCollapsed === null) {
+        setSidebarCollapsed(shouldCollapse);
+      } else {
+        setSidebarCollapsed(savedCollapsed === 'true');
+      }
+    };
+
+    if (savedWidth) {
+      setSidebarWidth(parseInt(savedWidth));
+    }
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Save user preferences
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed.toString());
+  }, [sidebarCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarWidth', sidebarWidth.toString());
+  }, [sidebarWidth]);
+
+  // Keyboard shortcut for sidebar toggle
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'b') {
+        e.preventDefault();
+        setSidebarCollapsed(!sidebarCollapsed);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarCollapsed]);
+
+  // Calculate main content padding
+  const getMainContentPadding = () => {
+    if (typeof window === 'undefined') return '0px';
+    if (window.innerWidth < 1024) return '0px';
+    return sidebarCollapsed ? '80px' : `${sidebarWidth}px`;
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -86,6 +141,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       ),
     },
     {
+      name: 'Forum',
+      href: '/community/forum',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      ),
+    },
+    {
       name: 'Messages',
       href: '/messages',
       icon: (
@@ -121,6 +185,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Privacy', href: '/privacy' },
     { name: 'Sign out', action: handleLogout },
   ];
+
+  // Handle sidebar resizing
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = Math.max(200, Math.min(400, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -182,92 +275,220 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </motion.div>
       </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
-          <div className="flex items-center px-6 py-4 border-b">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+      {/* Desktop Flexible Sidebar */}
+      <motion.div
+        initial={false}
+        animate={{
+          width: sidebarCollapsed ? '80px' : `${sidebarWidth}px`,
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="hidden lg:fixed lg:inset-y-0 lg:flex lg:flex-col bg-white border-r border-gray-200 shadow-sm z-30 group"
+        style={{ 
+          width: sidebarCollapsed ? '80px' : `${sidebarWidth}px`,
+          userSelect: isResizing ? 'none' : 'auto'
+        }}
+      >
+        {/* Resize Handle */}
+        {!sidebarCollapsed && (
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-300 transition-colors group-hover:bg-gray-300"
+            onMouseDown={handleMouseDown}
+            style={{ 
+              background: isResizing ? '#3b82f6' : 'transparent',
+              zIndex: 40
+            }}
+          />
+        )}
+        {/* Sidebar Toggle Button */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute -right-3 top-6 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-110 z-50"
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <svg
+            className={`w-3 h-3 text-gray-600 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Width Reset Button (when not collapsed) */}
+        {!sidebarCollapsed && sidebarWidth !== 280 && (
+          <button
+            onClick={() => setSidebarWidth(280)}
+            className="absolute -right-3 top-16 w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-110 z-50"
+            title="Reset width"
+          >
+            <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+            </svg>
+          </button>
+        )}
+
+        <div className="flex flex-col flex-grow">
+          {/* Header */}
+          <div className="flex items-center px-4 py-4 border-b border-gray-200">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-white font-bold text-sm">SC</span>
               </div>
-              <span className="text-lg font-bold text-gray-900">Student Community</span>
+              {!sidebarCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-lg font-bold text-gray-900 truncate"
+                  style={{ fontSize: sidebarWidth < 240 ? '16px' : '18px' }}
+                >
+                  {sidebarWidth < 240 ? 'SC' : 'Student Community'}
+                </motion.span>
+              )}
             </div>
           </div>
+
+          {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => (
-              <Link
+            {navigation.map((item, index) => (
+              <motion.div
                 key={item.name}
-                href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${pathname === item.href
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: sidebarCollapsed ? 0 : 0.1 + index * 0.05 }}
               >
-                <div className="flex items-center space-x-3">
-                  {item.icon}
-                  <span>{item.name}</span>
-                </div>
-                {item.badge && (
-                  <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
+                <Link
+                  href={item.href}
+                  className={`relative flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all group ${
+                    pathname === item.href
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  title={sidebarCollapsed ? item.name : undefined}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  {!sidebarCollapsed && (
+                    <>
+                      <span 
+                        className="ml-3 truncate"
+                        style={{ 
+                          fontSize: sidebarWidth < 240 ? '12px' : '14px',
+                          display: sidebarWidth < 200 ? 'none' : 'block'
+                        }}
+                      >
+                        {item.name}
+                      </span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full flex-shrink-0">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {sidebarCollapsed && item.badge && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                      {item.badge}
+                    </span>
+                  )}
+                  
+                  {/* Tooltip for collapsed or narrow sidebar */}
+                  {(sidebarCollapsed || sidebarWidth < 200) && (
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                      {item.name}
+                      {item.badge && <span className="ml-1 text-red-300">({item.badge})</span>}
+                    </div>
+                  )}
+                </Link>
+              </motion.div>
             ))}
           </nav>
 
           {/* User Profile Section */}
-          <div className="p-4 border-t">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium text-sm">{userInitials}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-2 h-2 rounded-full bg-green-400"></div>
-              </div>
-            </div>
-
-            {/* User Menu Dropdown */}
-            <div className="mt-3 space-y-1">
-              {userNavigation.map((item) => (
-                item.action ? (
-                  <button
-                    key={item.name}
-                    onClick={item.action}
-                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                  >
-                    {item.name}
-                  </button>
-                ) : (
-                  <Link
-                    key={item.name}
-                    href={item.href!}
-                    className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                  >
-                    {item.name}
-                  </Link>
-                )
-              ))}
-
-              {/* Debug Menu - Show in development or when not in production */}
-              <div className="pt-2 border-t border-gray-200">
-                {/* Environment indicator */}
-                <div className="text-xs text-gray-500 mb-2 px-3">
-                  ENV: {process.env.NODE_ENV || 'undefined'}
+          <div className="p-4 border-t border-gray-200">
+            {!sidebarCollapsed ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-3"
+              >
+                {/* User Info */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-medium text-sm">{userInitials}</span>
+                  </div>
+                  {sidebarWidth >= 220 && (
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                  )}
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-green-400" title="Online"></div>
+                  </div>
                 </div>
-                <DebugMenu />
+
+                {/* User Menu - Only show if width allows */}
+                {sidebarWidth >= 240 && (
+                  <div className="space-y-1">
+                    {userNavigation.map((item) => (
+                      item.action ? (
+                        <button
+                          key={item.name}
+                          onClick={item.action}
+                          className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                          {item.name}
+                        </button>
+                      ) : (
+                        <Link
+                          key={item.name}
+                          href={item.href!}
+                          className="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                          {item.name}
+                        </Link>
+                      )
+                    ))}
+                  </div>
+                )}
+
+                {/* Sidebar Width Indicator */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="text-xs text-gray-500 mb-2 px-3">
+                      Width: {sidebarWidth}px | ENV: {process.env.NODE_ENV || 'undefined'}
+                    </div>
+                    <div className="text-xs text-gray-400 px-3 mb-2">
+                      Ctrl+B to toggle
+                    </div>
+                    <DebugMenu />
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              /* Collapsed User Avatar with Tooltip */
+              <div className="flex justify-center group relative">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-sm">{userInitials}</span>
+                </div>
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                  {displayName}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div 
+        className="transition-all duration-300 ease-in-out"
+        style={{ 
+          paddingLeft: getMainContentPadding()
+        }}
+      >
         {/* Top navigation */}
         <div className="sticky top-0 z-10 bg-white shadow-sm lg:hidden">
           <div className="flex items-center justify-between px-4 py-3">

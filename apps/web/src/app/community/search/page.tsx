@@ -1,112 +1,98 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import PostCard from '@/components/community/PostCard';
-import PostDetailModal from '@/components/community/PostDetailModal';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface Post {
+interface SearchResult {
   id: string;
   title: string;
   content: string;
   author: {
-    id: string;
     name: string;
-    avatar?: string;
-    reputation: number;
-    isOnline: boolean;
+    avatar: string;
+    role: string;
   };
   category: string;
   tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  likes: number;
   replies: number;
+  likes: number;
   views: number;
+  createdAt: string;
   isLiked: boolean;
   isPinned: boolean;
   isSolved: boolean;
-  lastReply?: {
-    author: string;
-    timestamp: string;
-  };
 }
 
 export default function SearchPage() {
-  const searchParams = useSearchParams();
+  const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const query = searchParams?.get('q') || '';
   const category = searchParams?.get('category') || 'all';
-  
-  const [results, setResults] = useState<Post[]>([]);
+
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [sortBy, setSortBy] = useState('relevance');
 
   // Generate mock search results
-  const generateSearchResults = (searchQuery: string): Post[] => {
-    const mockPosts = [
+  const generateSearchResults = (searchQuery: string): SearchResult[] => {
+    const mockPosts: SearchResult[] = [
       {
         id: '1',
         title: 'Need help with calculus derivatives - chain rule explanation',
-        content: 'I\'m struggling with understanding derivatives in my calculus class. Can someone explain the chain rule in simple terms? I have an exam coming up and this is crucial.',
-        author: { id: 'user-1', name: 'Sarah Johnson', reputation: 245, isOnline: true },
+        content: 'I&apos;m struggling with understanding derivatives in my calculus class. Can someone explain the chain rule in simple terms? I have an exam coming up and this is crucial.',
+        author: { name: 'Sarah Johnson', avatar: 'SJ', role: 'Student' },
         category: 'academic',
         tags: ['calculus', 'derivatives', 'math', 'help'],
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
         likes: 12,
         replies: 8,
         views: 156,
         isLiked: false,
         isPinned: false,
-        isSolved: true,
-        lastReply: { author: 'Prof. Martinez', timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() }
+        isSolved: true
       },
       {
         id: '2',
         title: 'JavaScript vs Python for beginners - which to learn first?',
-        content: 'I\'m new to programming and trying to decide between JavaScript and Python as my first language. What are the pros and cons of each?',
-        author: { id: 'user-2', name: 'Alex Chen', reputation: 189, isOnline: false },
+        content: 'I&apos;m new to programming and trying to decide between JavaScript and Python as my first language. What are the pros and cons of each?',
+        author: { name: 'Alex Chen', avatar: 'AC', role: 'Student' },
         category: 'tech',
         tags: ['javascript', 'python', 'programming', 'beginners'],
         createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
         likes: 23,
         replies: 15,
         views: 289,
         isLiked: true,
         isPinned: false,
-        isSolved: false,
-        lastReply: { author: 'DevMaster', timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString() }
+        isSolved: false
       },
       {
         id: '3',
         title: 'Study group for Computer Science 101 - join us!',
         content: 'Starting a study group for CS 101. We meet twice a week to go over assignments and prepare for exams. All skill levels welcome!',
-        author: { id: 'user-3', name: 'Maria Rodriguez', reputation: 334, isOnline: true },
+        author: { name: 'Maria Rodriguez', avatar: 'MR', role: 'Student' },
         category: 'academic',
         tags: ['study-group', 'computer-science', 'collaboration'],
         createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
         likes: 18,
         replies: 12,
         views: 203,
         isLiked: false,
         isPinned: true,
-        isSolved: false,
-        lastReply: { author: 'StudyBuddy', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() }
+        isSolved: false
       }
     ];
 
     // Filter based on search query
-    if (searchQuery) {
+    if (query) {
       return mockPosts.filter(post => 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        post.title.toLowerCase().includes(query.toLowerCase()) ||
+        post.content.toLowerCase().includes(query.toLowerCase()) ||
+        post.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase()))
       );
     }
 
@@ -169,7 +155,7 @@ export default function SearchPage() {
     );
   };
 
-  const handleViewPost = (post: Post) => {
+  const handleViewPost = (post: SearchResult) => {
     setResults(prevResults => 
       prevResults.map(p => 
         p.id === post.id 
@@ -177,7 +163,8 @@ export default function SearchPage() {
           : p
       )
     );
-    setSelectedPost(post);
+    // Navigate to post detail page
+    router.push(`/community/forum/post/${post.id}`);
   };
 
   return (
@@ -309,25 +296,97 @@ export default function SearchPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => handleViewPost(post)}
                 >
-                  <PostCard
-                    post={post}
-                    onLike={() => handleLikePost(post.id)}
-                    onView={() => handleViewPost(post)}
-                  />
+                  <div className="flex items-start space-x-4">
+                    {/* Author Avatar */}
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-medium text-sm">{post.author.avatar}</span>
+                    </div>
+                    
+                    {/* Post Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {post.isPinned && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-medium">
+                              📌 Pinned
+                            </span>
+                          )}
+                          {post.isSolved && (
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                              ✅ Solved
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
+                        {post.title}
+                      </h3>
+                      
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{post.content}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span className="flex items-center space-x-1">
+                            <span className="font-medium">{post.author.name}</span>
+                            <span>•</span>
+                            <span>{post.author.role}</span>
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span className="flex items-center space-x-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            <span>{post.replies}</span>
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLikePost(post.id);
+                            }}
+                            className={`flex items-center space-x-1 hover:text-red-500 transition-colors ${
+                              post.isLiked ? 'text-red-500' : ''
+                            }`}
+                          >
+                            <svg className="w-4 h-4" fill={post.isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>{post.likes}</span>
+                          </button>
+                          <span className="flex items-center space-x-1">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>{post.views}</span>
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {post.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full hover:bg-gray-200 transition-colors cursor-pointer"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
-          )}
-
-          {/* Post Detail Modal */}
-          {selectedPost && (
-            <PostDetailModal
-              post={selectedPost}
-              isOpen={!!selectedPost}
-              onClose={() => setSelectedPost(null)}
-              onLike={() => handleLikePost(selectedPost.id)}
-            />
           )}
         </div>
       </div>

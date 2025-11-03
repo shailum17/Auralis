@@ -13,6 +13,7 @@ import { ModerationModule } from './modules/moderation/moderation.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WellnessModule } from './modules/wellness/wellness.module';
 import { MlGatewayModule } from './modules/ml-gateway/ml-gateway.module';
+import { CommunityModule } from './modules/community/community.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { HealthModule } from './health/health.module';
     AnalyticsModule,
     WellnessModule,
     MlGatewayModule,
+    CommunityModule,
     HealthModule,
   ],
 })
