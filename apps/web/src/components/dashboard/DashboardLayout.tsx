@@ -66,19 +66,47 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [sidebarCollapsed]);
 
-  // Calculate main content padding
-  const getMainContentPadding = () => {
-    if (typeof window === 'undefined') return '0px';
-    if (window.innerWidth < 1024) return '0px';
-    return sidebarCollapsed ? '80px' : `${sidebarWidth}px`;
-  };
-
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/auth/signin');
     }
   }, [loading, isAuthenticated, router]);
+
+  // Handle sidebar resizing
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = Math.max(200, Math.min(400, e.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    // Always add event listeners, but they will only act when isResizing is true
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Calculate main content padding
+  const getMainContentPadding = () => {
+    if (typeof window === 'undefined') return '0px';
+    if (window.innerWidth < 1024) return '0px';
+    return sidebarCollapsed ? '80px' : `${sidebarWidth}px`;
+  };
 
   // Show loading state while checking authentication
   if (loading) {
@@ -186,36 +214,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Sign out', action: handleLogout },
   ];
 
-  // Handle sidebar resizing
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      
-      const newWidth = Math.max(200, Math.min(400, e.clientX));
-      setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isResizing]);
-
   return (
+    
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>

@@ -169,7 +169,7 @@ export default function SearchPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-blue-50 to-green-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Breadcrumb */}
           <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
@@ -186,7 +186,7 @@ export default function SearchPage() {
           </nav>
 
           {/* Search Header */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 mb-6 border border-white/20" style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -240,7 +240,7 @@ export default function SearchPage() {
           {loading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+                <div key={i} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 animate-pulse border border-white/20" style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}>
                   <div className="flex items-start space-x-4">
                     <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                     <div className="flex-1 space-y-3">
@@ -256,7 +256,7 @@ export default function SearchPage() {
               ))}
             </div>
           ) : results.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-12 text-center border border-white/20" style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}>
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -296,7 +296,16 @@ export default function SearchPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className="bg-white rounded-xl shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/90 transition-all duration-300 cursor-pointer"
+                  style={{ 
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)';
+                  }}
                   onClick={() => handleViewPost(post)}
                 >
                   <div className="flex items-start space-x-4">

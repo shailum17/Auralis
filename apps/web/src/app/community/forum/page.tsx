@@ -176,7 +176,7 @@ export default function ForumPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-blue-50 to-green-50 flex">
         {/* Collapsible Sidebar */}
         <AnimatePresence>
           <motion.div
@@ -186,7 +186,8 @@ export default function ForumPage() {
               opacity: 1
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="bg-white border-r border-gray-200 shadow-sm flex-shrink-0 relative"
+            className="bg-white/80 backdrop-blur-sm border-r border-white/20 flex-shrink-0 relative"
+            style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}
           >
             {/* Sidebar Toggle Button */}
             <button
@@ -210,7 +211,8 @@ export default function ForumPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
-                  className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200"
+                  className="mb-6 p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80 backdrop-blur-sm rounded-xl border border-white/30"
+                  style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -329,7 +331,7 @@ export default function ForumPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 px-6 py-4" style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
             {/* Breadcrumb */}
             <nav className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
               <button
@@ -402,7 +404,7 @@ export default function ForumPage() {
             {loading ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl p-6 border border-gray-200 animate-pulse">
+                  <div key={i} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 animate-pulse" style={{ boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)' }}>
                     <div className="flex items-start space-x-4">
                       <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                       <div className="flex-1">
@@ -423,7 +425,16 @@ export default function ForumPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                    className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:bg-white/90 transition-all duration-300 cursor-pointer"
+                    style={{ 
+                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.05)';
+                    }}
                     onClick={() => router.push(`/community/forum/post/${post.id}`)}
                   >
                     <div className="flex items-start space-x-4">
