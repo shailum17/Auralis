@@ -10,6 +10,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [personalizedForums, setPersonalizedForums] = useState<any[]>([]);
+  const [isExplorePopupOpen, setIsExplorePopupOpen] = useState(false);
 
   // Check onboarding completion and load user preferences
   useEffect(() => {
@@ -112,10 +113,10 @@ export default function CommunityPage() {
   return (
     <DashboardLayout>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-        {/* Modern Header Section */}
-        <div className="relative bg-gradient-to-r from-slate-50 via-blue-50 to-indigo-50 border-b border-gray-100 overflow-hidden">
+        {/* Modern Header Section with Stats */}
+        <div className="sticky top-0 z-50 relative bg-white overflow-hidden shadow-lg">
           {/* Animated Background Pattern */}
-          <div className="absolute inset-0 opacity-40">
+          <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-full h-full">
               <div className="absolute top-8 left-12 w-20 h-20 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full opacity-20 animate-pulse"></div>
               <div className="absolute top-4 right-16 w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full opacity-20 animate-pulse delay-1000"></div>
@@ -123,194 +124,192 @@ export default function CommunityPage() {
             </div>
           </div>
           
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {/* Welcome Section */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               <div className="flex-1">
-                <div className="flex items-start space-x-4 mb-3">
-                  <div className="relative">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                      <span className="text-2xl">👋</span>
-                    </div>
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:space-x-2 space-y-1 sm:space-y-0">
+                    <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                      Welcome back,
+                    </h1>
+                    <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                      {user?.fullName?.split(' ')[0] || user?.username}!
+                    </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-                        Welcome back,
-                      </h1>
-                      <span className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                        {user?.fullName?.split(' ')[0] || user?.username}!
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm lg:text-base max-w-2xl">
-                      🌟 Ready to dive into discussions, share insights, and connect with your community?
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Quick Stats Bar */}
-                <div className="flex items-center space-x-6 mt-4">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-gray-600">1,234 online</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    <span className="text-gray-600">47 new posts today</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    <span className="text-gray-600">8 active forums</span>
-                  </div>
+                  <p className="text-gray-600 text-sm lg:text-base max-w-2xl leading-relaxed">
+                    Ready to dive into discussions, share insights, and connect with your community?
+                  </p>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <button 
-                  onClick={() => router.push('/community/forum')}
-                  className="group relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity"></div>
-                  <svg className="relative w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <span className="relative">Explore Forums</span>
-                </button>
-                
-                <button className="group relative bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50 px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span>Create Post</span>
-                </button>
-                
-                <button className="group relative bg-white/60 backdrop-blur-sm border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-700 hover:bg-white/80 p-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 7H4l5-5v5zM12 12h.01" />
-                  </svg>
-                </button>
+              <div className="relative flex-shrink-0">
+                {/* Explore Button with Colorful Gradient Shadow */}
+                <div className="relative">
+                  {/* Colorful gradient shadow behind button */}
+                  <div 
+                    className="absolute inset-0 z-0 rounded-2xl blur-[20px] opacity-60 pointer-events-none transform scale-110"
+                    style={{
+                      background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                    }}
+                  />
+                  
+                  <button 
+                    onClick={() => setIsExplorePopupOpen(!isExplorePopupOpen)}
+                    className="group relative bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 flex items-center space-x-3 text-base z-10"
+                  >
+                    <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                    <span className="bg-gradient-to-r from-gray-900 to-gray-800 bg-clip-text text-transparent font-bold">Explore</span>
+                  </button>
+                </div>
+
+                {/* Popup Menu */}
+                {isExplorePopupOpen && (
+                  <>
+                    {/* Backdrop */}
+                    <div 
+                      className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                      onClick={() => setIsExplorePopupOpen(false)}
+                    ></div>
+                    
+                    {/* Popup Content - Card Format */}
+                    <div className="fixed top-20 right-4 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-6rem)] overflow-y-auto">
+                      {/* Header */}
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 border-b border-gray-100">
+                        <h3 className="font-bold text-gray-900 text-lg">Quick Actions</h3>
+                        <p className="text-sm text-gray-600 mt-1">Choose what you'd like to do in the community</p>
+                      </div>
+                      
+                      <div className="p-4 space-y-4">
+                        {/* Community Stats Card */}
+                        <div className="bg-gradient-to-br from-gray-50 via-white to-blue-50 rounded-xl border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg">
+                          <div className="p-4">
+                            <h4 className="font-bold text-gray-900 text-base mb-3 flex items-center space-x-2">
+                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                              </svg>
+                              <span>Community Overview</span>
+                            </h4>
+                            <div className="grid grid-cols-2 gap-3">
+                              {/* Active Forums */}
+                              <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"></div>
+                                  <span className="text-lg font-bold text-blue-600">8</span>
+                                </div>
+                                <p className="text-xs font-medium text-gray-700">Active Forums</p>
+                                <div className="flex items-center space-x-1 mt-1">
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">+2 this week</span>
+                                </div>
+                              </div>
+
+                              {/* Community Members */}
+                              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full"></div>
+                                  <span className="text-lg font-bold text-emerald-600">20,847</span>
+                                </div>
+                                <p className="text-xs font-medium text-gray-700">Members</p>
+                                <div className="flex items-center space-x-1 mt-1">
+                                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Growing</span>
+                                </div>
+                              </div>
+
+                              {/* Online Now */}
+                              <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+                                  <span className="text-lg font-bold text-purple-600">1,234</span>
+                                </div>
+                                <p className="text-xs font-medium text-gray-700">Online Now</p>
+                                <div className="flex items-center space-x-1 mt-1">
+                                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full animate-pulse">Live</span>
+                                </div>
+                              </div>
+
+                              {/* Your Posts */}
+                              <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full"></div>
+                                  <span className="text-lg font-bold text-orange-600">12</span>
+                                </div>
+                                <p className="text-xs font-medium text-gray-700">Your Posts</p>
+                                <div className="flex items-center space-x-1 mt-1">
+                                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">This week</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Explore Forums Card */}
+                        <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-xl border-2 border-blue-100 hover:border-blue-300 transition-all duration-300 hover:shadow-lg group cursor-pointer"
+                             onClick={() => {
+                               router.push('/community/forum');
+                               setIsExplorePopupOpen(false);
+                             }}>
+                          <div className="p-5">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors">Explore Forums</h4>
+                                <p className="text-gray-600 text-sm mt-1 leading-relaxed">Browse through community discussions, discover trending topics, and join conversations that interest you.</p>
+                              </div>
+                              <svg className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Create Post Card */}
+                        <div className="bg-gradient-to-br from-green-50 via-white to-emerald-50 rounded-xl border-2 border-green-100 hover:border-green-300 transition-all duration-300 hover:shadow-lg group cursor-pointer"
+                             onClick={() => {
+                               // Add your create post logic here
+                               setIsExplorePopupOpen(false);
+                             }}>
+                          <div className="p-5">
+                            <div className="flex items-start space-x-4">
+                              <div className="w-14 h-14 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 text-lg group-hover:text-green-600 transition-colors">Create Post</h4>
+                                <p className="text-gray-600 text-sm mt-1 leading-relaxed">Start a new discussion, share your thoughts, ask questions, or contribute valuable content to the community.</p>
+                              </div>
+                              <svg className="w-6 h-6 text-gray-400 group-hover:text-green-500 transition-colors mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Footer */}
+                      <div className="bg-gray-50 p-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 text-center">Click on any option to get started with your community experience</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+
+
           </div>
         </div>
 
         {/* Main Dashboard Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Enhanced Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {/* Active Forums */}
-            <div className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                  <div className="flex items-center space-x-1 text-green-600 text-sm font-semibold bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span>+2 this week</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">8</h3>
-                  <p className="text-gray-800 font-semibold text-lg">Active Forums</p>
-                  <p className="text-sm text-gray-600">Forums you participate in</p>
-                </div>
-                <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full w-4/5 transition-all duration-1000"></div>
-                </div>
-              </div>
-            </div>
 
-            {/* Total Members */}
-            <div className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-green-500"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 715.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex items-center space-x-1 text-emerald-600 text-sm font-semibold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                    <span className="text-xs">📈</span>
-                    <span>Growing</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent">20,847</h3>
-                  <p className="text-gray-800 font-semibold text-lg">Community Members</p>
-                  <p className="text-sm text-gray-600">Total registered users</p>
-                </div>
-                <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-emerald-500 to-green-500 h-2 rounded-full w-full transition-all duration-1000"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Online Now */}
-            <div className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
-                    <div className="relative">
-                      <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-300 rounded-full animate-ping"></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1 text-purple-600 text-sm font-semibold bg-purple-50 px-3 py-1.5 rounded-full border border-purple-200">
-                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    <span>Live</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">1,234</h3>
-                  <p className="text-gray-800 font-semibold text-lg">Online Now</p>
-                  <p className="text-sm text-gray-600">Active community members</p>
-                </div>
-                <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full w-3/5 transition-all duration-1000 animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Your Activity */}
-            <div className="group relative bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-500 overflow-hidden cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-500"></div>
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div className="flex items-center space-x-1 text-orange-600 text-sm font-semibold bg-orange-50 px-3 py-1.5 rounded-full border border-orange-200">
-                    <span className="text-xs">⚡</span>
-                    <span>This week</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">12</h3>
-                  <p className="text-gray-800 font-semibold text-lg">Your Posts</p>
-                  <p className="text-sm text-gray-600">Posts and comments</p>
-                </div>
-                <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-500 h-2 rounded-full w-2/3 transition-all duration-1000"></div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
