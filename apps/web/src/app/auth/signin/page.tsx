@@ -23,8 +23,8 @@ export default function SignInPage() {
   const [formData, setFormData] = useState<LoginData>({
     identifier: '',
     password: '',
-    rememberMe: false,
-    sessionDuration: 24,
+    rememberMe: true, // Default to true to keep users logged in
+    sessionDuration: 168, // Default to 1 week
   });
 
   // UI state

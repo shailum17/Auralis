@@ -740,10 +740,85 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (tokens && storedUser) {
           const user = JSON.parse(storedUser);
           
-          // Verify token is still valid
-          const isValid = await authUtils.validateToken(tokens.accessToken);
+          // Check if access token is expired
+          const isAccessTokenExpired = authUtils.isTokenExpired(tokens.accessToken);
+          const isRefreshTokenExpired = authUtils.isTokenExpired(tokens.refreshToken);
           
-          if (isValid) {
+          // If refresh token is expired, clear everything
+          if (isRefreshTokenExpired) {
+            console.log('Refresh token expired, clearing session');
+            clearTokens();
+            updateState({ 
+              isLoading: false,
+              isAuthenticated: false,
+              user: null,
+              tokens: null
+            });
+            setIsInitialized(true);
+            return;
+          }
+          
+          // If access token is expired but refresh token is valid, refresh immediately
+          if (isAccessTokenExpired) {
+            console.log('Access token expired, refreshing...');
+            try {
+              const response = await authAPI.refreshToken(tokens.refreshToken);
+              
+              if (response.success && response.accessToken && response.refreshToken) {
+                const newTokens = {
+                  accessToken: response.accessToken,
+                  refreshToken: response.refreshToken,
+                };
+                
+                // Store new tokens
+                localStorage.setItem('accessToken', newTokens.accessToken);
+                localStorage.setItem('refreshToken', newTokens.refreshToken);
+                
+                const tokenMetadata = {
+                  accessTokenExpiry: authUtils.getTokenExpirationTime(newTokens.accessToken),
+                  refreshTokenExpiry: authUtils.getTokenExpirationTime(newTokens.refreshToken),
+                  storedAt: new Date().toISOString(),
+                };
+                localStorage.setItem('tokenMetadata', JSON.stringify(tokenMetadata));
+                
+                updateState({
+                  user,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  tokens: newTokens,
+                });
+                
+                // Setup token refresh
+                const sessionConfig = localStorage.getItem('sessionConfig');
+                if (sessionConfig) {
+                  const config = JSON.parse(sessionConfig);
+                  if (config.rememberMe) {
+                    setupTokenRefresh();
+                  }
+                }
+              } else {
+                console.log('Token refresh failed, clearing session');
+                clearTokens();
+                updateState({ 
+                  isLoading: false,
+                  isAuthenticated: false,
+                  user: null,
+                  tokens: null
+                });
+              }
+            } catch (refreshError) {
+              console.error('Token refresh error:', refreshError);
+              clearTokens();
+              updateState({ 
+                isLoading: false,
+                isAuthenticated: false,
+                user: null,
+                tokens: null
+              });
+            }
+          } else {
+            // Access token is still valid
+            console.log('Access token valid, restoring session');
             updateState({
               user,
               isAuthenticated: true,
@@ -758,37 +833,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
               if (config.rememberMe) {
                 setupTokenRefresh();
               }
-            }
-          } else {
-            // Try to refresh token
-            const refreshSuccess = await refreshToken();
-            if (refreshSuccess) {
-              const newTokens = loadTokens();
-              const updatedUser = JSON.parse(localStorage.getItem('user') || '{}');
-              updateState({
-                user: updatedUser,
-                isAuthenticated: true,
-                isLoading: false,
-                tokens: newTokens,
-              });
-              
-              // Setup token refresh if remember me is enabled
-              const sessionConfig = localStorage.getItem('sessionConfig');
-              if (sessionConfig) {
-                const config = JSON.parse(sessionConfig);
-                if (config.rememberMe) {
-                  setupTokenRefresh();
-                }
-              }
-            } else {
-              // Clear invalid tokens
-              clearTokens();
-              updateState({ 
-                isLoading: false,
-                isAuthenticated: false,
-                user: null,
-                tokens: null
-              });
             }
           }
         } else {
@@ -817,7 +861,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!isInitialized) {
       initializeAuth();
     }
-  }, [loadTokens, updateState, setupTokenRefresh, refreshToken, clearTokens, isInitialized]);
+  }, [loadTokens, updateState, setupTokenRefresh, clearTokens, isInitialized]);
 
   // Cleanup on unmount
   useEffect(() => {

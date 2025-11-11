@@ -8,14 +8,17 @@ export async function POST(request: NextRequest) {
     const { refreshToken } = body;
 
     if (!refreshToken) {
+      console.warn('Refresh token missing in request');
       return NextResponse.json(
         { success: false, error: 'Refresh token is required' },
         { status: 400 }
       );
     }
 
+    console.log('Attempting to refresh token...');
+
     // Call backend refresh token endpoint
-    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,6 +29,7 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Token refresh failed:', data.message || data.error);
       return NextResponse.json(
         { 
           success: false, 
@@ -35,6 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Token refreshed successfully');
     return NextResponse.json({
       success: true,
       accessToken: data.accessToken,

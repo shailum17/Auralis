@@ -25,18 +25,55 @@ export default function CommunityFeed() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading user-specific feed data
+    // Load real community feed data from API
     const loadFeedData = async () => {
       if (!user) return;
       
       setLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For now, show empty state to indicate it's user-specific
-      setPosts([]);
-      setLoading(false);
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          setLoading(false);
+          return;
+        }
+
+        // Fetch real posts from API
+        const response = await fetch('/api/community/posts', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.posts) {
+            // Map API posts to component format
+            const mappedPosts: Post[] = data.data.posts.map((post: any) => ({
+              id: post.id,
+              author: post.userName || 'Anonymous',
+              isAnonymous: post.isAnonymous || false,
+              avatar: post.userName ? post.userName.substring(0, 2).toUpperCase() : '?',
+              content: post.content,
+              tags: post.tags || [],
+              timestamp: new Date(post.createdAt).toLocaleString(),
+              reactions: { likes: post.likes || 0, supports: 0, helpful: 0 },
+              comments: post.comments || 0,
+              userReacted: false
+            }));
+            setPosts(mappedPosts);
+          } else {
+            setPosts([]);
+          }
+        } else {
+          setPosts([]);
+        }
+      } catch (error) {
+        console.error('Error loading community feed:', error);
+        setPosts([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadFeedData();

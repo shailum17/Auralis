@@ -11,11 +11,46 @@ interface Activity {
   action: string;
   title: string;
   timestamp: string;
-  engagement?: any;
-  icon: React.ReactNode;
+  engagement?: string;
+  iconType: 'post' | 'mood' | 'group' | 'comment' | 'like' | 'event';
   color: string;
   isAnonymous?: boolean;
 }
+
+const getActivityIcon = (iconType: string) => {
+  switch (iconType) {
+    case 'post':
+      return (
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      );
+    case 'mood':
+      return (
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    case 'group':
+      return (
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      );
+    case 'comment':
+      return (
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      );
+    default:
+      return (
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+      );
+  }
+};
 
 export default function RecentActivity() {
   // Use actual auth context
@@ -98,7 +133,7 @@ export default function RecentActivity() {
             className="flex items-start space-x-4 p-3 hover:bg-gray-50 rounded-lg transition-all duration-200 hover:shadow-md"
           >
             <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${activity.color}`}>
-              {activity.icon}
+              {getActivityIcon(activity.iconType)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-900">
@@ -109,7 +144,7 @@ export default function RecentActivity() {
                 <span className="text-xs text-gray-500">{activity.timestamp}</span>
                 {activity.engagement && (
                   <span className="text-xs text-gray-500">
-                    {activity.engagement} engagement
+                    {activity.engagement}
                   </span>
                 )}
               </div>

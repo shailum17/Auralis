@@ -50,8 +50,8 @@ export interface ActivityEntry {
   action: string;
   title: string;
   timestamp: string;
-  engagement?: any;
-  icon: React.ReactNode;
+  engagement?: string;
+  iconType: 'post' | 'mood' | 'group' | 'comment' | 'like' | 'event';
   color: string;
   isAnonymous?: boolean;
 }
@@ -100,6 +100,7 @@ export class DynamicProfileService {
     }
 
     // In a real implementation, this would fetch user's actual wellness data
+    // Return empty data - will be populated from database
     return {
       overallScore: 0, // Would be: await calculateUserWellnessScore(user.id)
       trend: '+0.0', // Would be: await getWellnessTrend(user.id)
@@ -122,7 +123,7 @@ export class DynamicProfileService {
     }
 
     // In a real implementation, this would fetch user's actual activity
-    // Return empty array to show no hardcoded data
+    // Return empty array - will be populated from database
     return []; // Would be: await getUserActivities(user.id, { limit: 20 })
   }
 

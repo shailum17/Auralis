@@ -1,81 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+// GET /api/community/preferences - Check user onboarding
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, error: 'Authorization header required' },
+        { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const response = await fetch(`${BACKEND_URL}/api/v1/community/preferences`, {
-      method: 'GET',
+    // Fetch user preferences from backend
+    const response = await fetch(`${API_BASE_URL}/api/v1/community/preferences`, {
       headers: {
         'Authorization': authHeader,
-        'Content-Type': 'application/json',
       },
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      return NextResponse.json(
-        { success: false, error: data.message || 'Failed to get preferences' },
-        { status: response.status }
-      );
+      throw new Error('Failed to fetch preferences');
     }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error getting community preferences:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader) {
-      return NextResponse.json(
-        { success: false, error: 'Authorization header required' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-
-    const response = await fetch(`${BACKEND_URL}/api/v1/community/preferences`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': authHeader,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
 
     const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, error: data.message || 'Failed to update preferences' },
-        { status: response.status }
-      );
-    }
-
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error updating community preferences:', error);
+    console.error('Error fetching preferences:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { success: false, message: 'Failed to fetch preferences' },
       { status: 500 }
     );
   }

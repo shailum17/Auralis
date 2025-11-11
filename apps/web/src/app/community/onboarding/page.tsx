@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { getIconSvg } from '@/lib/icon-utils';
 
 interface ForumCategory {
   id: string;
@@ -23,7 +24,7 @@ const forumCategories: ForumCategory[] = [
     id: 'academic-help',
     name: 'Academic Help',
     description: 'Get help with assignments, study tips, and academic guidance from fellow students',
-    icon: '📚',
+    icon: 'book',
     color: 'bg-blue-100 text-blue-700 border-blue-200',
     memberCount: 2847,
     postCount: 1523,
@@ -34,7 +35,7 @@ const forumCategories: ForumCategory[] = [
     id: 'career-guidance',
     name: 'Career Guidance',
     description: 'Discuss career paths, internships, job opportunities, and professional development',
-    icon: '💼',
+    icon: 'briefcase',
     color: 'bg-purple-100 text-purple-700 border-purple-200',
     memberCount: 1956,
     postCount: 892,
@@ -45,7 +46,7 @@ const forumCategories: ForumCategory[] = [
     id: 'mental-wellness',
     name: 'Mental Wellness',
     description: 'Share experiences, support each other, and discuss mental health resources',
-    icon: '🧘‍♀️',
+    icon: 'heart',
     color: 'bg-green-100 text-green-700 border-green-200',
     memberCount: 1634,
     postCount: 756,
@@ -55,7 +56,7 @@ const forumCategories: ForumCategory[] = [
     id: 'tech-innovation',
     name: 'Tech & Innovation',
     description: 'Explore latest technologies, coding projects, and innovative ideas',
-    icon: '💻',
+    icon: 'computer',
     color: 'bg-indigo-100 text-indigo-700 border-indigo-200',
     memberCount: 2156,
     postCount: 1234,
@@ -66,7 +67,7 @@ const forumCategories: ForumCategory[] = [
     id: 'creative-arts',
     name: 'Creative Arts',
     description: 'Share your creative work, get feedback, and collaborate on artistic projects',
-    icon: '🎨',
+    icon: 'palette',
     color: 'bg-pink-100 text-pink-700 border-pink-200',
     memberCount: 987,
     postCount: 543,
@@ -76,7 +77,7 @@ const forumCategories: ForumCategory[] = [
     id: 'sports-fitness',
     name: 'Sports & Fitness',
     description: 'Discuss fitness routines, sports events, and healthy lifestyle tips',
-    icon: '⚽',
+    icon: 'fitness',
     color: 'bg-orange-100 text-orange-700 border-orange-200',
     memberCount: 1423,
     postCount: 678,
@@ -86,7 +87,7 @@ const forumCategories: ForumCategory[] = [
     id: 'campus-life',
     name: 'Campus Life',
     description: 'Share campus experiences, events, and connect with fellow students',
-    icon: '🏫',
+    icon: 'building',
     color: 'bg-teal-100 text-teal-700 border-teal-200',
     memberCount: 3245,
     postCount: 2156,
@@ -96,7 +97,7 @@ const forumCategories: ForumCategory[] = [
     id: 'study-groups',
     name: 'Study Groups',
     description: 'Form study groups, share notes, and collaborate on academic projects',
-    icon: '👥',
+    icon: 'users',
     color: 'bg-cyan-100 text-cyan-700 border-cyan-200',
     memberCount: 1789,
     postCount: 934,
@@ -409,7 +410,7 @@ export default function CommunityOnboarding() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`relative bg-white rounded-2xl p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                    className={`group relative bg-white rounded-2xl p-6 border-2 cursor-pointer transition-all duration-200 hover:shadow-lg ${
                       selectedInterests.includes(category.id)
                         ? `${category.color} shadow-lg scale-105`
                         : 'border-gray-200 hover:border-gray-300'
@@ -439,7 +440,17 @@ export default function CommunityOnboarding() {
                     </div>
 
                     {/* Icon */}
-                    <div className="text-4xl mb-4">{category.icon}</div>
+                    <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
+                      <div 
+                        className="absolute -inset-6 rounded-full blur-[20px] opacity-0 group-hover:opacity-80 transition-opacity duration-300 pointer-events-none"
+                        style={{
+                          background: 'linear-gradient(120deg, #ff80b5 0%, #ffd700 25%, #ffb347 45%, #7fffd4 65%, #80bfff 85%, #ffd700 100%)',
+                        }}
+                      />
+                      <div className="relative z-10 text-gray-700">
+                        {getIconSvg(category.icon, "w-12 h-12")}
+                      </div>
+                    </div>
 
                     {/* Content */}
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{category.name}</h3>
