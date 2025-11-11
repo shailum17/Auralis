@@ -106,11 +106,31 @@ model User {
   @@map("users")
 }
 
+model Forum {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  forumId     String   @unique @map("forum_id") // Unique identifier like 'academic-help'
+  name        String
+  description String
+  icon        String
+  color       String
+  memberCount Int      @default(0) @map("member_count")
+  postCount   Int      @default(0) @map("post_count")
+  isPopular   Boolean  @default(false) @map("is_popular")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("forums")
+}
+
 model Post {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
   authorId      String    @map("author_id") @db.ObjectId
+  title         String?   // Post title
   content       String
+  forumId       String?   @map("forum_id") // Forum/category ID
   isAnonymous   Boolean   @default(false) @map("is_anonymous")
+  isPublished   Boolean   @default(true) @map("is_published")
   tags          String[]  // Array of strings for MongoDB
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")

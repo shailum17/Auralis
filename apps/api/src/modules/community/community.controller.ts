@@ -57,4 +57,34 @@ export class CommunityController {
     const userId = req.user.sub;
     return this.communityService.completeOnboarding(userId, completeOnboardingDto.interests);
   }
+
+  @Get('posts')
+  @ApiOperation({ summary: 'Get all community posts' })
+  @ApiResponse({ status: 200, description: 'Posts retrieved successfully' })
+  async getPosts(@Request() req) {
+    const userId = req.user.sub;
+    return this.communityService.getPosts(userId);
+  }
+
+  @Post('posts')
+  @ApiOperation({ summary: 'Create a new community post' })
+  @ApiResponse({ status: 201, description: 'Post created successfully' })
+  async createPost(
+    @Request() req,
+    @Body() createPostDto: {
+      title: string;
+      content: string;
+      forumId: string;
+    }
+  ) {
+    const userId = req.user.sub;
+    return this.communityService.createPost(userId, createPostDto);
+  }
+
+  @Get('posts/:postId')
+  @ApiOperation({ summary: 'Get a specific post by ID' })
+  @ApiResponse({ status: 200, description: 'Post retrieved successfully' })
+  async getPost(@Param('postId') postId: string) {
+    return this.communityService.getPost(postId);
+  }
 }

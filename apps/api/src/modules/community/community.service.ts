@@ -16,83 +16,115 @@ export interface ForumCategory {
 export class CommunityService {
   constructor(private prisma: PrismaService) {}
 
-  private readonly forumCategories: ForumCategory[] = [
+  // Fallback forums data (used if database query fails)
+  private readonly fallbackForums: ForumCategory[] = [
     {
       id: 'academic-help',
       name: 'Academic Help',
       description: 'Get help with assignments, study tips, and academic guidance from fellow students',
-      icon: '📚',
+      icon: 'book',
       color: 'bg-blue-100 text-blue-700 border-blue-200',
-      memberCount: 2847,
-      postCount: 1523,
+      memberCount: 0,
+      postCount: 0,
       isPopular: true
     },
     {
       id: 'career-guidance',
       name: 'Career Guidance',
       description: 'Discuss career paths, internships, job opportunities, and professional development',
-      icon: '💼',
+      icon: 'briefcase',
       color: 'bg-purple-100 text-purple-700 border-purple-200',
-      memberCount: 1956,
-      postCount: 892,
+      memberCount: 0,
+      postCount: 0,
       isPopular: true
     },
     {
       id: 'mental-wellness',
       name: 'Mental Wellness',
       description: 'Share experiences, support each other, and discuss mental health resources',
-      icon: '🧘‍♀️',
+      icon: 'heart',
       color: 'bg-green-100 text-green-700 border-green-200',
-      memberCount: 1634,
-      postCount: 756
+      memberCount: 0,
+      postCount: 0
     },
     {
       id: 'tech-innovation',
       name: 'Tech & Innovation',
       description: 'Explore latest technologies, coding projects, and innovative ideas',
-      icon: '💻',
+      icon: 'computer',
       color: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-      memberCount: 2156,
-      postCount: 1234,
+      memberCount: 0,
+      postCount: 0,
       isPopular: true
     },
     {
       id: 'creative-arts',
       name: 'Creative Arts',
       description: 'Share your creative work, get feedback, and collaborate on artistic projects',
-      icon: '🎨',
+      icon: 'palette',
       color: 'bg-pink-100 text-pink-700 border-pink-200',
-      memberCount: 987,
-      postCount: 543
+      memberCount: 0,
+      postCount: 0
     },
     {
       id: 'sports-fitness',
       name: 'Sports & Fitness',
       description: 'Discuss fitness routines, sports events, and healthy lifestyle tips',
-      icon: '⚽',
+      icon: 'fitness',
       color: 'bg-orange-100 text-orange-700 border-orange-200',
-      memberCount: 1423,
-      postCount: 678
+      memberCount: 0,
+      postCount: 0
     },
     {
       id: 'campus-life',
       name: 'Campus Life',
       description: 'Share campus experiences, events, and connect with fellow students',
-      icon: '🏫',
+      icon: 'building',
       color: 'bg-teal-100 text-teal-700 border-teal-200',
-      memberCount: 3245,
-      postCount: 2156
+      memberCount: 0,
+      postCount: 0
     },
     {
       id: 'study-groups',
       name: 'Study Groups',
       description: 'Form study groups, share notes, and collaborate on academic projects',
-      icon: '👥',
+      icon: 'users',
       color: 'bg-cyan-100 text-cyan-700 border-cyan-200',
-      memberCount: 1789,
-      postCount: 934
+      memberCount: 0,
+      postCount: 0
     }
   ];
+
+  // Helper method to get forums from database
+  private async getForumsFromDB() {
+    try {
+      const forums = await this.prisma.forum.findMany({
+        where: { isActive: true },
+        orderBy: { memberCount: 'desc' }
+      });
+      
+      if (forums.length === 0) {
+        console.warn('⚠️ No forums in database, using fallback forums');
+        return this.fallbackForums;
+      }
+      
+      return forums.map(forum => ({
+        id: forum.forumId,
+        name: forum.name,
+        description: forum.description,
+        icon: forum.icon,
+        color: forum.color,
+        memberCount: forum.memberCount,
+        postCount: forum.postCount,
+        isPopular: forum.isPopular
+      }));
+    } catch (error) {
+      console.error('❌ Error fetching forums from database:', error);
+      console.log('📋 Using fallback forums');
+      // Return fallback forums if database query fails
+      return this.fallbackForums;
+    }
+  }
 
   async getUserPreferences(userId: string) {
     console.log('🔍 Getting user preferences for:', userId);
@@ -170,18 +202,6 @@ export class CommunityService {
     }
   }
 
-  async getForums() {
-    console.log('📋 Getting available forums');
-    
-    return {
-      success: true,
-      data: {
-        forums: this.forumCategories,
-        totalForums: this.forumCategories.length
-      }
-    };
-  }
-
   async getPersonalizedFeed(userId: string) {
     console.log('🎯 Getting personalized feed for user:', userId);
     
@@ -193,14 +213,15 @@ export class CommunityService {
       }
 
       const userInterests = userPreferences.data.interests;
+      const allForums = await this.getForumsFromDB();
       
       // Filter forums based on user interests
-      const personalizedForums = this.forumCategories.filter(forum => 
+      const personalizedForums = allForums.filter(forum => 
         userInterests.includes(forum.id)
       );
 
       // Get other forums (not in user interests)
-      const otherForums = this.forumCategories.filter(forum => 
+      const otherForums = allForums.filter(forum => 
         !userInterests.includes(forum.id)
       );
 
@@ -223,13 +244,119 @@ export class CommunityService {
     }
   }
 
+  async getForums() {
+    console.log('📋 Getting available forums');
+    
+    try {
+      // Get forums from database
+      const forums = await this.prisma.forum.findMany({
+        where: { isActive: true },
+        orderBy: { memberCount: 'desc' }
+      });
+
+      if (forums.length === 0) {
+        console.warn('⚠️ No forums found in database. Using fallback forums.');
+        return {
+          success: true,
+          data: {
+            forums: this.fallbackForums,
+            totalForums: this.fallbackForums.length
+          }
+        };
+      }
+
+      // Update post counts and member counts in real-time
+      const forumsWithStats = await Promise.all(
+        forums.map(async (forum) => {
+          try {
+            // Count real posts
+            const postCount = await this.prisma.post.count({
+              where: {
+                forumId: forum.forumId,
+                isPublished: true,
+              }
+            });
+
+            // Count real members (users with this forum in interests)
+            const memberCount = await this.prisma.user.count({
+              where: {
+                interests: {
+                  has: forum.forumId
+                }
+              }
+            });
+
+            // Update forum stats if different
+            if (postCount !== forum.postCount || memberCount !== forum.memberCount) {
+              await this.prisma.forum.update({
+                where: { id: forum.id },
+                data: { 
+                  postCount,
+                  memberCount
+                }
+              });
+            }
+
+            return {
+              id: forum.forumId,
+              name: forum.name,
+              description: forum.description,
+              icon: forum.icon,
+              color: forum.color,
+              memberCount: memberCount,
+              postCount: postCount,
+              isPopular: forum.isPopular
+            };
+          } catch (countError) {
+            console.warn(`⚠️ Could not get stats for forum ${forum.forumId}:`, countError.message);
+            return {
+              id: forum.forumId,
+        name: forum.name,
+              description: forum.description,
+              icon: forum.icon,
+              color: forum.color,
+              memberCount: forum.memberCount,
+              postCount: forum.postCount,
+              isPopular: forum.isPopular
+            };
+          }
+        })
+      );
+
+      console.log('✅ Forums retrieved successfully:', forumsWithStats.length);
+
+      return {
+        success: true,
+        data: {
+          forums: forumsWithStats,
+          totalForums: forumsWithStats.length
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error getting forums:', error);
+      console.log('📋 Returning fallback forums due to error');
+      // Return fallback forums if any error occurs
+      return {
+        success: true,
+        data: {
+          forums: this.fallbackForums,
+          totalForums: this.fallbackForums.length
+        }
+      };
+    }
+  }
+
   async completeOnboarding(userId: string, interests: string[]) {
     console.log('🎉 Completing onboarding for user:', { userId, interests });
     
     try {
+      // Get valid forum IDs from database
+      const forums = await this.getForumsFromDB();
+      const validForumIds = forums.map(f => f.id);
+      
       // Validate interests
       const validInterests = interests.filter(interest => 
-        this.forumCategories.some(forum => forum.id === interest)
+        validForumIds.includes(interest)
       );
 
       if (validInterests.length === 0) {
@@ -262,6 +389,226 @@ export class CommunityService {
       };
     } catch (error) {
       console.error('❌ Error completing onboarding:', error);
+      throw error;
+    }
+  }
+
+  async getPosts(userId: string) {
+    console.log('📝 Getting all community posts for user:', userId);
+    
+    try {
+      // Get posts from database
+      const posts = await this.prisma.post.findMany({
+        where: {
+          isPublished: true,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              username: true,
+              email: true,
+            }
+          },
+          _count: {
+            select: {
+              reactions: true,
+              comments: true,
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 50 // Limit to 50 most recent posts
+      });
+
+      // Get forums from database for lookup
+      const forums = await this.getForumsFromDB();
+      const forumMap = new Map(forums.map(f => [f.id, f]));
+      
+      // Transform posts to include forum information
+      const transformedPosts = posts.map(post => {
+        // Find the forum this post belongs to
+        const forum = forumMap.get(post.forumId);
+        
+        return {
+          id: post.id,
+          userId: post.authorId,
+          userName: post.author.fullName || post.author.username || 'Anonymous',
+          userEmail: post.author.email,
+          forumId: post.forumId || 'general',
+          forumName: forum?.name || 'General Discussion',
+          title: post.title,
+          content: post.content,
+          createdAt: post.createdAt.toISOString(),
+          likes: post._count.reactions, // Count all reactions as likes for now
+          comments: post._count.comments,
+        };
+      });
+
+      console.log('✅ Posts retrieved successfully:', transformedPosts.length);
+
+      return {
+        success: true,
+        data: {
+          posts: transformedPosts,
+          totalPosts: transformedPosts.length
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error getting posts:', error);
+      throw error;
+    }
+  }
+
+  async createPost(userId: string, createPostDto: { title: string; content: string; forumId: string }) {
+    console.log('✍️ Creating new post:', { userId, ...createPostDto });
+    
+    try {
+      // Validate forum exists in database
+      const forumFromDB = await this.prisma.forum.findUnique({
+        where: { forumId: createPostDto.forumId }
+      });
+      
+      if (!forumFromDB) {
+        throw new Error('Invalid forum ID');
+      }
+      
+      const forum = {
+        id: forumFromDB.forumId,
+        name: forumFromDB.name
+      };
+
+      // Get user information
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+          email: true,
+        }
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // Create the post
+      const post = await this.prisma.post.create({
+        data: {
+          title: createPostDto.title,
+          content: createPostDto.content,
+          forumId: createPostDto.forumId,
+          authorId: userId,
+          isPublished: true,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              username: true,
+              email: true,
+            }
+          },
+          _count: {
+            select: {
+              reactions: true,
+              comments: true,
+            }
+          }
+        }
+      });
+
+      const transformedPost = {
+        id: post.id,
+        userId: post.authorId,
+        userName: post.author.fullName || post.author.username || 'Anonymous',
+        userEmail: post.author.email,
+        forumId: post.forumId || 'general',
+        forumName: forum.name,
+        title: post.title,
+        content: post.content,
+        createdAt: post.createdAt.toISOString(),
+        likes: post._count.reactions, // Count all reactions as likes for now
+        comments: post._count.comments,
+      };
+
+      console.log('✅ Post created successfully:', transformedPost.id);
+
+      return {
+        success: true,
+        message: 'Post created successfully',
+        data: {
+          post: transformedPost
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error creating post:', error);
+      throw error;
+    }
+  }
+
+  async getPost(postId: string) {
+    console.log('🔍 Getting post:', postId);
+    
+    try {
+      const post = await this.prisma.post.findUnique({
+        where: { id: postId },
+        include: {
+          author: {
+            select: {
+              id: true,
+              fullName: true,
+              username: true,
+              email: true,
+            }
+          },
+          _count: {
+            select: {
+              reactions: true,
+              comments: true,
+            }
+          }
+        }
+      });
+
+      if (!post) {
+        throw new NotFoundException('Post not found');
+      }
+
+      // Get forum from database
+      const forumFromDB = await this.prisma.forum.findUnique({
+        where: { forumId: post.forumId }
+      });
+
+      const transformedPost = {
+        id: post.id,
+        userId: post.authorId,
+        userName: post.author.fullName || post.author.username || 'Anonymous',
+        userEmail: post.author.email,
+        forumId: post.forumId || 'general',
+        forumName: forumFromDB?.name || 'General Discussion',
+        title: post.title,
+        content: post.content,
+        createdAt: post.createdAt.toISOString(),
+        likes: post._count.reactions, // Count all reactions as likes for now
+        comments: post._count.comments,
+      };
+
+      console.log('✅ Post retrieved successfully');
+
+      return {
+        success: true,
+        data: {
+          post: transformedPost
+        }
+      };
+    } catch (error) {
+      console.error('❌ Error getting post:', error);
       throw error;
     }
   }
