@@ -47,12 +47,12 @@ export function validateAdminSession(): boolean {
   if (typeof window === 'undefined') return false;
   
   try {
-    const userStr = localStorage.getItem('user');
-    const accessToken = localStorage.getItem('accessToken');
+    const { sessionStorage } = await import('./session-storage');
+    const user = sessionStorage.getUser();
+    const tokens = sessionStorage.getTokens();
+    const accessToken = tokens?.accessToken;
     
-    if (!userStr || !accessToken) return false;
-    
-    const user = JSON.parse(userStr);
+    if (!user || !accessToken) return false;
     return canAccessAdminDashboard(user);
   } catch (error) {
     console.error('Failed to validate admin session:', error);

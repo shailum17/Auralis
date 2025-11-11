@@ -18,6 +18,7 @@ import {
 } from '@/types/auth';
 import { authAPI } from '@/lib/auth-api';
 import { authUtils } from '@/lib/auth-utils';
+import { sessionStorage } from '@/lib/session-storage';
 
 // Initial auth state
 const initialAuthState: AuthState = {
@@ -59,16 +60,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       if (typeof window === 'undefined') return false;
       
-      const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
+      const tokens = sessionStorage.getTokens();
       
-      if (!accessToken || !refreshToken) {
+      if (!tokens) {
         return false;
       }
 
       // If access token is expired but refresh token is valid, session can be renewed
-      if (authUtils.isTokenExpired(accessToken)) {
-        return !authUtils.isTokenExpired(refreshToken);
+      if (authUtils.isTokenExpired(tokens.accessToken)) {
+        return !authUtils.isTokenExpired(tokens.refreshToken);
       }
 
       return true;
@@ -83,37 +83,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       if (typeof window === 'undefined') return false;
       
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
+      const tokens = sessionStorage.getTokens();
+      if (!tokens) {
         return false;
       }
 
       // If access token is expired or expires soon, refresh it
-      const expiryTime = authUtils.getTokenExpirationTime(accessToken);
+      const expiryTime = authUtils.getTokenExpirationTime(tokens.accessToken);
       const now = Date.now();
       const fiveMinutes = 5 * 60 * 1000;
 
       if (!expiryTime || expiryTime.getTime() - now < fiveMinutes) {
-        // Call refresh token directly to avoid circular dependency
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          return false;
-        }
-
-        if (authUtils.isTokenExpired(refreshToken)) {
+        if (authUtils.isTokenExpired(tokens.refreshToken)) {
           // Clear tokens if refresh token is expired
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('tokenMetadata');
-          localStorage.removeItem('sessionConfig');
-          localStorage.removeItem('user');
+          sessionStorage.clearSession();
           return false;
         }
 
         try {
           setState(prev => ({ ...prev, isLoading: true, error: null }));
           
-          const response = await authAPI.refreshToken(refreshToken);
+          const response = await authAPI.refreshToken(tokens.refreshToken);
           
           if (response.success && response.accessToken && response.refreshToken) {
             const newTokens = {
@@ -122,15 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             };
             
             // Store new tokens
-            localStorage.setItem('accessToken', newTokens.accessToken);
-            localStorage.setItem('refreshToken', newTokens.refreshToken);
-            
-            const tokenMetadata = {
-              accessTokenExpiry: authUtils.getTokenExpirationTime(newTokens.accessToken),
-              refreshTokenExpiry: authUtils.getTokenExpirationTime(newTokens.refreshToken),
-              storedAt: new Date().toISOString(),
-            };
-            localStorage.setItem('tokenMetadata', JSON.stringify(tokenMetadata));
+            sessionStorage.updateTokens(newTokens);
             
             setState(prev => ({ 
               ...prev,
@@ -181,8 +163,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: false,
       }));
       
-      // Update localStorage
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Update storage
+      const config = sessionStorage.getSessionConfig();
+      sessionStorage.storeUser(updatedUser, config || undefined);
       
       // TODO: Sync with backend API when user update endpoint is available
       // const response = await authAPI.updateUser(userData);
@@ -204,24 +187,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Store tokens securely
   const storeTokens = useCallback((tokens: AuthTokens, config?: SessionConfig) => {
     try {
-      // Store tokens with encryption in production
-      if (typeof window !== 'undefined') {
-        // For now using localStorage, but in production should use httpOnly cookies
-        // or encrypted storage for better security
-        localStorage.setItem('accessToken', tokens.accessToken);
-        localStorage.setItem('refreshToken', tokens.refreshToken);
-        
-        // Store token metadata for refresh logic
-        const tokenMetadata = {
-          accessTokenExpiry: authUtils.getTokenExpirationTime(tokens.accessToken),
-          refreshTokenExpiry: authUtils.getTokenExpirationTime(tokens.refreshToken),
-          storedAt: new Date().toISOString(),
-        };
-        localStorage.setItem('tokenMetadata', JSON.stringify(tokenMetadata));
-        
-        if (config) {
-          localStorage.setItem('sessionConfig', JSON.stringify(config));
-        }
+      // Store tokens in cookies with appropriate expiration
+      sessionStorage.storeTokens(tokens, config);
+      
+      // Store token metadata for refresh logic
+      const tokenMetadata = {
+        accessTokenExpiry: authUtils.getTokenExpirationTime(tokens.accessToken),
+        refreshTokenExpiry: authUtils.getTokenExpirationTime(tokens.refreshToken),
+        storedAt: new Date().toISOString(),
+      };
+      sessionStorage.storeTokenMetadata(tokenMetadata);
+      
+      if (config) {
+        sessionStorage.storeSessionConfig(config);
       }
       
       updateState({ tokens });
@@ -234,13 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Clear stored tokens
   const clearTokens = useCallback(() => {
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('tokenMetadata');
-        localStorage.removeItem('sessionConfig');
-        localStorage.removeItem('user');
-      }
+      sessionStorage.clearSession();
       updateState({ tokens: null });
     } catch (error) {
       console.error('Failed to clear tokens:', error);
@@ -252,19 +224,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       if (typeof window === 'undefined') return null;
       
-      const accessToken = localStorage.getItem('accessToken');
-      const refreshToken = localStorage.getItem('refreshToken');
-      const tokenMetadata = localStorage.getItem('tokenMetadata');
+      const tokens = sessionStorage.getTokens();
       
-      if (accessToken && refreshToken) {
+      if (tokens) {
         // Check if tokens are expired based on stored metadata
+        const tokenMetadata = sessionStorage.getTokenMetadata();
         if (tokenMetadata) {
           try {
-            const metadata = JSON.parse(tokenMetadata);
             const now = new Date();
             
             // If refresh token is expired, clear all tokens
-            if (metadata.refreshTokenExpiry && new Date(metadata.refreshTokenExpiry) <= now) {
+            if (tokenMetadata.refreshTokenExpiry && new Date(tokenMetadata.refreshTokenExpiry) <= now) {
               clearTokens();
               return null;
             }
@@ -273,7 +243,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         }
         
-        return { accessToken, refreshToken };
+        return tokens;
       }
     } catch (error) {
       console.error('Failed to load tokens:', error);
@@ -308,10 +278,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         
         // Preserve existing session config
-        const sessionConfig = localStorage.getItem('sessionConfig');
-        const config = sessionConfig ? JSON.parse(sessionConfig) : undefined;
+        const config = sessionStorage.getSessionConfig();
         
-        storeTokens(newTokens, config);
+        storeTokens(newTokens, config || undefined);
         
         updateState({ 
           tokens: newTokens,
@@ -361,21 +330,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Get session config to adjust refresh strategy
-    const sessionConfig = localStorage.getItem('sessionConfig');
-    if (sessionConfig) {
-      try {
-        const config = JSON.parse(sessionConfig);
-        if (config.rememberMe && config.sessionDuration) {
-          // For longer sessions, use a more conservative refresh strategy
-          const hours = config.sessionDuration;
-          if (hours >= 24) {
-            refreshInterval = Math.min(refreshInterval, 60 * 60 * 1000); // Max 1 hour
-          } else if (hours >= 8) {
-            refreshInterval = Math.min(refreshInterval, 30 * 60 * 1000); // Max 30 minutes
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing session config:', error);
+    const config = sessionStorage.getSessionConfig();
+    if (config && config.rememberMe && config.sessionDuration) {
+      // For longer sessions, use a more conservative refresh strategy
+      const hours = config.sessionDuration;
+      if (hours >= 24) {
+        refreshInterval = Math.min(refreshInterval, 60 * 60 * 1000); // Max 1 hour
+      } else if (hours >= 8) {
+        refreshInterval = Math.min(refreshInterval, 30 * 60 * 1000); // Max 30 minutes
       }
     }
 
@@ -397,13 +359,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           clearInterval(timer);
           
           // Clear all stored data
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('tokenMetadata');
-            localStorage.removeItem('sessionConfig');
-            localStorage.removeItem('user');
-          }
+          sessionStorage.clearSession();
           
           setState({
             user: null,
@@ -444,7 +400,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         storeTokens(tokens, sessionConfig);
         
         // Store user data
-        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.storeUser(response.user, sessionConfig);
         
         updateState({
           user: response.user,
@@ -580,7 +536,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         
         storeTokens(tokens);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.storeUser(response.user);
         
         updateState({
           user: response.user,
@@ -662,7 +618,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         
         storeTokens(tokens, sessionConfig);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.storeUser(response.user, sessionConfig);
         
         updateState({
           user: response.user,
@@ -735,10 +691,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         updateState({ isLoading: true, error: null });
         
         const tokens = loadTokens();
-        const storedUser = localStorage.getItem('user');
+        const user = sessionStorage.getUser();
         
-        if (tokens && storedUser) {
-          const user = JSON.parse(storedUser);
+        if (tokens && user) {
           
           // Check if access token is expired
           const isAccessTokenExpired = authUtils.isTokenExpired(tokens.accessToken);
@@ -771,15 +726,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 };
                 
                 // Store new tokens
-                localStorage.setItem('accessToken', newTokens.accessToken);
-                localStorage.setItem('refreshToken', newTokens.refreshToken);
-                
-                const tokenMetadata = {
-                  accessTokenExpiry: authUtils.getTokenExpirationTime(newTokens.accessToken),
-                  refreshTokenExpiry: authUtils.getTokenExpirationTime(newTokens.refreshToken),
-                  storedAt: new Date().toISOString(),
-                };
-                localStorage.setItem('tokenMetadata', JSON.stringify(tokenMetadata));
+                sessionStorage.updateTokens(newTokens);
                 
                 updateState({
                   user,
@@ -789,12 +736,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 });
                 
                 // Setup token refresh
-                const sessionConfig = localStorage.getItem('sessionConfig');
-                if (sessionConfig) {
-                  const config = JSON.parse(sessionConfig);
-                  if (config.rememberMe) {
-                    setupTokenRefresh();
-                  }
+                const config = sessionStorage.getSessionConfig();
+                if (config && config.rememberMe) {
+                  setupTokenRefresh();
                 }
               } else {
                 console.log('Token refresh failed, clearing session');
@@ -827,12 +771,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             });
             
             // Setup token refresh
-            const sessionConfig = localStorage.getItem('sessionConfig');
-            if (sessionConfig) {
-              const config = JSON.parse(sessionConfig);
-              if (config.rememberMe) {
-                setupTokenRefresh();
-              }
+            const config = sessionStorage.getSessionConfig();
+            if (config && config.rememberMe) {
+              setupTokenRefresh();
             }
           }
         } else {

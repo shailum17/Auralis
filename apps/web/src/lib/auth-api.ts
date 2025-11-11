@@ -35,8 +35,10 @@ class AuthAPI {
     const url = `${API_BASE_URL}${endpoint}`;
     
     try {
-      // Get auth token from localStorage
-      const token = localStorage.getItem('accessToken');
+      // Get auth token from session storage
+      const { sessionStorage: storage } = await import('./session-storage');
+      const tokens = storage.getTokens();
+      const token = tokens?.accessToken;
       
       const response = await fetch(url, {
         headers: {
