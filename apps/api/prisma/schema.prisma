@@ -590,3 +590,15 @@ model Otp {
   @@index([expiresAt])
   @@map("otps")
 }
+
+model NewsletterSubscription {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  email            String   @unique
+  unsubscribeToken String   @map("unsubscribe_token")
+  isActive         Boolean  @default(true) @map("is_active")
+  subscribedAt     DateTime @default(now()) @map("subscribed_at")
+  unsubscribedAt   DateTime? @map("unsubscribed_at")
+  
+  @@index([isActive])
+  @@map("newsletter_subscriptions")
+}

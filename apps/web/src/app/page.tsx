@@ -1,12 +1,84 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import StudentTestimonials from '@/components/StudentTestimonials';
 import HeroSection, { FAQ } from '@/components/HeroSection';
 
 
 export default function Home() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setMessage('Please enter your email address');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setMessage('');
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setMessage('Thanks for signing up! Check your email for next steps.');
+      setEmail('');
+      
+      // Redirect to signup page after 2 seconds
+      setTimeout(() => {
+        router.push('/auth/signup');
+      }, 2000);
+    } catch (error) {
+      setMessage('Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNewsletterSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail) return;
+    
+    setIsSubmitting(true);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${apiUrl}/api/v1/newsletter/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message || 'Successfully subscribed to newsletter! Check your email for confirmation.');
+        setNewsletterEmail('');
+      } else {
+        alert(data.message || 'Failed to subscribe. Please try again.');
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error);
+      alert('Failed to subscribe. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLearnMore = (_featureTitle: string) => {
+    // Scroll to the how-it-works section
+    const section = document.getElementById('how-it-works');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const swapFeatures = [
     {
@@ -60,7 +132,7 @@ export default function Home() {
           </motion.div>
 
           {swapFeatures.map((feature, index) => (
-            <FeatureRow key={index} feature={feature} index={index} />
+            <FeatureRow key={index} feature={feature} index={index} onLearnMore={handleLearnMore} />
           ))}
         </div>
       </section>
@@ -361,22 +433,36 @@ export default function Home() {
               }}
             />
 
-            <div className="relative bg-white rounded-2xl p-2 shadow-xl border border-gray-200 z-10">
+            <form onSubmit={handleEmailSignup} className="relative bg-white rounded-2xl p-2 shadow-xl border border-gray-200 z-10">
               <div className="flex items-center flex-col sm:flex-row gap-2 sm:gap-0">
                 <input
                   type="email"
                   placeholder="Enter your email address"
-                  className="flex-1 w-full sm:w-auto px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg focus:ring-2 focus:ring-blue-500 rounded-xl"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isSubmitting}
+                  className="flex-1 w-full sm:w-auto px-6 py-4 text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none text-lg focus:ring-2 focus:ring-blue-500 rounded-xl disabled:opacity-50"
                 />
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-full sm:w-auto bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-all transform shadow-lg"
+                  type="submit"
+                  disabled={isSubmitting}
+                  whileHover={{ scale: isSubmitting ? 1 : 1.05 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.95 }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold py-4 px-8 rounded-xl transition-all transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Get started now →
+                  {isSubmitting ? 'Processing...' : 'Get started now →'}
                 </motion.button>
               </div>
-            </div>
+            </form>
+            {message && (
+              <motion.p
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`text-center mt-4 text-sm ${message.includes('Thanks') ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {message}
+              </motion.p>
+            )}
           </motion.div>
 
           <motion.div
@@ -426,11 +512,11 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Features</h4>
               <ul className="space-y-2 text-gray-600 text-sm">
-                <li><a href="#" className="hover:text-gray-900 transition-colors">AI-Powered Chat</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Wellness Tracking</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Study Groups</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Academic Analytics</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Resource Sharing</a></li>
+                <li><a href="/community" className="hover:text-gray-900 transition-colors">AI-Powered Chat</a></li>
+                <li><a href="/wellness" className="hover:text-gray-900 transition-colors">Wellness Tracking</a></li>
+                <li><a href="/community" className="hover:text-gray-900 transition-colors">Study Groups</a></li>
+                <li><a href="/wellness" className="hover:text-gray-900 transition-colors">Academic Analytics</a></li>
+                <li><a href="/community" className="hover:text-gray-900 transition-colors">Resource Sharing</a></li>
               </ul>
             </div>
 
@@ -438,11 +524,11 @@ export default function Home() {
             <div>
               <h4 className="font-semibold text-gray-900 mb-4">Support</h4>
               <ul className="space-y-2 text-gray-600 text-sm">
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Community Guidelines</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a></li>
+                <li><a href="#faq" className="hover:text-gray-900 transition-colors">Help Center</a></li>
+                <li><a href="mailto:support@auralis.com" className="hover:text-gray-900 transition-colors">Contact Us</a></li>
+                <li><a href="/community" className="hover:text-gray-900 transition-colors">Community Guidelines</a></li>
+                <li><a href="/terms" className="hover:text-gray-900 transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" className="hover:text-gray-900 transition-colors">Terms of Service</a></li>
               </ul>
             </div>
 
@@ -454,7 +540,7 @@ export default function Home() {
               </p>
 
               {/* Newsletter Form with Gradient Background */}
-              <div className="relative">
+              <form onSubmit={handleNewsletterSignup} className="relative">
                 <div className="absolute inset-0 rounded-lg blur-sm opacity-70" style={{
                   background: 'linear-gradient(90deg, #a7f3d0 0%, #bfdbfe 25%, #ddd6fe 50%, #f3e8ff 75%, #fde68a 100%)'
                 }}></div>
@@ -463,14 +549,22 @@ export default function Home() {
                     <input
                       type="email"
                       placeholder="Enter your email"
-                      className="flex-1 px-3 py-2 text-sm text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      disabled={isSubmitting}
+                      required
+                      className="flex-1 px-3 py-2 text-sm text-gray-700 placeholder-gray-500 bg-transparent border-none outline-none disabled:opacity-50"
                     />
-                    <button className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2 px-4 rounded transition-colors">
-                      Subscribe
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium py-2 px-4 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? 'Subscribing...' : 'Subscribe'}
                     </button>
                   </div>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
 
@@ -496,9 +590,10 @@ interface SwapFeatureProps {
 interface FeatureRowProps {
   feature: SwapFeatureProps;
   index: number;
+  onLearnMore: (featureTitle: string) => void;
 }
 
-const FeatureRow = ({ feature, index }: FeatureRowProps) => {
+const FeatureRow = ({ feature, index, onLearnMore }: FeatureRowProps) => {
   const isEven = index % 2 === 0;
   const ref = useRef(null);
 
@@ -607,6 +702,7 @@ const FeatureRow = ({ feature, index }: FeatureRowProps) => {
           </motion.div>
 
           <motion.button
+            onClick={() => onLearnMore(feature.title)}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
             initial={{ opacity: 0, y: 20 }}

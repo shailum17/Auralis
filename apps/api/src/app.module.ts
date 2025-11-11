@@ -15,6 +15,7 @@ import { WellnessModule } from './modules/wellness/wellness.module';
 import { MlGatewayModule } from './modules/ml-gateway/ml-gateway.module';
 import { CommunityModule } from './modules/community/community.module';
 import { HealthModule } from './health/health.module';
+import { NewsletterModule } from './modules/newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { HealthModule } from './health/health.module';
     MlGatewayModule,
     CommunityModule,
     HealthModule,
+    NewsletterModule,
   ],
 })
 export class AppModule {}
