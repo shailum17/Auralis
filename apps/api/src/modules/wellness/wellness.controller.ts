@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { WellnessService } from './wellness.service';
 import { CreateMoodEntryDto } from './dto/create-mood-entry.dto';
+import { CreateStressEntryDto } from './dto/create-stress-entry.dto';
 
 @ApiTags('Wellness')
 @Controller('wellness')
@@ -39,5 +40,28 @@ export class WellnessController {
   @ApiResponse({ status: 200, description: 'Wellness insights retrieved successfully' })
   async getWellnessInsights(@Request() req) {
     return this.wellnessService.getWellnessInsights(req.user.id);
+  }
+
+  @Post('stress')
+  @ApiOperation({ summary: 'Log a stress entry' })
+  @ApiResponse({ status: 201, description: 'Stress entry created successfully' })
+  async createStressEntry(@Request() req, @Body() createStressEntryDto: CreateStressEntryDto) {
+    return this.wellnessService.createStressEntry(req.user.id, createStressEntryDto);
+  }
+
+  @Get('stress/history')
+  @ApiOperation({ summary: 'Get stress history' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to look back' })
+  @ApiResponse({ status: 200, description: 'Stress history retrieved successfully' })
+  async getStressHistory(@Request() req, @Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.wellnessService.getUserStressHistory(req.user.id, daysNum);
+  }
+
+  @Get('stress/analytics')
+  @ApiOperation({ summary: 'Get stress analytics and patterns' })
+  @ApiResponse({ status: 200, description: 'Stress analytics retrieved successfully' })
+  async getStressAnalytics(@Request() req) {
+    return this.wellnessService.getStressAnalytics(req.user.id);
   }
 }

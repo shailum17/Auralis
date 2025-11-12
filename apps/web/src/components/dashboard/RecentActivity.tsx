@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 interface Activity {
   id: number;
@@ -55,22 +55,20 @@ const getActivityIcon = (iconType: string) => {
 export default function RecentActivity() {
   // Use actual auth context
   const { user } = useAuth();
+  const router = useRouter();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading user-specific activity data
+    // Load user-specific activity data
     const loadActivityData = async () => {
       if (!user) return;
       
       setLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Get dynamic activity data for the user
-      const userActivities = DynamicProfileService.getUserActivityHistory(user);
-      setActivities(userActivities);
+      // For now, show empty state - activity tracking can be implemented later
+      // This could fetch from API: /api/v1/users/activity
+      setActivities([]);
       setLoading(false);
     };
 
@@ -102,7 +100,10 @@ export default function RecentActivity() {
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
-        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+        <button 
+          onClick={() => router.push('/profile?tab=activity')}
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+        >
           View All
         </button>
       </div>
@@ -119,7 +120,10 @@ export default function RecentActivity() {
             <p className="text-gray-600 mb-4">
               Start engaging with the community to see your activity here.
             </p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => router.push('/community/forum')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Explore Community
             </button>
           </div>
@@ -149,7 +153,16 @@ export default function RecentActivity() {
                 )}
               </div>
             </div>
-            <button className="flex-shrink-0 text-gray-400 hover:text-gray-600">
+            <button 
+              onClick={() => {
+                // Navigate based on activity type
+                if (activity.iconType === 'post') router.push('/community/forum');
+                else if (activity.iconType === 'mood') router.push('/wellness/mood');
+                else if (activity.iconType === 'group') router.push('/community/study-groups');
+                else router.push('/community/forum');
+              }}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+            >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>

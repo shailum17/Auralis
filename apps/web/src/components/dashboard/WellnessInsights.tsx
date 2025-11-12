@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { DynamicProfileService } from '@/lib/dynamic-profile-service';
+import MoodTrackerModal from '@/components/wellness/MoodTrackerModal';
 
 export default function WellnessInsights() {
   const { user } = useAuth();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [showMoodModal, setShowMoodModal] = useState(false);
   const [insights, setInsights] = useState<Array<{
     title: string;
     description: string;
@@ -29,19 +32,89 @@ export default function WellnessInsights() {
       
       setLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Get dynamic wellness insights and goals
-      const userInsights = DynamicProfileService.getUserWellnessInsights(user);
-      const userGoals = DynamicProfileService.getUserWeeklyGoals(user);
-      const shouldShowCheckIn = DynamicProfileService.shouldShowDailyCheckIn(user);
-      
-      setInsights(userInsights);
-      setWeeklyGoals(userGoals);
-      setShowDailyCheckIn(shouldShowCheckIn);
-      
-      setLoading(false);
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          setInsights([]);
+          setWeeklyGoals([]);
+          setShowDailyCheckIn(true);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch real wellness insights from API
+        const response = await fetch('/api/v1/wellness/insights', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Generate insights based on real data
+          const generatedInsights = [];
+          
+          if (data.moodTrend === 'improving') {
+            generatedInsights.push({
+              title: 'Mood Improving',
+              description: 'Your mood has been trending upward. Keep up the great work!',
+              type: 'success' as const,
+              icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ),
+              color: 'bg-green-50 border-green-200 text-green-800'
+            });
+          } else if (data.moodTrend === 'declining') {
+            generatedInsights.push({
+              title: 'Mood Declining',
+              description: 'Your mood has been trending down. Consider reaching out for support.',
+              type: 'warning' as const,
+              icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              ),
+              color: 'bg-yellow-50 border-yellow-200 text-yellow-800'
+            });
+          }
+
+          if (data.moodEntriesCount >= 5) {
+            generatedInsights.push({
+              title: 'Consistent Tracking',
+              description: `You've logged ${data.moodEntriesCount} mood entries. Great habit!`,
+              type: 'info' as const,
+              icon: (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ),
+              color: 'bg-blue-50 border-blue-200 text-blue-800'
+            });
+          }
+
+          setInsights(generatedInsights);
+          
+          // For now, no weekly goals - can be implemented later
+          setWeeklyGoals([]);
+          
+          // Show daily check-in if user hasn't logged mood today
+          setShowDailyCheckIn(data.moodEntriesCount === 0 || true);
+        } else {
+          setInsights([]);
+          setWeeklyGoals([]);
+          setShowDailyCheckIn(true);
+        }
+      } catch (error) {
+        console.error('Error loading wellness insights:', error);
+        setInsights([]);
+        setWeeklyGoals([]);
+        setShowDailyCheckIn(true);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadWellnessData();
@@ -163,7 +236,10 @@ export default function WellnessInsights() {
               <p className="text-sm font-medium text-blue-900">Ready for your daily check-in?</p>
               <p className="text-xs text-blue-700">Track your mood and get personalized insights</p>
             </div>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors">
+            <button 
+              onClick={() => setShowMoodModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+            >
               Start
             </button>
           </div>
@@ -178,12 +254,25 @@ export default function WellnessInsights() {
             <p className="text-xs text-gray-600 mb-3">
               Begin tracking your mood and wellness to unlock personalized insights and goals.
             </p>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+            <button 
+              onClick={() => setShowMoodModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
               Log Your First Mood
             </button>
           </div>
         </div>
       )}
+
+      {/* Mood Tracker Modal */}
+      <MoodTrackerModal
+        isOpen={showMoodModal}
+        onClose={() => setShowMoodModal(false)}
+        onSave={() => {
+          // Reload insights after saving
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

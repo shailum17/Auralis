@@ -9,6 +9,8 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import CommunityFeed from '@/components/dashboard/CommunityFeed';
 import UpcomingEvents from '@/components/dashboard/UpcomingEvents';
 import WellnessInsights from '@/components/dashboard/WellnessInsights';
+import MoodTrackerModal from '@/components/wellness/MoodTrackerModal';
+import StressTrackerModal from '@/components/wellness/StressTrackerModal';
 
 export default function Dashboard() {
   // Use actual auth context
@@ -56,10 +58,18 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  const [showMoodModal, setShowMoodModal] = useState(false);
+  const [showStressModal, setShowStressModal] = useState(false);
+
   // Navigation handlers
   const handleLogMood = () => {
     setIsExplorePopupOpen(false);
-    router.push('/wellness/mood');
+    setShowMoodModal(true);
+  };
+
+  const handleTrackStress = () => {
+    setIsExplorePopupOpen(false);
+    setShowStressModal(true);
   };
 
   const handleFindStudyGroup = () => {
@@ -201,20 +211,20 @@ export default function Dashboard() {
                             </div>
                           </button>
 
-                          {/* Find Study Group - Blue */}
+                          {/* Track Stress - Yellow */}
                           <button 
-                            onClick={handleFindStudyGroup}
-                            className="group relative overflow-hidden bg-white/80 backdrop-blur-sm border border-blue-200/50 hover:border-blue-300 rounded-xl p-3.5 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
+                            onClick={handleTrackStress}
+                            className="group relative overflow-hidden bg-white/80 backdrop-blur-sm border border-yellow-200/50 hover:border-yellow-300 rounded-xl p-3.5 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/20 hover:-translate-y-0.5"
                           >
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                             <div className="relative flex items-center space-x-2.5">
-                              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-md flex-shrink-0">
+                              <div className="w-9 h-9 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-md flex-shrink-0">
                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
                               </div>
                               <div className="text-left min-w-0">
-                                <h4 className="font-semibold text-sm text-gray-900">Study Group</h4>
+                                <h4 className="font-semibold text-sm text-gray-900">Track Stress</h4>
                               </div>
                             </div>
                           </button>
@@ -400,6 +410,26 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Mood Tracker Modal */}
+      <MoodTrackerModal
+        isOpen={showMoodModal}
+        onClose={() => setShowMoodModal(false)}
+        onSave={() => {
+          // Reload dashboard data after saving
+          window.location.reload();
+        }}
+      />
+
+      {/* Stress Tracker Modal */}
+      <StressTrackerModal
+        isOpen={showStressModal}
+        onClose={() => setShowStressModal(false)}
+        onSave={() => {
+          // Reload dashboard data after saving
+          window.location.reload();
+        }}
+      />
     </DashboardLayout>
   );
 }

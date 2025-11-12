@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Post {
@@ -20,6 +21,7 @@ interface Post {
 export default function CommunityFeed() {
   // Use actual auth context
   const { user } = useAuth();
+  const router = useRouter();
   const [filter, setFilter] = useState('all');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,7 +145,10 @@ export default function CommunityFeed() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Community Feed</h2>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+          <button 
+            onClick={() => router.push('/community/new-post')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
             New Post
           </button>
         </div>
@@ -181,7 +186,10 @@ export default function CommunityFeed() {
               This is where you'll see posts from other students in your community. 
               Be the first to share something or check back later for new posts.
             </p>
-            <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => router.push('/community/new-post')}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Create Your First Post
             </button>
           </div>
@@ -214,7 +222,10 @@ export default function CommunityFeed() {
                 </div>
                 <span className="text-sm text-gray-500">{post.timestamp}</span>
               </div>
-              <button className="text-gray-400 hover:text-gray-600">
+              <button 
+                onClick={() => router.push(`/community/post/${post.id}`)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>
@@ -244,6 +255,26 @@ export default function CommunityFeed() {
                 {Object.entries(post.reactions).map(([type, count]) => (
                   <button
                     key={type}
+                    onClick={async () => {
+                      // Handle reaction
+                      const accessToken = localStorage.getItem('accessToken');
+                      if (!accessToken) return;
+                      
+                      try {
+                        await fetch(`/api/community/posts/${post.id}/react`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ reactionType: type }),
+                        });
+                        // Reload posts after reaction
+                        window.location.reload();
+                      } catch (error) {
+                        console.error('Error reacting to post:', error);
+                      }
+                    }}
                     className={`flex items-center space-x-1 text-sm transition-colors ${
                       post.userReacted && (type === 'likes' || type === 'supports')
                         ? 'text-blue-600'
@@ -255,7 +286,10 @@ export default function CommunityFeed() {
                   </button>
                 ))}
               </div>
-              <button className="flex items-center space-x-1 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+              <button 
+                onClick={() => router.push(`/community/post/${post.id}`)}
+                className="flex items-center space-x-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
@@ -268,11 +302,16 @@ export default function CommunityFeed() {
       </div>
 
       {/* Load More */}
-      <div className="p-6 border-t border-gray-200">
-        <button className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
-          Load more posts
-        </button>
-      </div>
+      {posts.length > 0 && (
+        <div className="p-6 border-t border-gray-200">
+          <button 
+            onClick={() => router.push('/community/forum')}
+            className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            Load more posts
+          </button>
+        </div>
+      )}
     </div>
   );
 }

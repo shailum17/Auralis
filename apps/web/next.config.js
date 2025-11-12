@@ -7,6 +7,15 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
+  // Proxy API requests to the backend server
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'http://localhost:3001/api/v1/:path*',
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     // Exclude MongoDB from client-side bundle
     if (!isServer) {

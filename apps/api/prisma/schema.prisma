@@ -70,6 +70,9 @@ model User {
   fullName          String?          @map("full_name")
   bio               String?
   avatarUrl         String?          @map("avatar_url")
+  phone             String?          // Phone number
+  pronouns          String?          // User pronouns
+  location          String?          // User location
   interests         String[]         // Array of strings for MongoDB
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime         @updatedAt @map("updated_at")
@@ -92,6 +95,7 @@ model User {
   moderationActions ModerationAction[]
   stressScores      StressScore[]
   moodEntries       MoodEntry[]
+  stressEntries     StressEntry[]
   otps              Otp[]
   
   // New relationships for platform enhancements
@@ -348,17 +352,36 @@ model StressScore {
 }
 
 model MoodEntry {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @map("user_id") @db.ObjectId
-  moodScore Int      @map("mood_score")
-  tags      String[] // Array of strings for MongoDB
-  notes     String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String   @map("user_id") @db.ObjectId
+  moodScore           Int      @map("mood_score") // User's self-reported score (1-5)
+  tags                String[] // Array of strings for MongoDB
+  notes               String?  // Private journal entry
+  journalStressScore  Float?   @map("journal_stress_score") // Calculated from keyword analysis
+  stressKeywords      String[] @map("stress_keywords") // Detected stress keywords
+  discrepancyFlag     Boolean  @default(false) @map("discrepancy_flag") // True if self-report vs analysis mismatch
+  createdAt           DateTime @default(now()) @map("created_at")
   
   // Relationships
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("mood_entries")
+}
+
+model StressEntry {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @map("user_id") @db.ObjectId
+  stressLevel Int      @map("stress_level") // 1-5 scale (1=minimal, 5=overwhelming)
+  triggers    String[] // What's causing stress
+  symptoms    String[] // Physical/mental symptoms
+  copingUsed  String[] @map("coping_used") // Coping strategies used
+  notes       String?  // Additional notes
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  // Relationships
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("stress_entries")
 }
 
 model Resource {

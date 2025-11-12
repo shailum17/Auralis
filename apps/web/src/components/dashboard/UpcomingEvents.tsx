@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { DynamicProfileService } from '@/lib/dynamic-profile-service';
 
 interface Event {
   id: number;
@@ -20,6 +20,7 @@ interface Event {
 
 export default function UpcomingEvents() {
   const { user } = useAuth();
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -32,14 +33,34 @@ export default function UpcomingEvents() {
       
       setLoading(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Get dynamic events data for the user
-      const userEvents = DynamicProfileService.getUserEvents(user);
-      setEvents(userEvents);
-      
-      setLoading(false);
+      try {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          setEvents([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch real events from API
+        const response = await fetch('/api/v1/events', {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Map API events to component format if needed
+          setEvents(data.events || []);
+        } else {
+          setEvents([]);
+        }
+      } catch (error) {
+        console.error('Error loading events:', error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadEvents();
@@ -81,7 +102,10 @@ export default function UpcomingEvents() {
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
-        <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+        <button 
+          onClick={() => router.push('/community/events')}
+          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+        >
           View All
         </button>
       </div>
@@ -98,7 +122,10 @@ export default function UpcomingEvents() {
             There are no events scheduled at the moment. Check back later for new events from the community administrators.
           </p>
           {isAdmin && (
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => router.push('/admin/events/create')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Create First Event
             </button>
           )}
@@ -120,7 +147,25 @@ export default function UpcomingEvents() {
                   </div>
                   <h4 className="font-medium text-gray-900 text-sm">{event.title}</h4>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600">
+                <button 
+                  onClick={async () => {
+                    const accessToken = localStorage.getItem('accessToken');
+                    if (!accessToken) return;
+                    
+                    try {
+                      await fetch(`/api/events/${event.id}/bookmark`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${accessToken}`,
+                        },
+                      });
+                      alert('Event bookmarked!');
+                    } catch (error) {
+                      console.error('Error bookmarking event:', error);
+                    }
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
@@ -152,10 +197,42 @@ export default function UpcomingEvents() {
               </div>
 
               <div className="mt-3 flex items-center justify-between">
-                <button className="text-blue-600 hover:text-blue-700 text-xs font-medium">
+                <button 
+                  onClick={async () => {
+                    const accessToken = localStorage.getItem('accessToken');
+                    if (!accessToken) return;
+                    
+                    try {
+                      await fetch(`/api/events/${event.id}/join`, {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${accessToken}`,
+                        },
+                      });
+                      alert('Successfully joined the event!');
+                    } catch (error) {
+                      console.error('Error joining event:', error);
+                    }
+                  }}
+                  className="text-blue-600 hover:text-blue-700 text-xs font-medium"
+                >
                   Join Event
                 </button>
-                <button className="text-gray-400 hover:text-gray-600 text-xs">
+                <button 
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: event.title,
+                        text: event.description,
+                        url: window.location.href,
+                      });
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
+                      alert('Link copied to clipboard!');
+                    }
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-xs"
+                >
                   Share
                 </button>
               </div>
@@ -167,7 +244,10 @@ export default function UpcomingEvents() {
       {/* Create Event Button - Only show for admins */}
       {isAdmin && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <button className="w-full flex items-center justify-center space-x-2 py-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors">
+          <button 
+            onClick={() => router.push('/admin/events/create')}
+            className="w-full flex items-center justify-center space-x-2 py-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -183,7 +263,10 @@ export default function UpcomingEvents() {
             <p className="text-xs text-gray-500 mb-2">
               Events are created by community administrators
             </p>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            <button 
+              onClick={() => router.push('/contact?subject=event-request')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
               Request Event
             </button>
           </div>

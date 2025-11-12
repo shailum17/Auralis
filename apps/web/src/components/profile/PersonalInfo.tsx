@@ -5,6 +5,17 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileClient } from '@/lib/profile-client';
 
+// Map community IDs to display names
+const COMMUNITY_NAMES: Record<string, string> = {
+  'academic-help': 'Academic Help',
+  'career-guidance': 'Career Guidance',
+  'mental-wellness': 'Mental Wellness',
+  'tech-innovation': 'Tech & Innovation',
+  'creative-arts': 'Creative Arts',
+  'sports-fitness': 'Sports & Fitness',
+  'campus-life': 'Campus Life',
+  'study-groups': 'Study Groups',
+};
 
 export default function PersonalInfo() {
   // Use actual auth context
@@ -35,25 +46,78 @@ export default function PersonalInfo() {
       
       setLoading(true);
       
-      // Simulate API call to get user profile data
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Use actual user data from registration and any saved profile data
-      const nameParts = user.fullName?.split(' ') || user.username?.split(' ') || user.email?.split('@')[0].split('.') || [];
-      setFormData({
-        firstName: nameParts[0] || '',
-        lastName: nameParts[1] || '',
-        email: user.email,
-        phone: user.phone || '', // Load existing phone if available
-        major: user.academicInfo?.major || '',
-        year: user.academicInfo?.year?.toString() || '',
-        bio: user.bio || '',
-        interests: user.interests || [],
-        pronouns: user.pronouns || '', // Load existing pronouns if available
-        location: user.location || '' // Load existing location if available
-      });
-      
-      setLoading(false);
+      try {
+        // Fetch fresh user data from the API to get latest interests
+        const accessToken = localStorage.getItem('accessToken');
+        
+        if (accessToken) {
+          console.log('🔄 Fetching fresh user profile data...');
+          
+          const response = await fetch('/api/v1/users/profile', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+
+          if (response.ok) {
+            const freshUserData = await response.json();
+            console.log('✅ Fresh user data loaded:', freshUserData);
+            
+            // Use fresh data from API
+            const nameParts = freshUserData.fullName?.split(' ') || freshUserData.username?.split(' ') || freshUserData.email?.split('@')[0].split('.') || [];
+            setFormData({
+              firstName: nameParts[0] || '',
+              lastName: nameParts[1] || '',
+              email: freshUserData.email,
+              phone: freshUserData.phone || '',
+              major: freshUserData.academicInfo?.major || '',
+              year: freshUserData.academicInfo?.year?.toString() || '',
+              bio: freshUserData.bio || '',
+              interests: freshUserData.interests || [],
+              pronouns: freshUserData.pronouns || '',
+              location: freshUserData.location || ''
+            });
+            
+            console.log('📋 Loaded interests from API:', freshUserData.interests);
+          } else {
+            throw new Error('Failed to fetch profile');
+          }
+        } else {
+          // Fallback to user context data if no token
+          console.log('⚠️ No access token, using context data');
+          const nameParts = user.fullName?.split(' ') || user.username?.split(' ') || user.email?.split('@')[0].split('.') || [];
+          setFormData({
+            firstName: nameParts[0] || '',
+            lastName: nameParts[1] || '',
+            email: user.email,
+            phone: user.phone || '',
+            major: user.academicInfo?.major || '',
+            year: user.academicInfo?.year?.toString() || '',
+            bio: user.bio || '',
+            interests: user.interests || [],
+            pronouns: user.pronouns || '',
+            location: user.location || ''
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
+        // Fallback to context data on error
+        const nameParts = user.fullName?.split(' ') || user.username?.split(' ') || user.email?.split('@')[0].split('.') || [];
+        setFormData({
+          firstName: nameParts[0] || '',
+          lastName: nameParts[1] || '',
+          email: user.email,
+          phone: user.phone || '',
+          major: user.academicInfo?.major || '',
+          year: user.academicInfo?.year?.toString() || '',
+          bio: user.bio || '',
+          interests: user.interests || [],
+          pronouns: user.pronouns || '',
+          location: user.location || ''
+        });
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadUserData();
@@ -113,10 +177,14 @@ export default function PersonalInfo() {
     try {
       console.log('💾 Saving profile changes...');
       
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (!accessToken) {
+        throw new Error('Not authenticated');
+      }
+      
       // Prepare update data
       const updateData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
         fullName: `${formData.firstName} ${formData.lastName}`.trim(),
         bio: formData.bio,
         phone: formData.phone,
@@ -125,53 +193,57 @@ export default function PersonalInfo() {
         academicInfo: {
           institution: user.academicInfo?.institution || '',
           major: formData.major,
-          year: formData.year ? parseInt(formData.year) : undefined,
+          year: formData.year || undefined,
         },
         interests: formData.interests,
       };
 
+      console.log('📝 Saving profile data:', updateData);
 
+      // Save via real API
+      const response = await fetch('/api/v1/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      // Save via profile client
-      const result = await profileClient.updatePersonalInfo(updateData);
-      
-      if (result.success && result.data) {
-        // Update the auth context with new user data
-        const updatedUserData = {
-          ...user, // Start with current user data
-          ...updateData, // Apply the updates
-          // Ensure we preserve the current user's authentication info
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
-          emailVerified: user.emailVerified
-        };
-        
-        // Update the user in auth context to persist changes
-        updateUser(updatedUserData);
-        
-        setSaveStatus({
-          type: 'success',
-          message: `Profile updated successfully ${result.data.savedToDatabase ? '(saved to database)' : '(saved locally)'}`
-        });
-        
-        console.log(`✅ Profile saved via ${result.data.method}:`, {
-          savedToDatabase: result.data.savedToDatabase,
-          method: result.data.method,
-          updatedUser: updatedUserData
-        });
-        
-        setIsEditing(false);
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSaveStatus({ type: null, message: '' });
-        }, 3000);
-        
-      } else {
-        throw new Error(result.error || 'Failed to save profile');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save profile');
       }
+
+      const updatedUser = await response.json();
+      console.log('✅ Profile saved successfully:', updatedUser);
+      
+      // Update the auth context with new user data
+      const updatedUserData = {
+        ...user,
+        ...updatedUser,
+        // Ensure we preserve authentication info
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified
+      };
+      
+      // Update the user in auth context to persist changes
+      updateUser(updatedUserData);
+      
+      setSaveStatus({
+        type: 'success',
+        message: 'Profile updated successfully and saved to database!'
+      });
+      
+      setIsEditing(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSaveStatus({ type: null, message: '' });
+      }, 3000);
       
     } catch (error) {
       console.error('❌ Profile save failed:', error);
@@ -515,43 +587,45 @@ export default function PersonalInfo() {
         <div className="flex flex-wrap gap-3">
           {formData.interests.length === 0 && !isEditing ? (
             <div className="text-gray-500 italic bg-white p-4 rounded-lg shadow-sm w-full">
-              No interests added yet. Click "Edit Profile" to add your interests and connect with like-minded people! 🌟
+              No interests added yet. Visit the <a href="/community/interests" className="text-blue-600 hover:underline font-medium">Community Interests</a> page to select your communities! 🌟
             </div>
           ) : (
-            formData.interests.map((interest, index) => (
-              <motion.div
-                key={interest}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md"
-              >
-                <span>{interest}</span>
-                {isEditing && (
-                  <button
-                    onClick={() => handleInterestRemove(interest)}
-                    className="text-white/80 hover:text-white ml-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </motion.div>
-            ))
+            formData.interests.map((interest, index) => {
+              // Get display name from mapping, or use the interest ID as fallback
+              const displayName = COMMUNITY_NAMES[interest] || interest;
+              
+              return (
+                <motion.div
+                  key={interest}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md"
+                >
+                  <span>{displayName}</span>
+                  {isEditing && (
+                    <button
+                      onClick={() => handleInterestRemove(interest)}
+                      className="text-white/80 hover:text-white ml-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })
           )}
           {isEditing && (
             <button
-              onClick={() => {
-                const newInterest = prompt('Add a new interest:');
-                if (newInterest) handleInterestAdd(newInterest);
-              }}
+              onClick={() => window.location.href = '/community/interests'}
               className="flex items-center space-x-2 bg-white border-2 border-dashed border-gray-300 text-gray-600 px-4 py-2 rounded-full text-sm hover:border-gray-400 hover:bg-gray-50 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span>Add Interest</span>
+              <span>Manage Communities</span>
             </button>
           )}
         </div>
