@@ -89,13 +89,13 @@ export default function WellnessOverview() {
               hour: '2-digit',
               minute: '2-digit'
             }),
-            mood: entry.moodScore * 2, // Convert 1-5 scale to 2-10 scale for display
+            mood: entry.moodScore, // Keep 1-5 scale
             note: entry.notes || 'No notes added'
           }));
 
           // Calculate metrics from mood entries
           const avgMood = moodEntries.length > 0 
-            ? (moodEntries.reduce((sum: number, e: any) => sum + e.moodScore, 0) / moodEntries.length) * 2
+            ? moodEntries.reduce((sum: number, e: any) => sum + e.moodScore, 0) / moodEntries.length
             : 0;
 
           // Calculate trend
@@ -109,17 +109,29 @@ export default function WellnessOverview() {
           if (stressResponse.ok) {
             const stressEntries = await stressResponse.json();
             if (stressEntries.length > 0) {
-              avgStress = (stressEntries.reduce((sum: number, e: any) => sum + e.stressLevel, 0) / stressEntries.length) * 2;
+              avgStress = stressEntries.reduce((sum: number, e: any) => sum + e.stressLevel, 0) / stressEntries.length;
               stressTrend = stressEntries.length >= 2 ? calculateMoodTrend(stressEntries.map((e: any) => ({ moodScore: e.stressLevel }))) : '+0.0';
             }
           }
 
-          // Calculate overall wellness score (simplified)
-          const overallScore = Math.round(avgMood * 10) / 10;
+          // Calculate overall wellness score
+          // Mood contributes positively (1-5), Stress contributes negatively (inverted: 5-1)
+          // Formula: (Mood + (6 - Stress)) / 2 to get average on 1-5 scale
+          const invertedStress = avgStress > 0 ? (6 - avgStress) : 0; // Invert stress (5 becomes 1, 1 becomes 5)
+          const overallScore = avgMood > 0 && avgStress > 0 
+            ? Math.round(((avgMood + invertedStress) / 2) * 10) / 10
+            : avgMood > 0 
+              ? Math.round(avgMood * 10) / 10
+              : 0;
+
+          // Calculate overall trend (average of mood and stress trends)
+          const overallTrend = avgMood > 0 && avgStress > 0
+            ? calculateCombinedTrend(trend, stressTrend)
+            : trend;
 
           setWellnessData({
             overallScore: overallScore || 0,
-            trend: trend,
+            trend: overallTrend,
             metrics: [
               { 
                 name: 'Mood', 
@@ -182,9 +194,23 @@ export default function WellnessOverview() {
     const firstAvg = firstHalf.reduce((sum: number, e: any) => sum + e.moodScore, 0) / firstHalf.length;
     const secondAvg = secondHalf.reduce((sum: number, e: any) => sum + e.moodScore, 0) / secondHalf.length;
     
-    const difference = (secondAvg - firstAvg) * 2; // Scale to 10-point scale
+    const difference = secondAvg - firstAvg; // Keep on 1-5 scale
     
     return difference >= 0 ? `+${difference.toFixed(1)}` : difference.toFixed(1);
+  };
+
+  // Helper function to calculate combined trend from mood and stress
+  const calculateCombinedTrend = (moodTrend: string, stressTrend: string) => {
+    const moodValue = parseFloat(moodTrend);
+    const stressValue = parseFloat(stressTrend);
+    
+    // Invert stress trend (lower stress = better, so negative stress trend is positive for wellness)
+    const invertedStressTrend = -stressValue;
+    
+    // Average the two trends
+    const combined = (moodValue + invertedStressTrend) / 2;
+    
+    return combined >= 0 ? `+${combined.toFixed(1)}` : combined.toFixed(1);
   };
 
   if (loading) {
@@ -245,7 +271,7 @@ export default function WellnessOverview() {
             <div className="mt-2 bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full ${metric.color}`}
-                style={{ width: `${(metric.value / 10) * 100}%` }}
+                style={{ width: `${(metric.value / 5) * 100}%` }}
               ></div>
             </div>
           </motion.div>
@@ -284,20 +310,20 @@ export default function WellnessOverview() {
         ) : (
           <div className="space-y-3">
             {wellnessData.recentEntries.map((entry, index) => {
-              // Get mood emoji based on score
+              // Get mood emoji based on score (1-5 scale)
               const getMoodEmoji = (mood: number) => {
-                if (mood >= 9) return '😄';
-                if (mood >= 7) return '😊';
-                if (mood >= 5) return '😐';
-                if (mood >= 3) return '😟';
+                if (mood >= 5) return '😄';
+                if (mood >= 4) return '😊';
+                if (mood >= 3) return '😐';
+                if (mood >= 2) return '😟';
                 return '😢';
               };
 
               const getMoodLabel = (mood: number) => {
-                if (mood >= 9) return 'Excellent';
-                if (mood >= 7) return 'Good';
-                if (mood >= 5) return 'Okay';
-                if (mood >= 3) return 'Low';
+                if (mood >= 5) return 'Excellent';
+                if (mood >= 4) return 'Good';
+                if (mood >= 3) return 'Okay';
+                if (mood >= 2) return 'Low';
                 return 'Very Low';
               };
 
@@ -312,13 +338,13 @@ export default function WellnessOverview() {
                 >
                   <div className="flex-shrink-0">
                     <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white text-xs font-medium ${
-                      entry.mood >= 8 ? 'bg-gradient-to-br from-green-400 to-green-600' : 
-                      entry.mood >= 6 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 
-                      entry.mood >= 4 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                      entry.mood >= 4.5 ? 'bg-gradient-to-br from-green-400 to-green-600' : 
+                      entry.mood >= 3.5 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 
+                      entry.mood >= 2.5 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
                       'bg-gradient-to-br from-red-400 to-red-600'
                     }`}>
                       <span className="text-lg">{getMoodEmoji(entry.mood)}</span>
-                      <span className="text-xs font-bold">{entry.mood}/10</span>
+                      <span className="text-xs font-bold">{entry.mood}/5</span>
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
