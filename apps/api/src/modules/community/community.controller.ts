@@ -35,8 +35,9 @@ export class CommunityController {
   @Get('forums')
   @ApiOperation({ summary: 'Get available community forums' })
   @ApiResponse({ status: 200, description: 'Forums retrieved successfully' })
-  async getForums() {
-    return this.communityService.getForums();
+  async getForums(@Request() req) {
+    const userId = req.user.sub;
+    return this.communityService.getForums(userId);
   }
 
   @Get('personalized-feed')

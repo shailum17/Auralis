@@ -244,10 +244,25 @@ export class CommunityService {
     }
   }
 
-  async getForums() {
-    console.log('📋 Getting available forums');
+  async getForums(userId?: string) {
+    console.log('📋 Getting available forums', userId ? `for user ${userId}` : '');
     
     try {
+      // Get user interests if userId is provided
+      let userInterests: string[] = [];
+      if (userId) {
+        try {
+          const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { interests: true }
+          });
+          userInterests = user?.interests || [];
+          console.log('👤 User interests:', userInterests);
+        } catch (error) {
+          console.warn('⚠️ Could not fetch user interests:', error.message);
+        }
+      }
+
       // Get forums from database
       const forums = await this.prisma.forum.findMany({
         where: { isActive: true },
@@ -256,11 +271,15 @@ export class CommunityService {
 
       if (forums.length === 0) {
         console.warn('⚠️ No forums found in database. Using fallback forums.');
+        const forumsWithJoinStatus = this.fallbackForums.map(forum => ({
+          ...forum,
+          isJoined: userInterests.includes(forum.id)
+        }));
         return {
           success: true,
           data: {
-            forums: this.fallbackForums,
-            totalForums: this.fallbackForums.length
+            forums: forumsWithJoinStatus,
+            totalForums: forumsWithJoinStatus.length
           }
         };
       }
@@ -305,25 +324,28 @@ export class CommunityService {
               color: forum.color,
               memberCount: memberCount,
               postCount: postCount,
-              isPopular: forum.isPopular
+              isPopular: forum.isPopular,
+              isJoined: userInterests.includes(forum.forumId)
             };
           } catch (countError) {
             console.warn(`⚠️ Could not get stats for forum ${forum.forumId}:`, countError.message);
             return {
               id: forum.forumId,
-        name: forum.name,
+              name: forum.name,
               description: forum.description,
               icon: forum.icon,
               color: forum.color,
               memberCount: forum.memberCount,
               postCount: forum.postCount,
-              isPopular: forum.isPopular
+              isPopular: forum.isPopular,
+              isJoined: userInterests.includes(forum.forumId)
             };
           }
         })
       );
 
       console.log('✅ Forums retrieved successfully:', forumsWithStats.length);
+      console.log('✅ Joined forums:', forumsWithStats.filter(f => f.isJoined).length);
 
       return {
         success: true,
@@ -339,7 +361,10 @@ export class CommunityService {
       return {
         success: true,
         data: {
-          forums: this.fallbackForums,
+          forums: this.fallbackForums.map(forum => ({
+            ...forum,
+            isJoined: false
+          })),
           totalForums: this.fallbackForums.length
         }
       };
