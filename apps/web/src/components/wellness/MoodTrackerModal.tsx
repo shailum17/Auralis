@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { MoodAvatars } from '@/components/wellness/MoodAvatars';
 
 interface MoodTrackerModalProps {
   isOpen: boolean;
@@ -25,16 +26,17 @@ export default function MoodTrackerModal({
   const [saving, setSaving] = useState(false);
 
   const moodLabels = [
-    { score: 1, label: 'Very Low', emoji: '😢', color: 'from-red-500 to-red-600' },
-    { score: 2, label: 'Low', emoji: '😟', color: 'from-orange-500 to-orange-600' },
-    { score: 3, label: 'Okay', emoji: '😐', color: 'from-yellow-500 to-yellow-600' },
-    { score: 4, label: 'Good', emoji: '😊', color: 'from-green-500 to-green-600' },
-    { score: 5, label: 'Excellent', emoji: '😄', color: 'from-emerald-500 to-emerald-600' },
+    { score: 1, label: 'Very Low', avatar: MoodAvatars.Sad, color: 'from-red-500 to-red-600' },
+    { score: 2, label: 'Low', avatar: MoodAvatars.Worried, color: 'from-orange-500 to-orange-600' },
+    { score: 3, label: 'Okay', avatar: MoodAvatars.Neutral, color: 'from-yellow-500 to-yellow-600' },
+    { score: 4, label: 'Good', avatar: MoodAvatars.Content, color: 'from-green-500 to-green-600' },
+    { score: 5, label: 'Excellent', avatar: MoodAvatars.Happy, color: 'from-emerald-500 to-emerald-600' },
   ];
 
   const availableTags = [
-    'Anxious', 'Stressed', 'Happy', 'Sad', 'Tired', 'Energized',
-    'Overwhelmed', 'Calm', 'Frustrated', 'Grateful', 'Lonely', 'Connected'
+    'Happy', 'Calm', 'Content', 'Excited', 'Energetic', 'Grateful',
+    'Stressed', 'Anxious', 'Worried', 'Overwhelmed', 'Frustrated', 'Angry',
+    'Sad', 'Down', 'Lonely', 'Tired', 'Exhausted', 'Peaceful'
   ];
 
   useEffect(() => {
@@ -206,28 +208,31 @@ export default function MoodTrackerModal({
                 </p>
                 
                 <div className="grid grid-cols-5 gap-3 mb-6">
-                  {moodLabels.map((mood, index) => (
-                    <motion.button
-                      key={mood.score}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => handleMoodSelect(mood.score)}
-                      className={`relative p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                        selectedMood === mood.score
-                          ? 'border-blue-500 shadow-lg'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className={`w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br ${mood.color} flex items-center justify-center text-3xl shadow-md`}>
-                        {mood.emoji}
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-bold text-gray-900 mb-1">{mood.score}</div>
-                        <div className="text-xs font-medium text-gray-600">{mood.label}</div>
-                      </div>
-                    </motion.button>
-                  ))}
+                  {moodLabels.map((mood, index) => {
+                    const MoodAvatar = mood.avatar;
+                    return (
+                      <motion.button
+                        key={mood.score}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        onClick={() => handleMoodSelect(mood.score)}
+                        className={`relative p-4 rounded-xl border-2 transition-all duration-300 hover:scale-105 hover:shadow-lg ${
+                          selectedMood === mood.score
+                            ? 'border-blue-500 shadow-lg'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full shadow-md overflow-hidden">
+                          <MoodAvatar />
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xl font-bold text-gray-900 mb-1">{mood.score}</div>
+                          <div className="text-xs font-medium text-gray-600">{mood.label}</div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
 
                 <div className="text-center text-sm text-gray-500 flex items-center justify-center">
@@ -241,26 +246,30 @@ export default function MoodTrackerModal({
               /* Journal Entry Step */
               <div>
                 {/* Selected Mood Display */}
-                {selectedMood && (
-                  <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-xl">
-                    <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${getMoodData(selectedMood).color} flex items-center justify-center text-2xl shadow-md flex-shrink-0`}>
-                      {getMoodData(selectedMood).emoji}
-                    </div>
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">
-                        {getMoodData(selectedMood).label}
+                {selectedMood && (() => {
+                  const moodData = getMoodData(selectedMood);
+                  const MoodAvatar = moodData.avatar;
+                  return (
+                    <div className="flex items-center space-x-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                      <div className="w-14 h-14 rounded-full shadow-md flex-shrink-0 overflow-hidden">
+                        <MoodAvatar />
                       </div>
-                      <div className="text-sm text-gray-600">
-                        Mood Score: {selectedMood}/5
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">
+                          {moodData.label}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Mood Score: {selectedMood}/5
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Tags Selection */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    How are you feeling? (Optional)
+                    How are you feeling? <span className="text-red-600">* (Required - Min 2)</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {availableTags.map(tag => (
@@ -282,7 +291,7 @@ export default function MoodTrackerModal({
                 {/* Journal Text Area */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Write about your day (Optional but recommended)
+                    Write about your day <span className="text-red-600">* (Required - Min 50 characters)</span>
                   </label>
                   <textarea
                     value={journalText}
@@ -290,15 +299,27 @@ export default function MoodTrackerModal({
                     placeholder="What's on your mind? This is a private space for your thoughts..."
                     className="w-full h-48 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
-                  <div className="mt-2 flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center">
+                  <div className="mt-2 flex items-center justify-between text-sm">
+                    <div className="flex items-center text-gray-500">
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                       Private & encrypted
                     </div>
-                    <div>{journalText.length} characters</div>
+                    <div className={journalText.length >= 50 ? 'text-green-600 font-medium' : 'text-orange-600 font-medium'}>
+                      {journalText.length}/50 characters
+                    </div>
                   </div>
+                  {journalText.length < 50 && (
+                    <p className="mt-2 text-sm text-orange-600">
+                      ⚠️ Please write at least {50 - journalText.length} more characters
+                    </p>
+                  )}
+                  {selectedTags.length < 2 && (
+                    <p className="mt-2 text-sm text-red-600">
+                      ⚠️ Please select at least 2 mood tags above
+                    </p>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -311,7 +332,7 @@ export default function MoodTrackerModal({
                   </button>
                   <button
                     onClick={handleSaveEntry}
-                    disabled={saving}
+                    disabled={saving || !selectedMood || selectedTags.length < 2 || journalText.length < 50}
                     className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   >
                     {saving ? (

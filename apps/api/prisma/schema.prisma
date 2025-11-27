@@ -96,6 +96,8 @@ model User {
   stressScores      StressScore[]
   moodEntries       MoodEntry[]
   stressEntries     StressEntry[]
+  sleepEntries      SleepEntry[]
+  socialEntries     SocialEntry[]
   otps              Otp[]
   
   // New relationships for platform enhancements
@@ -360,6 +362,10 @@ model MoodEntry {
   journalStressScore  Float?   @map("journal_stress_score") // Calculated from keyword analysis
   stressKeywords      String[] @map("stress_keywords") // Detected stress keywords
   discrepancyFlag     Boolean  @default(false) @map("discrepancy_flag") // True if self-report vs analysis mismatch
+  qualityScore        Int?     @map("quality_score") // 0-100 entry quality score
+  completeness        String?  // "high", "medium", "low", "incomplete"
+  flaggedForReview    Boolean  @default(false) @map("flagged_for_review") // Crisis keywords detected
+  crisisKeywords      String[] @default([]) @map("crisis_keywords") // Detected crisis keywords
   createdAt           DateTime @default(now()) @map("created_at")
   
   // Relationships
@@ -369,19 +375,61 @@ model MoodEntry {
 }
 
 model StressEntry {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @map("user_id") @db.ObjectId
-  stressLevel Int      @map("stress_level") // 1-5 scale (1=minimal, 5=overwhelming)
-  triggers    String[] // What's causing stress
-  symptoms    String[] // Physical/mental symptoms
-  copingUsed  String[] @map("coping_used") // Coping strategies used
-  notes       String?  // Additional notes
-  createdAt   DateTime @default(now()) @map("created_at")
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @map("user_id") @db.ObjectId
+  stressLevel      Int      @map("stress_level") // 1-5 scale (1=minimal, 5=overwhelming)
+  triggers         String[] // What's causing stress
+  symptoms         String[] // Physical/mental symptoms
+  copingUsed       String[] @map("coping_used") // Coping strategies used
+  notes            String?  // Additional notes
+  qualityScore     Int?     @map("quality_score") // 0-100 entry quality score
+  completeness     String?  // "high", "medium", "low", "incomplete"
+  flaggedForReview Boolean  @default(false) @map("flagged_for_review") // High stress + missing coping
+  createdAt        DateTime @default(now()) @map("created_at")
   
   // Relationships
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("stress_entries")
+}
+
+model SleepEntry {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @map("user_id") @db.ObjectId
+  sleepQuality  Int      @map("sleep_quality") // 1-5 scale (1=very poor, 5=excellent)
+  hoursSlept    Float    @map("hours_slept") // Hours of sleep
+  bedTime       String?  @map("bed_time") // Time went to bed (HH:MM format)
+  wakeTime      String?  @map("wake_time") // Time woke up (HH:MM format)
+  sleepIssues   String[] @map("sleep_issues") // Issues: insomnia, nightmares, etc.
+  factors       String[] // Factors affecting sleep: caffeine, stress, etc.
+  notes         String?  // Additional notes
+  qualityScore  Int?     @map("quality_score") // 0-100 entry quality score
+  completeness  String?  // "high", "medium", "low", "incomplete"
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  // Relationships
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sleep_entries")
+}
+
+model SocialEntry {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @map("user_id") @db.ObjectId
+  connectionQuality Int      @map("connection_quality") // 1-5 scale (1=very isolated, 5=very connected)
+  interactions      String[] // Types: in-person, online, phone, etc.
+  activities        String[] // Activities: study group, hangout, chat, etc.
+  feelings          String[] // How they felt: supported, lonely, energized, etc.
+  notes             String?  // Additional notes
+  qualityScore      Int?     @map("quality_score") // 0-100 entry quality score
+  completeness      String?  // "high", "medium", "low", "incomplete"
+  flaggedForReview  Boolean  @default(false) @map("flagged_for_review") // Severe isolation detected
+  createdAt         DateTime @default(now()) @map("created_at")
+  
+  // Relationships
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("social_entries")
 }
 
 model Resource {

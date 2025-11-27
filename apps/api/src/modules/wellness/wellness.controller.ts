@@ -64,4 +64,50 @@ export class WellnessController {
   async getStressAnalytics(@Request() req) {
     return this.wellnessService.getStressAnalytics(req.user.id);
   }
+
+  @Post('sleep')
+  @ApiOperation({ summary: 'Log a sleep entry' })
+  @ApiResponse({ status: 201, description: 'Sleep entry created successfully' })
+  async createSleepEntry(@Request() req, @Body() createSleepEntryDto: any) {
+    return this.wellnessService.createSleepEntry(req.user.id, createSleepEntryDto);
+  }
+
+  @Get('sleep/history')
+  @ApiOperation({ summary: 'Get sleep history' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to look back' })
+  @ApiResponse({ status: 200, description: 'Sleep history retrieved successfully' })
+  async getSleepHistory(@Request() req, @Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.wellnessService.getUserSleepHistory(req.user.id, daysNum);
+  }
+
+  @Get('sleep/analytics')
+  @ApiOperation({ summary: 'Get sleep analytics and patterns' })
+  @ApiResponse({ status: 200, description: 'Sleep analytics retrieved successfully' })
+  async getSleepAnalytics(@Request() req) {
+    return this.wellnessService.getSleepAnalytics(req.user.id);
+  }
+
+  @Post('social')
+  @ApiOperation({ summary: 'Log a social connection entry' })
+  @ApiResponse({ status: 201, description: 'Social entry created successfully' })
+  async createSocialEntry(@Request() req, @Body() createSocialEntryDto: any) {
+    return this.wellnessService.createSocialEntry(req.user.id, createSocialEntryDto);
+  }
+
+  @Get('social/history')
+  @ApiOperation({ summary: 'Get social connection history' })
+  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to look back' })
+  @ApiResponse({ status: 200, description: 'Social history retrieved successfully' })
+  async getSocialHistory(@Request() req, @Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.wellnessService.getUserSocialHistory(req.user.id, daysNum);
+  }
+
+  @Get('social/analytics')
+  @ApiOperation({ summary: 'Get social connection analytics and patterns' })
+  @ApiResponse({ status: 200, description: 'Social analytics retrieved successfully' })
+  async getSocialAnalytics(@Request() req) {
+    return this.wellnessService.getSocialAnalytics(req.user.id);
+  }
 }

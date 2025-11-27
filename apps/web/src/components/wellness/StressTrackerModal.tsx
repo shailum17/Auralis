@@ -176,8 +176,13 @@ export default function StressTrackerModal({ isOpen, onClose, onSave }: StressTr
             {/* Triggers */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                What's causing your stress? (Optional)
+                What's causing your stress? <span className="text-red-600">* (Required - Min 2)</span>
               </label>
+              {selectedTriggers.length < 2 && (
+                <p className="text-sm text-red-600 mb-2">
+                  ⚠️ Please select at least 2 stress triggers
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {triggers.map(trigger => (
                   <button
@@ -198,8 +203,13 @@ export default function StressTrackerModal({ isOpen, onClose, onSave }: StressTr
             {/* Symptoms */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
-                What symptoms are you experiencing? (Optional)
+                What symptoms are you experiencing? <span className="text-red-600">* (Required - Min 2)</span>
               </label>
+              {selectedSymptoms.length < 2 && (
+                <p className="text-sm text-red-600 mb-2">
+                  ⚠️ Please select at least 2 symptoms
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {symptoms.map(symptom => (
                   <button
@@ -271,7 +281,7 @@ export default function StressTrackerModal({ isOpen, onClose, onSave }: StressTr
               </button>
               <button
                 onClick={handleSave}
-                disabled={!stressLevel || saving}
+                disabled={!stressLevel || selectedTriggers.length < 2 || selectedSymptoms.length < 2 || saving}
                 className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {saving ? (

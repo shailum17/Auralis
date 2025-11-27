@@ -6,25 +6,33 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import MoodTrackerModal from '@/components/wellness/MoodTrackerModal';
 import StressTrackerModal from '@/components/wellness/StressTrackerModal';
+import SleepTrackerModal from '@/components/wellness/SleepTrackerModal';
+import SocialTrackerModal from '@/components/wellness/SocialTrackerModal';
+import { getMoodAvatar, MetricIcons } from '@/components/wellness/MoodAvatars';
 
 interface WellnessMetric {
   name: string;
   value: number;
   change: string;
   color: string;
+  icon: string;
 }
 
-interface MoodEntry {
+interface WellnessEntry {
   date: string;
-  mood: number;
+  type: 'mood' | 'stress' | 'sleep' | 'social';
+  value: number;
+  label: string;
   note: string;
+  icon?: string;
 }
 
 interface WellnessData {
   overallScore: number;
   trend: string;
   metrics: WellnessMetric[];
-  recentEntries: MoodEntry[];
+  recentEntries: WellnessEntry[];
+  moodDistribution: { [key: string]: number };
 }
 
 export default function WellnessOverview() {
@@ -35,14 +43,19 @@ export default function WellnessOverview() {
     overallScore: 0,
     trend: '+0.0',
     metrics: [
-      { name: 'Mood', value: 0, change: '+0.0', color: 'bg-green-500' },
-      { name: 'Stress', value: 0, change: '+0.0', color: 'bg-yellow-500' },
+      { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: 'mood' },
+      { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: 'stress' },
+      { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: 'sleep' },
+      { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: 'social' },
     ],
-    recentEntries: []
+    recentEntries: [],
+    moodDistribution: {}
   });
   const [loading, setLoading] = useState(true);
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [showStressModal, setShowStressModal] = useState(false);
+  const [showSleepModal, setShowSleepModal] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
   const [quickMood, setQuickMood] = useState<number | undefined>(undefined);
 
   // Load user-specific wellness data
@@ -59,39 +72,150 @@ export default function WellnessOverview() {
             overallScore: 0,
             trend: '+0.0',
             metrics: [
-              { name: 'Mood', value: 0, change: '+0.0', color: 'bg-green-500' },
-              { name: 'Stress', value: 0, change: '+0.0', color: 'bg-yellow-500' },
+              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
+              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
+              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
+              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
             ],
-            recentEntries: []
+            recentEntries: [],
+            moodDistribution: {}
           });
           setLoading(false);
           return;
         }
 
-        // Fetch both mood and stress data
-        const [moodResponse, stressResponse] = await Promise.all([
+        // Fetch all wellness data
+        const [moodResponse, stressResponse, sleepResponse, socialResponse] = await Promise.all([
           fetch('/api/v1/wellness/mood/history?days=7', {
             headers: { 'Authorization': `Bearer ${accessToken}` },
           }),
           fetch('/api/v1/wellness/stress/history?days=7', {
             headers: { 'Authorization': `Bearer ${accessToken}` },
           }),
+          fetch('/api/v1/wellness/sleep/history?days=7', {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          }),
+          fetch('/api/v1/wellness/social/history?days=7', {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          }),
         ]);
 
-        if (moodResponse.ok) {
-          const moodEntries = await moodResponse.json();
+        // Parse all responses
+        const moodEntries = moodResponse.ok ? await moodResponse.json() : [];
+        const stressEntries = stressResponse.ok ? await stressResponse.json() : [];
+        const sleepEntries = sleepResponse.ok ? await sleepResponse.json() : [];
+        const socialEntries = socialResponse.ok ? await socialResponse.json() : [];
+
+        if (moodResponse.ok || stressResponse.ok || sleepResponse.ok || socialResponse.ok) {
+          // Calculate wellness patterns from all sources
+          const wellnessDistribution: { [key: string]: number } = {};
           
-          // Transform API data to component format
-          const recentEntries: MoodEntry[] = moodEntries.slice(0, 5).map((entry: any) => ({
-            date: new Date(entry.createdAt).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            }),
-            mood: entry.moodScore, // Keep 1-5 scale
-            note: entry.notes || 'No notes added'
-          }));
+          // Add mood tags
+          moodEntries.forEach((entry: any) => {
+            const tags = entry.tags || [];
+            tags.forEach((tag: string) => {
+              wellnessDistribution[tag] = (wellnessDistribution[tag] || 0) + 1;
+            });
+          });
+          
+          // Combine all entries from different sources
+          const allEntries: WellnessEntry[] = [];
+          
+          // Add mood entries
+          moodEntries.forEach((entry: any) => {
+            const tags = entry.tags || [];
+            const primaryMood = tags.length > 0 ? tags[0] : 'Neutral';
+            allEntries.push({
+              date: new Date(entry.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              type: 'mood',
+              value: entry.moodScore,
+              label: primaryMood,
+              note: entry.notes || 'No notes added',
+              icon: '😊'
+            });
+          });
+          
+          // Add stress entries
+          stressEntries.forEach((entry: any) => {
+            const triggers = entry.triggers || [];
+            const primaryTrigger = triggers.length > 0 ? triggers[0] : 'General stress';
+            allEntries.push({
+              date: new Date(entry.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              type: 'stress',
+              value: entry.stressLevel,
+              label: `Stress: ${primaryTrigger}`,
+              note: entry.notes || `Stress level ${entry.stressLevel}/5`,
+              icon: '😰'
+            });
+            
+            // Add stress triggers to patterns
+            triggers.forEach((trigger: string) => {
+              wellnessDistribution[trigger] = (wellnessDistribution[trigger] || 0) + 1;
+            });
+          });
+          
+          // Add sleep entries
+          sleepEntries.forEach((entry: any) => {
+            allEntries.push({
+              date: new Date(entry.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              type: 'sleep',
+              value: entry.sleepQuality,
+              label: `Sleep: ${entry.hoursSlept}h`,
+              note: `Quality ${entry.sleepQuality}/5, ${entry.hoursSlept} hours`,
+              icon: '😴'
+            });
+            
+            // Add sleep issues to patterns
+            const issues = entry.sleepIssues || [];
+            issues.forEach((issue: string) => {
+              wellnessDistribution[issue] = (wellnessDistribution[issue] || 0) + 1;
+            });
+          });
+          
+          // Add social entries
+          socialEntries.forEach((entry: any) => {
+            const feelings = entry.feelings || [];
+            const primaryFeeling = feelings.length > 0 ? feelings[0] : 'Neutral';
+            allEntries.push({
+              date: new Date(entry.createdAt).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              type: 'social',
+              value: entry.connectionQuality,
+              label: `Social: ${primaryFeeling}`,
+              note: `Connection quality ${entry.connectionQuality}/5`,
+              icon: '🤝'
+            });
+            
+            // Add feelings to patterns
+            feelings.forEach((feeling: string) => {
+              wellnessDistribution[feeling] = (wellnessDistribution[feeling] || 0) + 1;
+            });
+          });
+          
+          // Sort all entries by date (most recent first)
+          allEntries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          
+          // Take top 10 most recent entries
+          const recentEntries = allEntries.slice(0, 10);
 
           // Calculate metrics from mood entries
           const avgMood = moodEntries.length > 0 
@@ -103,15 +227,12 @@ export default function WellnessOverview() {
             ? calculateMoodTrend(moodEntries)
             : '+0.0';
 
-          // Get stress data
+          // Calculate stress metrics
           let avgStress = 0;
           let stressTrend = '+0.0';
-          if (stressResponse.ok) {
-            const stressEntries = await stressResponse.json();
-            if (stressEntries.length > 0) {
-              avgStress = stressEntries.reduce((sum: number, e: any) => sum + e.stressLevel, 0) / stressEntries.length;
-              stressTrend = stressEntries.length >= 2 ? calculateMoodTrend(stressEntries.map((e: any) => ({ moodScore: e.stressLevel }))) : '+0.0';
-            }
+          if (stressEntries.length > 0) {
+            avgStress = stressEntries.reduce((sum: number, e: any) => sum + e.stressLevel, 0) / stressEntries.length;
+            stressTrend = stressEntries.length >= 2 ? calculateMoodTrend(stressEntries.map((e: any) => ({ moodScore: e.stressLevel }))) : '+0.0';
           }
 
           // Calculate overall wellness score
@@ -129,24 +250,57 @@ export default function WellnessOverview() {
             ? calculateCombinedTrend(trend, stressTrend)
             : trend;
 
+          // Calculate sleep metrics
+          let avgSleep = 0;
+          let sleepTrend = '+0.0';
+          if (sleepEntries.length > 0) {
+            avgSleep = sleepEntries.reduce((sum: number, e: any) => sum + e.sleepQuality, 0) / sleepEntries.length;
+            sleepTrend = sleepEntries.length >= 2 ? calculateMoodTrend(sleepEntries.map((e: any) => ({ moodScore: e.sleepQuality }))) : '+0.0';
+          }
+          
+          // Calculate social connection metrics
+          let avgSocial = 0;
+          let socialTrend = '+0.0';
+          if (socialEntries.length > 0) {
+            avgSocial = socialEntries.reduce((sum: number, e: any) => sum + e.connectionQuality, 0) / socialEntries.length;
+            socialTrend = socialEntries.length >= 2 ? calculateMoodTrend(socialEntries.map((e: any) => ({ moodScore: e.connectionQuality }))) : '+0.0';
+          }
+
           setWellnessData({
             overallScore: overallScore || 0,
             trend: overallTrend,
             metrics: [
               { 
-                name: 'Mood', 
+                name: 'Average Mood', 
                 value: Math.round(avgMood * 10) / 10, 
                 change: trend, 
-                color: 'bg-green-500' 
+                color: 'bg-green-500',
+                icon: 'mood'
               },
               { 
-                name: 'Stress', 
+                name: 'Stress Level', 
                 value: Math.round(avgStress * 10) / 10, 
                 change: stressTrend, 
-                color: 'bg-yellow-500' 
+                color: 'bg-yellow-500',
+                icon: 'stress'
+              },
+              { 
+                name: 'Sleep Quality', 
+                value: Math.round(avgSleep * 10) / 10, 
+                change: sleepTrend, 
+                color: 'bg-blue-500',
+                icon: 'sleep'
+              },
+              { 
+                name: 'Social Connection', 
+                value: Math.round(avgSocial * 10) / 10, 
+                change: socialTrend, 
+                color: 'bg-purple-500',
+                icon: 'social'
               },
             ],
-            recentEntries: recentEntries
+            recentEntries: recentEntries,
+            moodDistribution: wellnessDistribution
           });
         } else {
           // API failed - show empty state
@@ -155,10 +309,13 @@ export default function WellnessOverview() {
             overallScore: 0,
             trend: '+0.0',
             metrics: [
-              { name: 'Mood', value: 0, change: '+0.0', color: 'bg-green-500' },
-              { name: 'Stress', value: 0, change: '+0.0', color: 'bg-yellow-500' },
+              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
+              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
+              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
+              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
             ],
-            recentEntries: []
+            recentEntries: [],
+            moodDistribution: {}
           });
         }
       } catch (error) {
@@ -168,10 +325,13 @@ export default function WellnessOverview() {
           overallScore: 0,
           trend: '+0.0',
           metrics: [
-            { name: 'Mood', value: 0, change: '+0.0', color: 'bg-green-500' },
-            { name: 'Stress', value: 0, change: '+0.0', color: 'bg-yellow-500' },
+            { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
+            { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
+            { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
+            { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
           ],
-          recentEntries: []
+          recentEntries: [],
+          moodDistribution: {}
         });
       } finally {
         setLoading(false);
@@ -247,41 +407,87 @@ export default function WellnessOverview() {
       </div>
 
       {/* Wellness Metrics */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {wellnessData.metrics.map((metric, index) => (
           <motion.div
             key={metric.name}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-gray-50 rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200"
+            onClick={() => {
+              if (metric.name === 'Average Mood') setShowMoodModal(true);
+              else if (metric.name === 'Stress Level') setShowStressModal(true);
+              else if (metric.name === 'Sleep Quality') setShowSleepModal(true);
+              else if (metric.name === 'Social Connection') setShowSocialModal(true);
+            }}
+            className="bg-gradient-to-br from-white to-gray-50 rounded-lg p-4 shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">{metric.name}</span>
-              <div className={`w-3 h-3 rounded-full ${metric.color}`}></div>
+              <span className="text-xs font-medium text-gray-600">{metric.name}</span>
+              <div className="w-6 h-6 text-gray-600">
+                {metric.icon === 'mood' && <MetricIcons.Mood />}
+                {metric.icon === 'stress' && <MetricIcons.Stress />}
+                {metric.icon === 'sleep' && <MetricIcons.Sleep />}
+                {metric.icon === 'social' && <MetricIcons.Social />}
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-gray-900">{metric.value}</span>
-              <span className={`text-xs ${
-                metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+            <div className="flex items-baseline space-x-2 mb-2">
+              <span className="text-2xl font-bold text-gray-900">{metric.value}</span>
+              <span className="text-sm text-gray-500">/5</span>
+              <span className={`text-xs font-medium ${
+                metric.change.startsWith('+') && parseFloat(metric.change) > 0 ? 'text-green-600' : 
+                metric.change.startsWith('-') ? 'text-red-600' : 'text-gray-500'
               }`}>
                 {metric.change}
               </span>
             </div>
-            <div className="mt-2 bg-gray-200 rounded-full h-2">
+            <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
               <div
-                className={`h-2 rounded-full ${metric.color}`}
-                style={{ width: `${(metric.value / 5) * 100}%` }}
+                className={`h-2 rounded-full ${metric.color} transition-all duration-500`}
+                style={{ width: `${Math.min((metric.value / 5) * 100, 100)}%` }}
               ></div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Recent Mood Entries */}
+      {/* Wellness Patterns */}
+      {Object.keys(wellnessData.moodDistribution).length > 0 && (
+        <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg border border-indigo-100">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Your Wellness Patterns</h3>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(wellnessData.moodDistribution)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 6)
+              .map(([mood, count]) => {
+                const getMoodColor = (moodType: string) => {
+                  const lowerMood = moodType.toLowerCase();
+                  if (lowerMood.includes('happy') || lowerMood.includes('joyful') || lowerMood.includes('excited')) return 'bg-green-100 text-green-700 border-green-200';
+                  if (lowerMood.includes('calm') || lowerMood.includes('peaceful') || lowerMood.includes('relaxed')) return 'bg-blue-100 text-blue-700 border-blue-200';
+                  if (lowerMood.includes('stress') || lowerMood.includes('anxious') || lowerMood.includes('worried')) return 'bg-red-100 text-red-700 border-red-200';
+                  if (lowerMood.includes('sad') || lowerMood.includes('down') || lowerMood.includes('lonely')) return 'bg-gray-100 text-gray-700 border-gray-200';
+                  if (lowerMood.includes('energetic') || lowerMood.includes('motivated')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+                  return 'bg-purple-100 text-purple-700 border-purple-200';
+                };
+                
+                return (
+                  <div
+                    key={mood}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border ${getMoodColor(mood)} flex items-center space-x-1`}
+                  >
+                    <span>{mood}</span>
+                    <span className="font-bold">×{count}</span>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Entries */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Mood Entries</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Recent Entries</h3>
           {wellnessData.recentEntries.length > 0 && (
             <button 
               onClick={() => setShowMoodModal(true)}
@@ -298,8 +504,8 @@ export default function WellnessOverview() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h4 className="text-lg font-medium text-gray-900 mb-2">No mood entries yet</h4>
-            <p className="text-gray-600 mb-4">Start tracking your wellness by recording your first mood entry.</p>
+            <h4 className="text-lg font-medium text-gray-900 mb-2">No wellness entries yet</h4>
+            <p className="text-gray-600 mb-4">Start tracking your wellness by recording your first entry.</p>
             <button 
               onClick={() => setShowMoodModal(true)}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -310,21 +516,63 @@ export default function WellnessOverview() {
         ) : (
           <div className="space-y-3">
             {wellnessData.recentEntries.map((entry, index) => {
-              // Get mood emoji based on score (1-5 scale)
-              const getMoodEmoji = (mood: number) => {
-                if (mood >= 5) return '😄';
-                if (mood >= 4) return '😊';
-                if (mood >= 3) return '😐';
-                if (mood >= 2) return '😟';
-                return '😢';
+              // Get appropriate icon/avatar based on entry type
+              const getEntryIcon = () => {
+                if (entry.type === 'mood') {
+                  const MoodAvatar = getMoodAvatar(entry.label);
+                  return (
+                    <div className="w-14 h-14 rounded-full shadow-md overflow-hidden relative">
+                      <MoodAvatar />
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] font-bold text-center py-0.5">
+                        {entry.value}/5
+                      </div>
+                    </div>
+                  );
+                }
+                
+                // For other types, show colored circle with icon
+                const colors = {
+                  stress: 'from-red-400 to-red-600',
+                  sleep: 'from-blue-400 to-blue-600',
+                  social: 'from-purple-400 to-purple-600'
+                };
+                
+                return (
+                  <div className={`w-14 h-14 rounded-full shadow-md bg-gradient-to-br ${colors[entry.type]} flex flex-col items-center justify-center text-white`}>
+                    <span className="text-2xl">{entry.icon}</span>
+                    <span className="text-[10px] font-bold">{entry.value}/5</span>
+                  </div>
+                );
               };
-
-              const getMoodLabel = (mood: number) => {
-                if (mood >= 5) return 'Excellent';
-                if (mood >= 4) return 'Good';
-                if (mood >= 3) return 'Okay';
-                if (mood >= 2) return 'Low';
-                return 'Very Low';
+              
+              const getTypeColor = () => {
+                const colors = {
+                  mood: 'text-green-600',
+                  stress: 'text-red-600',
+                  sleep: 'text-blue-600',
+                  social: 'text-purple-600'
+                };
+                return colors[entry.type];
+              };
+              
+              const getTypeBadge = () => {
+                const badges = {
+                  mood: 'bg-green-100 text-green-700',
+                  stress: 'bg-red-100 text-red-700',
+                  sleep: 'bg-blue-100 text-blue-700',
+                  social: 'bg-purple-100 text-purple-700'
+                };
+                const labels = {
+                  mood: 'Mood',
+                  stress: 'Stress',
+                  sleep: 'Sleep',
+                  social: 'Social'
+                };
+                return (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${badges[entry.type]}`}>
+                    {labels[entry.type]}
+                  </span>
+                );
               };
 
               return (
@@ -334,22 +582,23 @@ export default function WellnessOverview() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
-                  onClick={() => router.push('/wellness/mood')}
+                  onClick={() => {
+                    const routes = {
+                      mood: '/wellness/mood',
+                      stress: '/wellness/stress',
+                      sleep: '/wellness/sleep',
+                      social: '/wellness/social'
+                    };
+                    router.push(routes[entry.type]);
+                  }}
                 >
                   <div className="flex-shrink-0">
-                    <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center text-white text-xs font-medium ${
-                      entry.mood >= 4.5 ? 'bg-gradient-to-br from-green-400 to-green-600' : 
-                      entry.mood >= 3.5 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' : 
-                      entry.mood >= 2.5 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                      'bg-gradient-to-br from-red-400 to-red-600'
-                    }`}>
-                      <span className="text-lg">{getMoodEmoji(entry.mood)}</span>
-                      <span className="text-xs font-bold">{entry.mood}/5</span>
-                    </div>
+                    {getEntryIcon()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
-                      <p className="text-sm font-semibold text-gray-900">{getMoodLabel(entry.mood)}</p>
+                      {getTypeBadge()}
+                      <p className="text-sm font-semibold text-gray-900">{entry.label}</p>
                       <span className="text-xs text-gray-500">•</span>
                       <p className="text-xs text-gray-500">{entry.date}</p>
                     </div>
@@ -368,24 +617,40 @@ export default function WellnessOverview() {
       </div>
 
       {/* Quick Mood Entry */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200">
-        <h4 className="text-sm font-medium text-blue-900 mb-3">How are you feeling today?</h4>
-        <div className="grid grid-cols-5 gap-2">
-          {[1, 2, 3, 4, 5].map((mood) => (
-            <button
-              key={mood}
-              onClick={() => {
-                setQuickMood(mood);
-                setShowMoodModal(true);
-              }}
-              className="py-2 rounded-lg bg-white border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 flex flex-col items-center justify-center text-sm font-medium text-blue-700 transition-all hover:scale-105"
-            >
-              <span className="text-xl mb-1">
-                {mood === 1 ? '😢' : mood === 2 ? '😟' : mood === 3 ? '😐' : mood === 4 ? '😊' : '😄'}
-              </span>
-              <span>{mood}</span>
-            </button>
-          ))}
+      <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-blue-100">
+        <h4 className="text-sm font-semibold text-blue-900 mb-3">How are you feeling today?</h4>
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+          {[
+            { avatar: 'Happy', label: 'Happy', score: 5 },
+            { avatar: 'Calm', label: 'Calm', score: 4 },
+            { avatar: 'Content', label: 'Content', score: 4 },
+            { avatar: 'Neutral', label: 'Neutral', score: 3 },
+            { avatar: 'Stressed', label: 'Stressed', score: 2 },
+            { avatar: 'Sad', label: 'Sad', score: 2 },
+            { avatar: 'Tired', label: 'Tired', score: 3 },
+            { avatar: 'Excited', label: 'Excited', score: 5 },
+            { avatar: 'Worried', label: 'Worried', score: 2 },
+            { avatar: 'Angry', label: 'Angry', score: 2 },
+            { avatar: 'Loved', label: 'Loved', score: 5 },
+            { avatar: 'Down', label: 'Down', score: 2 },
+          ].map((mood) => {
+            const MoodAvatar = getMoodAvatar(mood.avatar);
+            return (
+              <button
+                key={mood.label}
+                onClick={() => {
+                  setQuickMood(mood.score);
+                  setShowMoodModal(true);
+                }}
+                className="py-2 px-1 rounded-lg bg-white border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 flex flex-col items-center justify-center text-xs font-medium text-blue-700 transition-all hover:scale-105 hover:shadow-md"
+              >
+                <div className="w-12 h-12 mb-1">
+                  <MoodAvatar />
+                </div>
+                <span className="text-[10px] leading-tight">{mood.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -425,6 +690,24 @@ export default function WellnessOverview() {
       <StressTrackerModal
         isOpen={showStressModal}
         onClose={() => setShowStressModal(false)}
+        onSave={() => {
+          loadWellnessData();
+        }}
+      />
+
+      {/* Sleep Tracker Modal */}
+      <SleepTrackerModal
+        isOpen={showSleepModal}
+        onClose={() => setShowSleepModal(false)}
+        onSave={() => {
+          loadWellnessData();
+        }}
+      />
+
+      {/* Social Tracker Modal */}
+      <SocialTrackerModal
+        isOpen={showSocialModal}
+        onClose={() => setShowSocialModal(false)}
         onSave={() => {
           loadWellnessData();
         }}
