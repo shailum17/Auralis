@@ -19,6 +19,24 @@ export class UpdateProfileDto {
   @IsString()
   avatarUrl?: string;
 
+  @ApiProperty({ required: false, example: '+1234567890' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiProperty({ required: false, example: 'they/them' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  pronouns?: string;
+
+  @ApiProperty({ required: false, example: 'San Francisco, CA' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  location?: string;
+
   @ApiProperty({ 
     required: false, 
     example: ['programming', 'machine-learning', 'web-development'],

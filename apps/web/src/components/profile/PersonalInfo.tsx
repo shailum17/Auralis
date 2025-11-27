@@ -186,16 +186,16 @@ export default function PersonalInfo() {
       // Prepare update data
       const updateData = {
         fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-        bio: formData.bio,
-        phone: formData.phone,
-        pronouns: formData.pronouns,
-        location: formData.location,
+        bio: formData.bio || undefined,
+        phone: formData.phone || undefined,
+        pronouns: formData.pronouns || undefined,
+        location: formData.location || undefined,
         academicInfo: {
           institution: user.academicInfo?.institution || '',
-          major: formData.major,
-          year: formData.year || undefined,
+          major: formData.major || undefined,
+          year: formData.year ? parseInt(formData.year) : undefined,
         },
-        interests: formData.interests,
+        interests: formData.interests && formData.interests.length > 0 ? formData.interests : undefined,
       };
 
       console.log('📝 Saving profile data:', updateData);

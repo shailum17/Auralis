@@ -1,15 +1,29 @@
 'use client';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Edit, Bell, Palette, Shield, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getDisplayName } from '@/lib/profile-utils';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState({
-    fullName: 'Jenny Wilson',
-    username: 'jenny_wilson',
-    bio: 'Student of Psychology at Stanford. Passionate about mental wellness and building supportive communities. In my free time, I love hiking and reading.',
-    avatar: '/avatars/jenny.png', // Placeholder avatar
+    fullName: '',
+    username: '',
+    bio: '',
+    avatar: '',
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        fullName: getDisplayName(user),
+        username: user.username || user.email.split('@')[0],
+        bio: user.bio || '',
+        avatar: user.avatar || '',
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
