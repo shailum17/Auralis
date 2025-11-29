@@ -128,7 +128,7 @@ export default function CommunityOnboarding() {
       // First try to load from backend
       const accessToken = localStorage.getItem('accessToken');
       if (accessToken) {
-        const response = await fetch('/api/community/preferences', {
+        const response = await fetch('/api/v1/community/preferences', {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
@@ -189,7 +189,7 @@ export default function CommunityOnboarding() {
       }
 
       // Save to backend database
-      const response = await fetch('/api/community/onboarding', {
+      const response = await fetch('/api/v1/community/onboarding/complete', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,

@@ -98,6 +98,7 @@ model User {
   stressEntries     StressEntry[]
   sleepEntries      SleepEntry[]
   socialEntries     SocialEntry[]
+  weeklyGoals       WeeklyGoal[]
   otps              Otp[]
   
   // New relationships for platform enhancements
@@ -430,6 +431,24 @@ model SocialEntry {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@map("social_entries")
+}
+
+model WeeklyGoal {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @map("user_id") @db.ObjectId
+  weekStart DateTime @map("week_start") // Start of the week (Sunday)
+  name      String   // Goal name
+  target    Int      // Target value
+  current   Int      @default(0) // Current progress
+  category  String   // Category: mood, sleep, exercise, social, meditation, water
+  unit      String   // Unit: entries, nights, sessions, interactions, glasses, etc.
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relationships
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("weekly_goals")
 }
 
 model Resource {

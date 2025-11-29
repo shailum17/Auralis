@@ -451,7 +451,7 @@ export class CommunityService {
 
       // Get forums from database for lookup
       const forums = await this.getForumsFromDB();
-      const forumMap = new Map(forums.map(f => [f.id, f]));
+      const forumMap = new Map<string, ForumCategory>(forums.map(f => [f.id, f]));
       
       // Transform posts to include forum information
       const transformedPosts = posts.map(post => {

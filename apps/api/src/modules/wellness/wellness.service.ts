@@ -102,6 +102,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     // AUTO-CREATE STRESS ENTRY based on mood tags and score
     await this.autoCreateStressEntry(userId, createMoodEntryDto);
 
+    // Update weekly goals for mood tracking
+    await this.updateGoalProgress(userId, 'mood', 1);
+
     return {
       ...moodEntry,
       analysis: journalStressScore !== null ? {
@@ -427,6 +430,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     
     this.logger.log(`Sleep entry created for user ${userId}: Quality ${createSleepEntryDto.sleepQuality}/5, Hours: ${createSleepEntryDto.hoursSlept}, Quality Score: ${scoringResult.score}/100`);
 
+    // Update weekly goals for sleep tracking
+    await this.updateGoalProgress(userId, 'sleep', 1);
+
     const sleepEntry = await this.prisma.sleepEntry.create({
       data: {
         userId,
@@ -538,6 +544,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     const scoringResult = this.entryScoringService.calculateSocialScore(createSocialEntryDto);
     
     this.logger.log(`Social entry created for user ${userId}: Quality ${createSocialEntryDto.connectionQuality}/5, Quality Score: ${scoringResult.score}/100`);
+
+    // Update weekly goals for social connection tracking
+    await this.updateGoalProgress(userId, 'social', 1);
 
     const socialEntry = await this.prisma.socialEntry.create({
       data: {
@@ -723,5 +732,130 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         .map(([coping, count]) => ({ coping, count })),
       highStressDays,
     };
+  }
+
+  // Weekly Goals Methods
+  async setWeeklyGoals(userId: string, goals: any[]) {
+    // Delete existing goals for this week
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    await this.prisma.weeklyGoal.deleteMany({
+      where: {
+        userId,
+        weekStart: startOfWeek,
+      },
+    });
+
+    // Create new goals
+    const createdGoals = await Promise.all(
+      goals.map(goal =>
+        this.prisma.weeklyGoal.create({
+          data: {
+            userId,
+            weekStart: startOfWeek,
+            name: goal.name,
+            target: goal.target,
+            current: goal.current || 0,
+            category: goal.category,
+            unit: goal.unit,
+          },
+        })
+      )
+    );
+
+    this.logger.log(`Set ${createdGoals.length} weekly goals for user ${userId}`);
+    return { success: true, goals: createdGoals };
+  }
+
+  async getWeeklyGoals(userId: string) {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const goals = await this.prisma.weeklyGoal.findMany({
+      where: {
+        userId,
+        weekStart: startOfWeek,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return goals;
+  }
+
+  // Helper method to update goal progress automatically
+  private async updateGoalProgress(userId: string, category: string, incrementBy: number = 1) {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    try {
+      // Find goals matching this category
+      const goals = await this.prisma.weeklyGoal.findMany({
+        where: {
+          userId,
+          weekStart: startOfWeek,
+          category,
+        },
+      });
+
+      // Update each matching goal
+      for (const goal of goals) {
+        const newCurrent = Math.min(goal.current + incrementBy, goal.target);
+        await this.prisma.weeklyGoal.update({
+          where: { id: goal.id },
+          data: { current: newCurrent },
+        });
+
+        this.logger.log(`Updated goal "${goal.name}" for user ${userId}: ${newCurrent}/${goal.target}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error updating goal progress for user ${userId}:`, error);
+    }
+  }
+
+  // Public method for manual goal tracking by category
+  async trackGoalManually(userId: string, category: string, amount: number = 1) {
+    await this.updateGoalProgress(userId, category, amount);
+    
+    // Return updated goals
+    return this.getWeeklyGoals(userId);
+  }
+
+  // Public method for incrementing a specific goal by name
+  async incrementGoalByName(userId: string, goalName: string, amount: number = 1) {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    try {
+      // Find the specific goal by name
+      const goal = await this.prisma.weeklyGoal.findFirst({
+        where: {
+          userId,
+          weekStart: startOfWeek,
+          name: goalName,
+        },
+      });
+
+      if (goal) {
+        const newCurrent = Math.min(goal.current + amount, goal.target);
+        await this.prisma.weeklyGoal.update({
+          where: { id: goal.id },
+          data: { current: newCurrent },
+        });
+
+        this.logger.log(`Incremented goal "${goalName}" for user ${userId}: ${newCurrent}/${goal.target}`);
+      } else {
+        this.logger.warn(`Goal "${goalName}" not found for user ${userId}`);
+      }
+    } catch (error) {
+      this.logger.error(`Error incrementing goal "${goalName}" for user ${userId}:`, error);
+    }
+
+    // Return updated goals
+    return this.getWeeklyGoals(userId);
   }
 }

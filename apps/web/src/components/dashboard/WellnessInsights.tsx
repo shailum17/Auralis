@@ -5,12 +5,15 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import MoodTrackerModal from '@/components/wellness/MoodTrackerModal';
+import WeeklyGoalsModal from '@/components/wellness/WeeklyGoalsModal';
+import QuickGoalTracker from '@/components/wellness/QuickGoalTracker';
 
 export default function WellnessInsights() {
   const { user } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [showMoodModal, setShowMoodModal] = useState(false);
+  const [showGoalsModal, setShowGoalsModal] = useState(false);
   const [insights, setInsights] = useState<Array<{
     title: string;
     description: string;
@@ -97,8 +100,24 @@ export default function WellnessInsights() {
 
           setInsights(generatedInsights);
           
-          // For now, no weekly goals - can be implemented later
-          setWeeklyGoals([]);
+          // Fetch weekly goals
+          const goalsResponse = await fetch('/api/v1/wellness/goals', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+            },
+          });
+
+          if (goalsResponse.ok) {
+            const goalsData = await goalsResponse.json();
+            setWeeklyGoals(goalsData.map((g: any) => ({
+              name: g.name,
+              progress: (g.current / g.target) * 100,
+              target: g.target,
+              current: g.current,
+            })));
+          } else {
+            setWeeklyGoals([]);
+          }
           
           // Show daily check-in if user hasn't logged mood today
           setShowDailyCheckIn(data.moodEntriesCount === 0 || true);
@@ -119,6 +138,68 @@ export default function WellnessInsights() {
 
     loadWellnessData();
   }, [user]);
+
+  const handleQuickTrack = async (category: string, amount: number) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        alert('Please log in to track goals');
+        return;
+      }
+
+      const response = await fetch('/api/v1/wellness/goals/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ category, amount }),
+      });
+
+      if (response.ok) {
+        const updatedGoals = await response.json();
+        setWeeklyGoals(updatedGoals.map((g: any) => ({
+          name: g.name,
+          progress: (g.current / g.target) * 100,
+          target: g.target,
+          current: g.current,
+        })));
+      }
+    } catch (error) {
+      console.error('Error tracking goal:', error);
+    }
+  };
+
+  const handleIncrementGoal = async (goalName: string) => {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        alert('Please log in to track goals');
+        return;
+      }
+
+      const response = await fetch('/api/v1/wellness/goals/increment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ goalName, amount: 1 }),
+      });
+
+      if (response.ok) {
+        const updatedGoals = await response.json();
+        setWeeklyGoals(updatedGoals.map((g: any) => ({
+          name: g.name,
+          progress: (g.current / g.target) * 100,
+          target: g.target,
+          current: g.current,
+        })));
+      }
+    } catch (error) {
+      console.error('Error incrementing goal:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -182,9 +263,24 @@ export default function WellnessInsights() {
         )}
       </div>
 
+      {/* Quick Goal Tracker */}
+      {weeklyGoals.length > 0 && (
+        <div className="mb-6 pb-6 border-b border-gray-200">
+          <QuickGoalTracker onTrack={handleQuickTrack} />
+        </div>
+      )}
+
       {/* Weekly Goals */}
       <div>
-        <h4 className="text-sm font-medium text-gray-900 mb-3">Weekly Goals</h4>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-gray-900">Weekly Goals</h4>
+          <button
+            onClick={() => setShowGoalsModal(true)}
+            className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            {weeklyGoals.length === 0 ? '+ Set Goals' : 'Edit Goals'}
+          </button>
+        </div>
         <div className="space-y-3">
           {weeklyGoals.length === 0 ? (
             <div className="text-center py-4">
@@ -194,9 +290,15 @@ export default function WellnessInsights() {
                 </svg>
               </div>
               <p className="text-sm text-gray-600 mb-1">No goals set</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mb-3">
                 Set weekly wellness goals to track your progress
               </p>
+              <button
+                onClick={() => setShowGoalsModal(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Set Your First Goal →
+              </button>
             </div>
           ) : (
             weeklyGoals.map((goal, index) => (
@@ -205,13 +307,26 @@ export default function WellnessInsights() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
-              className="space-y-2"
+              className="space-y-2 group"
             >
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700">{goal.name}</span>
-                <span className="text-xs text-gray-500">{goal.current}/{goal.target}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">{goal.current}/{goal.target}</span>
+                  {goal.current < goal.target && (
+                    <button
+                      onClick={() => handleIncrementGoal(goal.name)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600"
+                      title="Add +1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2 cursor-pointer" onClick={() => handleIncrementGoal(goal.name)}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${goal.progress}%` }}
@@ -272,6 +387,29 @@ export default function WellnessInsights() {
           // Reload insights after saving
           window.location.reload();
         }}
+      />
+
+      {/* Weekly Goals Modal */}
+      <WeeklyGoalsModal
+        isOpen={showGoalsModal}
+        onClose={() => setShowGoalsModal(false)}
+        onSave={(goals) => {
+          setWeeklyGoals(goals.map(g => ({
+            name: g.name,
+            progress: (g.current / g.target) * 100,
+            target: g.target,
+            current: g.current,
+          })));
+          setShowGoalsModal(false);
+        }}
+        existingGoals={weeklyGoals.map((g, i) => ({
+          id: `goal-${i}`,
+          name: g.name,
+          target: g.target,
+          current: g.current,
+          category: 'mood' as const,
+          unit: 'times',
+        }))}
       />
     </div>
   );

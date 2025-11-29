@@ -132,7 +132,7 @@ export default function InterestsPage() {
       }
 
       // Save to backend database
-      const response = await fetch('/api/community/preferences', {
+      const response = await fetch('/api/v1/community/preferences', {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${accessToken}`,

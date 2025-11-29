@@ -73,7 +73,7 @@ export default function CommunityPage() {
         return;
       }
 
-      const response = await fetch('/api/community/preferences', {
+      const response = await fetch('/api/v1/community/preferences', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -102,7 +102,7 @@ export default function CommunityPage() {
       
       // Load forums
       console.log('Loading forums...');
-      const forumsResponse = await fetch('/api/community/forums', {
+      const forumsResponse = await fetch('/api/v1/community/forums', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -138,7 +138,7 @@ export default function CommunityPage() {
 
       // Load posts
       console.log('Loading posts...');
-      const postsResponse = await fetch('/api/community/posts', {
+      const postsResponse = await fetch('/api/v1/community/posts', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -179,7 +179,7 @@ export default function CommunityPage() {
 
     try {
       const accessToken = localStorage.getItem('accessToken');
-      const response = await fetch('/api/community/posts', {
+      const response = await fetch('/api/v1/community/posts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -28,12 +28,12 @@ export default function Dashboard() {
         if (!accessToken) return;
 
         // Load forums count
-        const forumsResponse = await fetch('/api/community/forums', {
+        const forumsResponse = await fetch('/api/v1/community/forums', {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
         
         // Load posts count
-        const postsResponse = await fetch('/api/community/posts', {
+        const postsResponse = await fetch('/api/v1/community/posts', {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
 

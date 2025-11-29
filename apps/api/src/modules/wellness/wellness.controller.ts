@@ -110,4 +110,32 @@ export class WellnessController {
   async getSocialAnalytics(@Request() req) {
     return this.wellnessService.getSocialAnalytics(req.user.id);
   }
+
+  @Post('goals')
+  @ApiOperation({ summary: 'Set weekly wellness goals' })
+  @ApiResponse({ status: 201, description: 'Goals saved successfully' })
+  async setWeeklyGoals(@Request() req, @Body() body: { goals: any[] }) {
+    return this.wellnessService.setWeeklyGoals(req.user.id, body.goals);
+  }
+
+  @Get('goals')
+  @ApiOperation({ summary: 'Get weekly wellness goals' })
+  @ApiResponse({ status: 200, description: 'Goals retrieved successfully' })
+  async getWeeklyGoals(@Request() req) {
+    return this.wellnessService.getWeeklyGoals(req.user.id);
+  }
+
+  @Post('goals/track')
+  @ApiOperation({ summary: 'Manually track goal progress by category' })
+  @ApiResponse({ status: 200, description: 'Goal progress updated successfully' })
+  async trackGoalProgress(@Request() req, @Body() body: { category: string; amount?: number }) {
+    return this.wellnessService.trackGoalManually(req.user.id, body.category, body.amount || 1);
+  }
+
+  @Post('goals/increment')
+  @ApiOperation({ summary: 'Increment a specific goal by name' })
+  @ApiResponse({ status: 200, description: 'Goal incremented successfully' })
+  async incrementGoal(@Request() req, @Body() body: { goalName: string; amount?: number }) {
+    return this.wellnessService.incrementGoalByName(req.user.id, body.goalName, body.amount || 1);
+  }
 }

@@ -6,7 +6,7 @@ async function testMyInterests() {
   try {
     // Step 1: Login as admin
     console.log('1️⃣ Logging in as admin...');
-    const loginResponse = await fetch('http://localhost:3001/api/auth/signin', {
+    const loginResponse = await fetch('http://localhost:3001/api/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -25,7 +25,7 @@ async function testMyInterests() {
 
     // Step 2: Get user preferences to see current interests
     console.log('2️⃣ Fetching user preferences...');
-    const prefsResponse = await fetch('http://localhost:3001/api/community/preferences', {
+    const prefsResponse = await fetch('http://localhost:3001/api/v1/community/preferences', {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 
@@ -37,7 +37,7 @@ async function testMyInterests() {
 
     // Step 3: Get forums with isJoined property
     console.log('3️⃣ Fetching forums with join status...');
-    const forumsResponse = await fetch('http://localhost:3001/api/community/forums', {
+    const forumsResponse = await fetch('http://localhost:3001/api/v1/community/forums', {
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
 

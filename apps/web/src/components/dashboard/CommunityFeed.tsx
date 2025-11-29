@@ -41,7 +41,7 @@ export default function CommunityFeed() {
         }
 
         // Fetch real posts from API
-        const response = await fetch('/api/community/posts', {
+        const response = await fetch('/api/v1/community/posts', {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
           },
