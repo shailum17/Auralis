@@ -5,6 +5,7 @@ A privacy-first, scalable student community platform designed to foster safe, su
 ## 🌟 Features
 
 ### Core Functionality
+- **Multi-User Support**: ✅ Unlimited concurrent users with complete data isolation
 - **User Authentication**: Secure JWT-based auth with refresh tokens
 - **Anonymous Posting**: Post anonymously while maintaining private user linkage
 - **Community Forums**: Create posts, comments, and reactions with tag-based organization
@@ -236,10 +237,21 @@ pnpm test:e2e
 ## 📚 Documentation
 
 - [Architecture Overview](docs/architecture/README.md)
+- [Multi-User Support](MULTI_USER_GUIDE.md) - Complete guide to concurrent user support
 - [API Documentation](docs/api/)
 - [Privacy & Security](docs/security-privacy/)
 - [Deployment Guide](docs/deployment/)
 - [Contributing Guide](CONTRIBUTING.md)
+
+### Multi-User System
+✅ **Fully Supported** - The platform supports unlimited concurrent users with complete data isolation.
+
+- [Quick Reference](QUICK_REFERENCE_MULTI_USER.md) - Quick facts and verification
+- [User Data Isolation](docs/USER_DATA_ISOLATION.md) - Technical details
+- [Architecture Diagrams](docs/architecture/MULTI_USER_ARCHITECTURE.md) - Visual guides
+- [Test Suite](test-multi-user-isolation.js) - Automated verification
+
+Run diagnostic: `node check-multi-user-setup.js`
 
 ## 🆘 Support
 
