@@ -8,7 +8,7 @@ interface Goal {
   name: string;
   target: number;
   current: number;
-  category: 'mood' | 'sleep' | 'exercise' | 'social' | 'meditation' | 'water';
+  category: 'mood' | 'sleep' | 'exercise' | 'social' | 'meditation' | 'water' | 'stress';
   unit: string;
 }
 
@@ -21,6 +21,7 @@ interface WeeklyGoalsModalProps {
 
 const goalTemplates = [
   { name: 'Log Mood Daily', category: 'mood' as const, target: 7, unit: 'entries' },
+  { name: 'Track Stress', category: 'stress' as const, target: 7, unit: 'entries' },
   { name: 'Sleep 8 Hours', category: 'sleep' as const, target: 7, unit: 'nights' },
   { name: 'Exercise', category: 'exercise' as const, target: 3, unit: 'sessions' },
   { name: 'Social Connection', category: 'social' as const, target: 5, unit: 'interactions' },

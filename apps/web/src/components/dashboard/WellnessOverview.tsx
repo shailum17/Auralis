@@ -72,10 +72,10 @@ export default function WellnessOverview() {
             overallScore: 0,
             trend: '+0.0',
             metrics: [
-              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
-              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
-              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
-              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
+              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: 'mood' },
+              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: 'stress' },
+              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: 'sleep' },
+              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: 'social' },
             ],
             recentEntries: [],
             moodDistribution: {}
@@ -135,8 +135,7 @@ export default function WellnessOverview() {
               type: 'mood',
               value: entry.moodScore,
               label: primaryMood,
-              note: entry.notes || 'No notes added',
-              icon: '😊'
+              note: entry.notes || 'No notes added'
             });
           });
           
@@ -154,8 +153,7 @@ export default function WellnessOverview() {
               type: 'stress',
               value: entry.stressLevel,
               label: `Stress: ${primaryTrigger}`,
-              note: entry.notes || `Stress level ${entry.stressLevel}/5`,
-              icon: '😰'
+              note: entry.notes || `Stress level ${entry.stressLevel}/5`
             });
             
             // Add stress triggers to patterns
@@ -176,8 +174,7 @@ export default function WellnessOverview() {
               type: 'sleep',
               value: entry.sleepQuality,
               label: `Sleep: ${entry.hoursSlept}h`,
-              note: `Quality ${entry.sleepQuality}/5, ${entry.hoursSlept} hours`,
-              icon: '😴'
+              note: `Quality ${entry.sleepQuality}/5, ${entry.hoursSlept} hours`
             });
             
             // Add sleep issues to patterns
@@ -201,8 +198,7 @@ export default function WellnessOverview() {
               type: 'social',
               value: entry.connectionQuality,
               label: `Social: ${primaryFeeling}`,
-              note: `Connection quality ${entry.connectionQuality}/5`,
-              icon: '🤝'
+              note: `Connection quality ${entry.connectionQuality}/5`
             });
             
             // Add feelings to patterns
@@ -309,10 +305,10 @@ export default function WellnessOverview() {
             overallScore: 0,
             trend: '+0.0',
             metrics: [
-              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
-              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
-              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
-              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
+              { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: 'mood' },
+              { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: 'stress' },
+              { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: 'sleep' },
+              { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: 'social' },
             ],
             recentEntries: [],
             moodDistribution: {}
@@ -325,10 +321,10 @@ export default function WellnessOverview() {
           overallScore: 0,
           trend: '+0.0',
           metrics: [
-            { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: '😊' },
-            { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: '😰' },
-            { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: '😴' },
-            { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: '🤝' },
+            { name: 'Average Mood', value: 0, change: '+0.0', color: 'bg-green-500', icon: 'mood' },
+            { name: 'Stress Level', value: 0, change: '+0.0', color: 'bg-yellow-500', icon: 'stress' },
+            { name: 'Sleep Quality', value: 0, change: '+0.0', color: 'bg-blue-500', icon: 'sleep' },
+            { name: 'Social Connection', value: 0, change: '+0.0', color: 'bg-purple-500', icon: 'social' },
           ],
           recentEntries: [],
           moodDistribution: {}
@@ -530,16 +526,24 @@ export default function WellnessOverview() {
                   );
                 }
                 
-                // For other types, show colored circle with icon
+                // For other types, show colored circle with SVG icon
                 const colors = {
                   stress: 'from-red-400 to-red-600',
                   sleep: 'from-blue-400 to-blue-600',
                   social: 'from-purple-400 to-purple-600'
                 };
                 
+                const icons = {
+                  stress: <MetricIcons.Stress />,
+                  sleep: <MetricIcons.Sleep />,
+                  social: <MetricIcons.Social />
+                };
+                
                 return (
-                  <div className={`w-14 h-14 rounded-full shadow-md bg-gradient-to-br ${colors[entry.type]} flex flex-col items-center justify-center text-white`}>
-                    <span className="text-2xl">{entry.icon}</span>
+                  <div className={`w-14 h-14 rounded-full shadow-md bg-gradient-to-br ${colors[entry.type]} flex flex-col items-center justify-center text-white p-2`}>
+                    <div className="w-6 h-6 mb-0.5">
+                      {icons[entry.type]}
+                    </div>
                     <span className="text-[10px] font-bold">{entry.value}/5</span>
                   </div>
                 );

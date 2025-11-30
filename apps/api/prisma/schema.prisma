@@ -440,13 +440,17 @@ model WeeklyGoal {
   name      String   // Goal name
   target    Int      // Target value
   current   Int      @default(0) // Current progress
-  category  String   // Category: mood, sleep, exercise, social, meditation, water
+  category  String   // Category: mood, stress, sleep, exercise, social, meditation, water
   unit      String   // Unit: entries, nights, sessions, interactions, glasses, etc.
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   
   // Relationships
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes for efficient querying and data isolation
+  @@index([userId, weekStart, category])
+  @@index([userId, weekStart])
   
   @@map("weekly_goals")
 }

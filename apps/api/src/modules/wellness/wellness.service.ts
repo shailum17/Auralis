@@ -392,6 +392,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       },
     });
 
+    // Update weekly goals for stress tracking
+    await this.updateGoalProgress(userId, 'stress', 1);
+
     return {
       ...stressEntry,
       qualityScoring: {
@@ -430,9 +433,6 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     
     this.logger.log(`Sleep entry created for user ${userId}: Quality ${createSleepEntryDto.sleepQuality}/5, Hours: ${createSleepEntryDto.hoursSlept}, Quality Score: ${scoringResult.score}/100`);
 
-    // Update weekly goals for sleep tracking
-    await this.updateGoalProgress(userId, 'sleep', 1);
-
     const sleepEntry = await this.prisma.sleepEntry.create({
       data: {
         userId,
@@ -447,6 +447,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         completeness: scoringResult.completeness,
       },
     });
+
+    // Update weekly goals for sleep tracking (after successful entry creation)
+    await this.updateGoalProgress(userId, 'sleep', 1);
 
     return {
       ...sleepEntry,
@@ -545,9 +548,6 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     
     this.logger.log(`Social entry created for user ${userId}: Quality ${createSocialEntryDto.connectionQuality}/5, Quality Score: ${scoringResult.score}/100`);
 
-    // Update weekly goals for social connection tracking
-    await this.updateGoalProgress(userId, 'social', 1);
-
     const socialEntry = await this.prisma.socialEntry.create({
       data: {
         userId,
@@ -561,6 +561,9 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         flaggedForReview: scoringResult.flaggedForReview,
       },
     });
+
+    // Update weekly goals for social connection tracking (after successful entry creation)
+    await this.updateGoalProgress(userId, 'social', 1);
 
     return {
       ...socialEntry,
@@ -792,6 +795,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     startOfWeek.setHours(0, 0, 0, 0);
 
     try {
+      this.logger.log(`Attempting to update goal progress: userId=${userId}, category=${category}, increment=${incrementBy}, weekStart=${startOfWeek.toISOString()}`);
+
       // Find goals matching this category
       const goals = await this.prisma.weeklyGoal.findMany({
         where: {
@@ -801,18 +806,28 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         },
       });
 
+      if (goals.length === 0) {
+        this.logger.warn(`No weekly goals found for user ${userId} with category "${category}" for week starting ${startOfWeek.toISOString()}`);
+        return;
+      }
+
+      this.logger.log(`Found ${goals.length} goal(s) to update for category "${category}"`);
+
       // Update each matching goal
       for (const goal of goals) {
+        const oldCurrent = goal.current;
         const newCurrent = Math.min(goal.current + incrementBy, goal.target);
+        
         await this.prisma.weeklyGoal.update({
           where: { id: goal.id },
           data: { current: newCurrent },
         });
 
-        this.logger.log(`Updated goal "${goal.name}" for user ${userId}: ${newCurrent}/${goal.target}`);
+        this.logger.log(`✅ Updated goal "${goal.name}" for user ${userId}: ${oldCurrent}/${goal.target} → ${newCurrent}/${goal.target} (category: ${category})`);
       }
     } catch (error) {
-      this.logger.error(`Error updating goal progress for user ${userId}:`, error);
+      this.logger.error(`❌ Error updating goal progress for user ${userId}, category ${category}:`, error);
+      // Don't throw - we don't want goal update failures to prevent entry creation
     }
   }
 
