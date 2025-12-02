@@ -434,23 +434,29 @@ model SocialEntry {
 }
 
 model WeeklyGoal {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @map("user_id") @db.ObjectId
-  weekStart DateTime @map("week_start") // Start of the week (Sunday)
-  name      String   // Goal name
-  target    Int      // Target value
-  current   Int      @default(0) // Current progress
-  category  String   // Category: mood, stress, sleep, exercise, social, meditation, water
-  unit      String   // Unit: entries, nights, sessions, interactions, glasses, etc.
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @map("user_id") @db.ObjectId
+  weekStart   DateTime  @map("week_start") // Start of the week (Sunday)
+  weekEnd     DateTime  @map("week_end") // End of the week (Saturday 23:59:59)
+  name        String    // Goal name
+  target      Int       // Target value
+  current     Int       @default(0) // Current progress
+  category    String    // Category: mood, stress, sleep, exercise, social, meditation, water
+  unit        String    // Unit: entries, nights, sessions, interactions, glasses, etc.
+  isCompleted Boolean   @default(false) @map("is_completed") // Auto-set when current >= target
+  isOverdue   Boolean   @default(false) @map("is_overdue") // Auto-set when weekEnd passed and not completed
+  completedAt DateTime? @map("completed_at") // Timestamp when goal was completed
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   
   // Relationships
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   // Indexes for efficient querying and data isolation
   @@index([userId, weekStart, category])
   @@index([userId, weekStart])
+  @@index([userId, isCompleted])
+  @@index([weekEnd, isCompleted, isOverdue])
   
   @@map("weekly_goals")
 }

@@ -102,8 +102,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     // AUTO-CREATE STRESS ENTRY based on mood tags and score
     await this.autoCreateStressEntry(userId, createMoodEntryDto);
 
-    // Update weekly goals for mood tracking
-    await this.updateGoalProgress(userId, 'mood', 1);
+    // Update weekly goals for mood tracking and get completed goals
+    const { completedGoals } = await this.updateGoalProgress(userId, 'mood', 1);
 
     return {
       ...moodEntry,
@@ -123,7 +123,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         flaggedForReview: scoringResult.flaggedForReview,
         details: scoringResult.details,
         suggestions: scoringResult.suggestions
-      }
+      },
+      completedGoals: completedGoals.length > 0 ? completedGoals : undefined,
     };
   }
 
@@ -392,8 +393,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       },
     });
 
-    // Update weekly goals for stress tracking
-    await this.updateGoalProgress(userId, 'stress', 1);
+    // Update weekly goals for stress tracking and get completed goals
+    const { completedGoals } = await this.updateGoalProgress(userId, 'stress', 1);
 
     return {
       ...stressEntry,
@@ -405,7 +406,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         flaggedForReview: scoringResult.flaggedForReview,
         details: scoringResult.details,
         suggestions: scoringResult.suggestions
-      }
+      },
+      completedGoals: completedGoals.length > 0 ? completedGoals : undefined,
     };
   }
 
@@ -448,8 +450,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       },
     });
 
-    // Update weekly goals for sleep tracking (after successful entry creation)
-    await this.updateGoalProgress(userId, 'sleep', 1);
+    // Update weekly goals for sleep tracking and get completed goals
+    const { completedGoals } = await this.updateGoalProgress(userId, 'sleep', 1);
 
     return {
       ...sleepEntry,
@@ -461,7 +463,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         flaggedForReview: scoringResult.flaggedForReview,
         details: scoringResult.details,
         suggestions: scoringResult.suggestions
-      }
+      },
+      completedGoals: completedGoals.length > 0 ? completedGoals : undefined,
     };
   }
 
@@ -562,8 +565,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       },
     });
 
-    // Update weekly goals for social connection tracking (after successful entry creation)
-    await this.updateGoalProgress(userId, 'social', 1);
+    // Update weekly goals for social connection tracking and get completed goals
+    const { completedGoals } = await this.updateGoalProgress(userId, 'social', 1);
 
     return {
       ...socialEntry,
@@ -575,7 +578,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         flaggedForReview: scoringResult.flaggedForReview,
         details: scoringResult.details,
         suggestions: scoringResult.suggestions
-      }
+      },
+      completedGoals: completedGoals.length > 0 ? completedGoals : undefined,
     };
   }
 
@@ -739,11 +743,16 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
 
   // Weekly Goals Methods
   async setWeeklyGoals(userId: string, goals: any[]) {
-    // Delete existing goals for this week
+    // Calculate week boundaries
     const startOfWeek = new Date();
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Delete existing goals for this week (backward compatible)
     await this.prisma.weeklyGoal.deleteMany({
       where: {
         userId,
@@ -751,21 +760,40 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       },
     });
 
-    // Create new goals
+    // Create new goals (backward compatible - only include fields that exist)
     const createdGoals = await Promise.all(
-      goals.map(goal =>
-        this.prisma.weeklyGoal.create({
-          data: {
-            userId,
-            weekStart: startOfWeek,
-            name: goal.name,
-            target: goal.target,
-            current: goal.current || 0,
-            category: goal.category,
-            unit: goal.unit,
-          },
-        })
-      )
+      goals.map(async (goal) => {
+        try {
+          // Try with new fields first
+          return await this.prisma.weeklyGoal.create({
+            data: {
+              userId,
+              weekStart: startOfWeek,
+              weekEnd: endOfWeek,
+              name: goal.name,
+              target: goal.target,
+              current: goal.current || 0,
+              category: goal.category,
+              unit: goal.unit,
+              isCompleted: false,
+              isOverdue: false,
+            } as any,
+          });
+        } catch (error) {
+          // Fallback to old schema (without new fields)
+          return await this.prisma.weeklyGoal.create({
+            data: {
+              userId,
+              weekStart: startOfWeek,
+              name: goal.name,
+              target: goal.target,
+              current: goal.current || 0,
+              category: goal.category,
+              unit: goal.unit,
+            } as any,
+          });
+        }
+      })
     );
 
     this.logger.log(`Set ${createdGoals.length} weekly goals for user ${userId}`);
@@ -777,58 +805,146 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const goals = await this.prisma.weeklyGoal.findMany({
-      where: {
-        userId,
-        weekStart: startOfWeek,
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    return goals;
-  }
-
-  // Helper method to update goal progress automatically
-  private async updateGoalProgress(userId: string, category: string, incrementBy: number = 1) {
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
+    // Mark overdue goals before fetching (only if new schema exists)
     try {
-      this.logger.log(`Attempting to update goal progress: userId=${userId}, category=${category}, increment=${incrementBy}, weekStart=${startOfWeek.toISOString()}`);
+      await this.markOverdueGoals(userId);
+    } catch (error) {
+      // Ignore if new fields don't exist yet
+    }
 
-      // Find goals matching this category
+    // Fetch goals for current week (backward compatible)
+    try {
+      // Try with new schema first (only incomplete goals)
       const goals = await this.prisma.weeklyGoal.findMany({
         where: {
           userId,
           weekStart: startOfWeek,
-          category,
-        },
+          isCompleted: false,
+        } as any,
+        orderBy: { createdAt: 'asc' },
       });
+      return goals;
+    } catch (error) {
+      // Fallback to old schema (all goals for the week)
+      const goals = await this.prisma.weeklyGoal.findMany({
+        where: {
+          userId,
+          weekStart: startOfWeek,
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+      return goals;
+    }
+  }
+
+  // Helper method to update goal progress automatically
+  private async updateGoalProgress(userId: string, category: string, incrementBy: number = 1): Promise<{ completedGoals: any[] }> {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const completedGoals: any[] = [];
+
+    try {
+      this.logger.log(`Attempting to update goal progress: userId=${userId}, category=${category}, increment=${incrementBy}, weekStart=${startOfWeek.toISOString()}`);
+
+      // Find goals matching this category (backward compatible)
+      let goals;
+      try {
+        // Try with new schema (only incomplete goals)
+        goals = await this.prisma.weeklyGoal.findMany({
+          where: {
+            userId,
+            weekStart: startOfWeek,
+            category,
+            isCompleted: false,
+          } as any,
+        });
+      } catch (error) {
+        // Fallback to old schema (all goals)
+        goals = await this.prisma.weeklyGoal.findMany({
+          where: {
+            userId,
+            weekStart: startOfWeek,
+            category,
+          },
+        });
+      }
 
       if (goals.length === 0) {
         this.logger.warn(`No weekly goals found for user ${userId} with category "${category}" for week starting ${startOfWeek.toISOString()}`);
-        return;
+        return { completedGoals };
       }
 
       this.logger.log(`Found ${goals.length} goal(s) to update for category "${category}"`);
 
       // Update each matching goal
       for (const goal of goals) {
+        this.logger.log(`Processing goal: "${goal.name}" - Current: ${goal.current}/${goal.target}`);
+        
         const oldCurrent = goal.current;
         const newCurrent = Math.min(goal.current + incrementBy, goal.target);
+        const isNowCompleted = newCurrent >= goal.target;
         
-        await this.prisma.weeklyGoal.update({
-          where: { id: goal.id },
-          data: { current: newCurrent },
-        });
+        this.logger.log(`After increment: ${newCurrent}/${goal.target}, Will be completed: ${isNowCompleted}`);
+        
+        try {
+          // Try with new schema (with completion tracking)
+          this.logger.log(`Updating goal with new schema: isCompleted=${isNowCompleted}, current=${newCurrent}`);
+          
+          await this.prisma.weeklyGoal.update({
+            where: { id: goal.id },
+            data: { 
+              current: newCurrent,
+              isCompleted: isNowCompleted,
+              completedAt: isNowCompleted ? new Date() : null,
+            } as any,
+          });
 
-        this.logger.log(`✅ Updated goal "${goal.name}" for user ${userId}: ${oldCurrent}/${goal.target} → ${newCurrent}/${goal.target} (category: ${category})`);
+          this.logger.log(`Goal updated successfully. Checking if completed: ${isNowCompleted}`);
+
+          if (isNowCompleted) {
+            this.logger.log(`Goal COMPLETED and will be auto-removed: "${goal.name}" for user ${userId}: ${newCurrent}/${goal.target}`);
+            
+            // Add to completed goals list for celebration
+            completedGoals.push({
+              id: goal.id,
+              name: goal.name,
+              category: goal.category,
+              target: goal.target,
+              unit: goal.unit,
+              completedAt: new Date(),
+            });
+            
+            // Auto-remove completed goal
+            await this.prisma.weeklyGoal.delete({
+              where: { id: goal.id },
+            });
+            
+            this.logger.log(`Auto-removed completed goal "${goal.name}" for user ${userId}`);
+          } else {
+            this.logger.log(`Updated goal "${goal.name}" for user ${userId}: ${oldCurrent}/${goal.target} -> ${newCurrent}/${goal.target} (category: ${category})`);
+          }
+        } catch (error) {
+          // Fallback to old schema (just update current)
+          this.logger.error(`Failed to update with new schema, falling back to old schema. Error: ${error.message}`);
+          
+          await this.prisma.weeklyGoal.update({
+            where: { id: goal.id },
+            data: { 
+              current: newCurrent,
+            },
+          });
+          
+          this.logger.log(`Updated goal "${goal.name}" for user ${userId}: ${oldCurrent}/${goal.target} -> ${newCurrent}/${goal.target} (category: ${category}) [OLD SCHEMA - NO AUTO-REMOVE]`);
+        }
       }
     } catch (error) {
-      this.logger.error(`❌ Error updating goal progress for user ${userId}, category ${category}:`, error);
+      this.logger.error(`Error updating goal progress for user ${userId}, category ${category}:`, error);
       // Don't throw - we don't want goal update failures to prevent entry creation
     }
+
+    return { completedGoals };
   }
 
   // Public method for manual goal tracking by category
@@ -837,6 +953,91 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
     
     // Return updated goals
     return this.getWeeklyGoals(userId);
+  }
+
+  // Helper method to mark overdue goals (only works with new schema)
+  private async markOverdueGoals(userId: string) {
+    const now = new Date();
+
+    try {
+      // Find goals that are past their weekEnd and not completed
+      const overdueGoals = await this.prisma.weeklyGoal.findMany({
+        where: {
+          userId,
+          weekEnd: { lt: now },
+          isCompleted: false,
+          isOverdue: false,
+        } as any,
+      });
+
+      if (overdueGoals.length > 0) {
+        // Mark them as overdue
+        await this.prisma.weeklyGoal.updateMany({
+          where: {
+            userId,
+            weekEnd: { lt: now },
+            isCompleted: false,
+            isOverdue: false,
+          } as any,
+          data: {
+            isOverdue: true,
+          } as any,
+        });
+
+        this.logger.log(`Marked ${overdueGoals.length} goal(s) as overdue for user ${userId}`);
+      }
+    } catch (error) {
+      // Silently fail if new fields don't exist yet
+      // This is expected before running the schema update
+    }
+  }
+
+  // Get goal history (completed and overdue goals) - only works with new schema
+  async getGoalHistory(userId: string, weeks: number = 4) {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - (weeks * 7));
+
+      const history = await this.prisma.weeklyGoal.findMany({
+        where: {
+          userId,
+          createdAt: { gte: startDate },
+          OR: [
+            { isCompleted: true },
+            { isOverdue: true },
+          ],
+        } as any,
+        orderBy: { weekStart: 'desc' },
+      });
+
+      return history;
+    } catch (error) {
+      // Return empty array if new fields don't exist yet
+      this.logger.warn('Goal history feature requires schema update. Run quick-update script.');
+      return [];
+    }
+  }
+
+  // Get overdue goals - only works with new schema
+  async getOverdueGoals(userId: string) {
+    try {
+      await this.markOverdueGoals(userId);
+
+      const overdueGoals = await this.prisma.weeklyGoal.findMany({
+        where: {
+          userId,
+          isOverdue: true,
+          isCompleted: false,
+        } as any,
+        orderBy: { weekEnd: 'asc' } as any,
+      });
+
+      return overdueGoals;
+    } catch (error) {
+      // Return empty array if new fields don't exist yet
+      this.logger.warn('Overdue goals feature requires schema update. Run quick-update script.');
+      return [];
+    }
   }
 
   // Public method for incrementing a specific goal by name
@@ -857,12 +1058,34 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
 
       if (goal) {
         const newCurrent = Math.min(goal.current + amount, goal.target);
+        const isCompleted = newCurrent >= goal.target;
+        
+        // Update goal with completion status
+        const updateData: any = { 
+          current: newCurrent,
+          updatedAt: new Date()
+        };
+        
+        if (isCompleted) {
+          updateData.isCompleted = true;
+          updateData.completedAt = new Date();
+        }
+        
         await this.prisma.weeklyGoal.update({
           where: { id: goal.id },
-          data: { current: newCurrent },
+          data: updateData,
         });
 
-        this.logger.log(`Incremented goal "${goalName}" for user ${userId}: ${newCurrent}/${goal.target}`);
+        this.logger.log(`Incremented goal "${goalName}" for user ${userId}: ${newCurrent}/${goal.target}${isCompleted ? ' (COMPLETED)' : ''}`);
+        
+        // Auto-remove if completed
+        if (isCompleted) {
+          this.logger.log(`Goal COMPLETED and will be auto-removed: "${goalName}" for user ${userId}: ${newCurrent}/${goal.target}`);
+          await this.prisma.weeklyGoal.delete({
+            where: { id: goal.id },
+          });
+          this.logger.log(`Auto-removed completed goal "${goalName}" for user ${userId}`);
+        }
       } else {
         this.logger.warn(`Goal "${goalName}" not found for user ${userId}`);
       }

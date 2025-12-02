@@ -138,4 +138,20 @@ export class WellnessController {
   async incrementGoal(@Request() req, @Body() body: { goalName: string; amount?: number }) {
     return this.wellnessService.incrementGoalByName(req.user.id, body.goalName, body.amount || 1);
   }
+
+  @Get('goals/history')
+  @ApiOperation({ summary: 'Get goal history (completed and overdue goals)' })
+  @ApiQuery({ name: 'weeks', required: false, type: Number, description: 'Number of weeks to look back' })
+  @ApiResponse({ status: 200, description: 'Goal history retrieved successfully' })
+  async getGoalHistory(@Request() req, @Query('weeks') weeks?: string) {
+    const weeksNum = weeks ? parseInt(weeks, 10) : 4;
+    return this.wellnessService.getGoalHistory(req.user.id, weeksNum);
+  }
+
+  @Get('goals/overdue')
+  @ApiOperation({ summary: 'Get overdue goals' })
+  @ApiResponse({ status: 200, description: 'Overdue goals retrieved successfully' })
+  async getOverdueGoals(@Request() req) {
+    return this.wellnessService.getOverdueGoals(req.user.id);
+  }
 }

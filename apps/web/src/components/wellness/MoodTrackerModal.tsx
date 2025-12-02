@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { MoodAvatars } from '@/components/wellness/MoodAvatars';
+import GoalCelebration from './GoalCelebration';
 
 interface MoodTrackerModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ export default function MoodTrackerModal({
   const [journalText, setJournalText] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [completedGoals, setCompletedGoals] = useState<any[]>([]);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const moodLabels = [
     { score: 1, label: 'Very Low', avatar: MoodAvatars.Sad, color: 'from-red-500 to-red-600' },
@@ -92,6 +95,9 @@ export default function MoodTrackerModal({
       if (response.ok) {
         const savedEntry = await response.json();
         
+        console.log('📥 Full API Response:', savedEntry);
+        console.log('🔍 Checking for completedGoals:', savedEntry.completedGoals);
+        
         // Log analysis results (simulated ML workflow)
         if (savedEntry.analysis) {
           console.log('='.repeat(50));
@@ -107,6 +113,17 @@ export default function MoodTrackerModal({
           console.log('='.repeat(50));
         }
 
+        // Check for completed goals
+        if (savedEntry.completedGoals && savedEntry.completedGoals.length > 0) {
+          console.log('🎉 Goals completed:', savedEntry.completedGoals);
+          console.log('🎊 Setting celebration state...');
+          setCompletedGoals(savedEntry.completedGoals);
+          setShowCelebration(true);
+          console.log('✅ Celebration state set!');
+        } else {
+          console.log('ℹ️ No completed goals in response');
+        }
+
         // Reset and close
         setSelectedMood(null);
         setJournalText('');
@@ -116,10 +133,11 @@ export default function MoodTrackerModal({
         // Call onSave callback to refresh data
         if (onSave) onSave();
         
-        onClose();
-        
-        // Show success message
-        alert('Mood entry saved successfully!');
+        // Only close if no celebration to show
+        if (!savedEntry.completedGoals || savedEntry.completedGoals.length === 0) {
+          onClose();
+          alert('Mood entry saved successfully!');
+        }
       } else {
         // Log detailed error information
         const errorData = await response.json().catch(() => null);
@@ -153,6 +171,7 @@ export default function MoodTrackerModal({
   if (!isOpen) return null;
 
   return (
+    <>
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         {/* Backdrop */}
@@ -356,5 +375,18 @@ export default function MoodTrackerModal({
         </motion.div>
       </div>
     </AnimatePresence>
+
+    {/* Goal Celebration */}
+    {showCelebration && completedGoals.length > 0 && (
+      <GoalCelebration
+        goals={completedGoals}
+        onClose={() => {
+          setShowCelebration(false);
+          setCompletedGoals([]);
+          onClose(); // Close the mood modal too
+        }}
+      />
+    )}
+  </>
   );
 }
