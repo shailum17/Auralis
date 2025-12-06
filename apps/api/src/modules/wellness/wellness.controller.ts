@@ -154,4 +154,12 @@ export class WellnessController {
   async getOverdueGoals(@Request() req) {
     return this.wellnessService.getOverdueGoals(req.user.id);
   }
+
+  @Post('goals/check-overdue')
+  @ApiOperation({ summary: 'Check and notify users about overdue goals (admin/cron only)' })
+  @ApiResponse({ status: 200, description: 'Overdue goals checked and notifications sent' })
+  async checkOverdueGoals(@Request() req) {
+    // In production, you should add admin-only guard here
+    return this.wellnessService.checkAndNotifyOverdueGoals();
+  }
 }

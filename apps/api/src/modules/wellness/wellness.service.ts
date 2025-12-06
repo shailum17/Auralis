@@ -4,6 +4,7 @@ import { CreateMoodEntryDto } from './dto/create-mood-entry.dto';
 import { CreateStressEntryDto } from './dto/create-stress-entry.dto';
 import { StressAnalysisService } from './services/stress-analysis.service';
 import { EntryScoringService } from './services/entry-scoring.service';
+import { WellnessNotificationService } from './notifications.service';
 
 @Injectable()
 export class WellnessService {
@@ -12,7 +13,8 @@ export class WellnessService {
   constructor(
     private prisma: PrismaService,
     private stressAnalysisService: StressAnalysisService,
-    private entryScoringService: EntryScoringService
+    private entryScoringService: EntryScoringService,
+    private notificationService: WellnessNotificationService
   ) {}
 
   async createMoodEntry(userId: string, createMoodEntryDto: CreateMoodEntryDto) {
@@ -916,6 +918,18 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
               completedAt: new Date(),
             });
             
+            // Send completion notification email
+            await this.notificationService.sendGoalCompletionEmail(userId, {
+              goalName: goal.name,
+              category: goal.category,
+              current: newCurrent,
+              target: goal.target,
+              unit: goal.unit,
+              completedAt: new Date(),
+              weekStart: goal.weekStart,
+              weekEnd: goal.weekEnd,
+            });
+            
             // Auto-remove completed goal
             await this.prisma.weeklyGoal.delete({
               where: { id: goal.id },
@@ -1081,6 +1095,19 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
         // Auto-remove if completed
         if (isCompleted) {
           this.logger.log(`Goal COMPLETED and will be auto-removed: "${goalName}" for user ${userId}: ${newCurrent}/${goal.target}`);
+          
+          // Send completion notification email
+          await this.notificationService.sendGoalCompletionEmail(userId, {
+            goalName: goal.name,
+            category: goal.category,
+            current: newCurrent,
+            target: goal.target,
+            unit: goal.unit,
+            completedAt: new Date(),
+            weekStart: goal.weekStart,
+            weekEnd: goal.weekEnd,
+          });
+          
           await this.prisma.weeklyGoal.delete({
             where: { id: goal.id },
           });
@@ -1095,5 +1122,13 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
 
     // Return updated goals
     return this.getWeeklyGoals(userId);
+  }
+
+  /**
+   * Check and notify users about overdue goals
+   * This should be called by a cron job daily
+   */
+  async checkAndNotifyOverdueGoals() {
+    return this.notificationService.checkAndNotifyOverdueGoals();
   }
 }
