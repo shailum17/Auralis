@@ -69,9 +69,6 @@ const Navigation = () => {
             <a href="#faq" className="text-base font-medium text-gray-900 transition-all duration-200 hover:text-blue-600">
               FAQ
             </a>
-            <Link href="/ui-test" className="text-base font-medium text-purple-600 transition-all duration-200 hover:text-purple-800 border border-purple-200 px-3 py-1 rounded-md hover:bg-purple-50">
-              UI Test
-            </Link>
           </div>
 
           <div className="hidden md:block">
@@ -127,9 +124,6 @@ const Navigation = () => {
                 <a href="#faq" className="flex items-center text-base font-medium text-gray-900 transition-all duration-200">
                   FAQ
                 </a>
-                <Link href="/ui-test" className="flex items-center text-base font-medium text-purple-600 transition-all duration-200 border border-purple-200 px-3 py-2 rounded-md">
-                  UI Test
-                </Link>
                 <div className="relative">
                   <div className="absolute inset-0 z-0 rounded-lg blur-[40px] opacity-60 pointer-events-none"
                     style={{
