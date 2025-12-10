@@ -305,7 +305,7 @@ export default function CommunityFeed() {
       {posts.length > 0 && (
         <div className="p-6 border-t border-gray-200">
           <button 
-            onClick={() => router.push('/community/forum')}
+            onClick={() => router.push('/community')}
             className="w-full py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
           >
             Load more posts

@@ -121,7 +121,7 @@ export default function RecentActivity() {
               Start engaging with the community to see your activity here.
             </p>
             <button 
-              onClick={() => router.push('/community/forum')}
+              onClick={() => router.push('/community')}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Explore Community
@@ -156,10 +156,10 @@ export default function RecentActivity() {
             <button 
               onClick={() => {
                 // Navigate based on activity type
-                if (activity.iconType === 'post') router.push('/community/forum');
+                if (activity.iconType === 'post') router.push('/community');
                 else if (activity.iconType === 'mood') router.push('/wellness/mood');
                 else if (activity.iconType === 'group') router.push('/community/study-groups');
-                else router.push('/community/forum');
+                else router.push('/community');
               }}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600"
             >
