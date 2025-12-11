@@ -109,6 +109,8 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
 
     return {
       ...moodEntry,
+      // Ensure date field is available for frontend compatibility
+      date: moodEntry.createdAt,
       analysis: journalStressScore !== null ? {
         stressScore: journalStressScore,
         intensity: journalStressScore >= 0.7 ? 'high' : 
@@ -210,7 +212,12 @@ Suggestions: ${scoringResult.suggestions.join(', ')}
       orderBy: { createdAt: 'desc' },
     });
 
-    return moodEntries;
+    // Add date field for frontend compatibility and ensure proper field mapping
+    return moodEntries.map(entry => ({
+      ...entry,
+      date: entry.createdAt,
+      mood: entry.moodScore, // Map moodScore to mood for backward compatibility
+    }));
   }
 
   async getWellnessBanners(userId: string) {

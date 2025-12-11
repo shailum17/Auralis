@@ -49,7 +49,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.1 }}
       >
-        <p className="font-medium text-sm mb-2">{label}</p>
+        <p className="font-medium text-sm mb-2 text-white">{label}</p>
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
             <div
@@ -57,7 +57,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-secondary-300">{entry.name}:</span>
-            <span className="font-medium">{entry.value}</span>
+            <span className="font-medium text-white">{entry.value}</span>
           </div>
         ))}
       </motion.div>

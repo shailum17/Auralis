@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       badge: '3',
     },
     {
-      name: 'Wellness',
+      name: 'My Wellness',
       href: '/wellness',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

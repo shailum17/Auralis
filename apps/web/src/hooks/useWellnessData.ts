@@ -1,16 +1,48 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiClient } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useWellnessDataSync } from './useWellnessDataSync';
 
 export interface MoodEntry {
   id: string;
-  date: string;
-  mood: number; // 1-10 scale
-  energy: number; // 1-10 scale
-  stress: number; // 1-10 scale
+  date?: string;
+  createdAt?: string;
+  mood?: number; // 1-5 scale (backward compatibility)
+  moodScore?: number; // 1-5 scale (new field)
+  energy?: number; // 1-5 scale
+  stress?: number; // 1-5 scale
   notes?: string;
   tags?: string[];
+}
+
+export interface StressEntry {
+  id: string;
+  date: string;
+  stressLevel: number;
+  triggers: string[];
+  copingStrategies: string[];
+  notes?: string;
+}
+
+export interface SleepEntry {
+  id: string;
+  date: string;
+  hoursSlept: number;
+  sleepQuality: number;
+  bedtime: string;
+  wakeTime: string;
+  sleepIssues: string[];
+  notes?: string;
+}
+
+export interface SocialEntry {
+  id: string;
+  date: string;
+  connectionQuality: number;
+  feelings: string[];
+  socialActivities: string[];
+  notes?: string;
 }
 
 export interface WellnessGoal {
@@ -35,11 +67,17 @@ export interface WellnessStats {
 
 interface UseWellnessDataReturn {
   moodEntries: MoodEntry[];
+  stressEntries: StressEntry[];
+  sleepEntries: SleepEntry[];
+  socialEntries: SocialEntry[];
   wellnessGoals: WellnessGoal[];
   wellnessStats: WellnessStats | null;
   loading: boolean;
   error: string | null;
   hasData: boolean;
+  
+  // Sync status
+  syncStatus: any;
   
   // Actions
   addMoodEntry: (entry: Omit<MoodEntry, 'id'>) => Promise<boolean>;
@@ -49,69 +87,70 @@ interface UseWellnessDataReturn {
 }
 
 export function useWellnessData(): UseWellnessDataReturn {
-  // Mock user data since auth is removed
-  const user = null;
-  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
-  const [wellnessGoals, setWellnessGoals] = useState<WellnessGoal[]>([]);
-  const [wellnessStats, setWellnessStats] = useState<WellnessStats | null>(null);
+  const { user } = useAuth();
+  
+  // Use the new sync hook for core data
+  const {
+    moodEntries: syncedMoodEntries,
+    wellnessGoals: syncedWellnessGoals,
+    wellnessStats: syncedWellnessStats,
+    syncStatus,
+    addMoodEntry: syncAddMoodEntry,
+    updateWellnessGoal: syncUpdateWellnessGoal,
+    syncData
+  } = useWellnessDataSync();
+  
+  // Legacy state for other data types (not yet migrated to sync)
+  const [stressEntries, setStressEntries] = useState<StressEntry[]>([]);
+  const [sleepEntries, setSleepEntries] = useState<SleepEntry[]>([]);
+  const [socialEntries, setSocialEntries] = useState<SocialEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFetch, setLastFetch] = useState<number>(0);
+
+  // Convert synced data to legacy format
+  const moodEntries: MoodEntry[] = syncedMoodEntries.map(entry => ({
+    id: entry.id,
+    date: entry.date,
+    createdAt: entry.createdAt,
+    mood: entry.mood,
+    moodScore: entry.moodScore,
+    energy: entry.energy,
+    stress: entry.stress,
+    notes: entry.notes,
+    tags: entry.tags
+  }));
+
+  const wellnessGoals: WellnessGoal[] = syncedWellnessGoals.map(goal => ({
+    id: goal.id,
+    name: goal.name,
+    current: goal.current,
+    target: goal.target,
+    unit: goal.unit,
+    category: goal.category
+  }));
+
+  const wellnessStats: WellnessStats | null = syncedWellnessStats ? {
+    overallScore: syncedWellnessStats.overallScore,
+    dayStreak: syncedWellnessStats.dayStreak,
+    totalActivities: syncedWellnessStats.totalActivities,
+    weeklyAverage: syncedWellnessStats.weeklyAverage
+  } : null;
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
   const hasWellnessTrackingEnabled = useCallback(() => {
-    // Always return false since user is null (auth removed)
-    return false;
+    if (!user) return false;
+    return !!(
+      user.wellnessSettings?.trackMood || 
+      user.wellnessSettings?.trackStress ||
+      user.wellnessSettings?.allowWellnessInsights
+    );
   }, [user]);
 
-  const fetchWellnessData = useCallback(async () => {
-    if (!user || !hasWellnessTrackingEnabled()) {
-      setMoodEntries([]);
-      setWellnessGoals([]);
-      setWellnessStats(null);
-      return;
-    }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch mood entries
-      const moodResponse = await apiClient.request<MoodEntry[]>('/wellness/mood-entries', {
-        method: 'GET'
-      });
-
-      if (moodResponse.success && moodResponse.data) {
-        setMoodEntries(moodResponse.data);
-      }
-
-      // Fetch wellness goals
-      const goalsResponse = await apiClient.request<WellnessGoal[]>('/wellness/goals', {
-        method: 'GET'
-      });
-
-      if (goalsResponse.success && goalsResponse.data) {
-        setWellnessGoals(goalsResponse.data);
-      }
-
-      // Fetch wellness stats
-      const statsResponse = await apiClient.request<WellnessStats>('/wellness/stats', {
-        method: 'GET'
-      });
-
-      if (statsResponse.success && statsResponse.data) {
-        setWellnessStats(statsResponse.data);
-      }
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch wellness data';
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, hasWellnessTrackingEnabled]);
 
   const addMoodEntry = useCallback(async (entry: Omit<MoodEntry, 'id'>): Promise<boolean> => {
     if (!user || !hasWellnessTrackingEnabled()) {
@@ -119,32 +158,25 @@ export function useWellnessData(): UseWellnessDataReturn {
       return false;
     }
 
-    setLoading(true);
-    setError(null);
+    // Use the sync version which handles offline/online scenarios
+    const result = await syncAddMoodEntry({
+      date: entry.date || new Date().toISOString(),
+      createdAt: entry.createdAt || new Date().toISOString(),
+      moodScore: entry.moodScore || entry.mood || 0,
+      mood: entry.mood || entry.moodScore || 0,
+      energy: entry.energy,
+      stress: entry.stress,
+      notes: entry.notes,
+      tags: entry.tags,
+      synced: false
+    });
 
-    try {
-      const response = await apiClient.request<MoodEntry>('/wellness/mood-entries', {
-        method: 'POST',
-        body: JSON.stringify(entry)
-      });
-
-      if (response.success && response.data) {
-        setMoodEntries(prev => [response.data!, ...prev]);
-        // Refresh stats after adding new entry
-        await fetchWellnessData();
-        return true;
-      } else {
-        setError(response.error || 'Failed to add mood entry');
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to add mood entry';
-      setError(errorMessage);
-      return false;
-    } finally {
-      setLoading(false);
+    if (!result) {
+      setError('Failed to add mood entry');
     }
-  }, [user, hasWellnessTrackingEnabled, fetchWellnessData]);
+
+    return result;
+  }, [user, hasWellnessTrackingEnabled, syncAddMoodEntry]);
 
   const updateWellnessGoal = useCallback(async (goalId: string, updates: Partial<WellnessGoal>): Promise<boolean> => {
     if (!user || !hasWellnessTrackingEnabled()) {
@@ -152,51 +184,82 @@ export function useWellnessData(): UseWellnessDataReturn {
       return false;
     }
 
+    // Use the sync version which handles offline/online scenarios
+    const result = await syncUpdateWellnessGoal(goalId, updates);
+
+    if (!result) {
+      setError('Failed to update wellness goal');
+    }
+
+    return result;
+  }, [user, hasWellnessTrackingEnabled, syncUpdateWellnessGoal]);
+
+  const refreshData = useCallback(async () => {
+    await syncData(); // Use sync data instead
+  }, [syncData]);
+
+  // Legacy data fetching for non-synced data types
+  const fetchLegacyData = useCallback(async () => {
+    if (!user || !hasWellnessTrackingEnabled()) return;
+
     setLoading(true);
-    setError(null);
-
     try {
-      const response = await apiClient.request<WellnessGoal>(`/wellness/goals/${goalId}`, {
-        method: 'PUT',
-        body: JSON.stringify(updates)
-      });
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) return;
 
-      if (response.success && response.data) {
-        setWellnessGoals(prev => 
-          prev.map(goal => goal.id === goalId ? response.data! : goal)
-        );
-        return true;
-      } else {
-        setError(response.error || 'Failed to update wellness goal');
-        return false;
+      const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Fetch stress, sleep, and social entries (not yet migrated to sync)
+      const [stressResponse, sleepResponse, socialResponse] = await Promise.all([
+        fetch('/api/v1/wellness/stress/history', { headers }).catch(() => null),
+        fetch('/api/v1/wellness/sleep/history', { headers }).catch(() => null),
+        fetch('/api/v1/wellness/social/history', { headers }).catch(() => null)
+      ]);
+
+      if (stressResponse?.ok) {
+        const stressData = await stressResponse.json();
+        setStressEntries(Array.isArray(stressData) ? stressData : []);
       }
+
+      if (sleepResponse?.ok) {
+        const sleepData = await sleepResponse.json();
+        setSleepEntries(Array.isArray(sleepData) ? sleepData : []);
+      }
+
+      if (socialResponse?.ok) {
+        const socialData = await socialResponse.json();
+        setSocialEntries(Array.isArray(socialData) ? socialData : []);
+      }
+
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update wellness goal';
-      setError(errorMessage);
-      return false;
+      console.error('Error fetching legacy wellness data:', err);
     } finally {
       setLoading(false);
     }
   }, [user, hasWellnessTrackingEnabled]);
 
-  const refreshData = useCallback(async () => {
-    await fetchWellnessData();
-  }, [fetchWellnessData]);
-
-  // Fetch data when user changes or wellness settings change
+  // Fetch legacy data when user changes
   useEffect(() => {
-    fetchWellnessData();
-  }, [fetchWellnessData]);
+    fetchLegacyData();
+  }, [fetchLegacyData]);
 
-  const hasData = moodEntries.length > 0 || wellnessGoals.length > 0;
+  const hasData = moodEntries.length > 0 || wellnessGoals.length > 0 || 
+                  stressEntries.length > 0 || sleepEntries.length > 0 || socialEntries.length > 0;
 
   return {
     moodEntries,
+    stressEntries,
+    sleepEntries,
+    socialEntries,
     wellnessGoals,
     wellnessStats,
-    loading,
-    error,
+    loading: loading || syncStatus.syncInProgress,
+    error: error || (syncStatus.errors.length > 0 ? syncStatus.errors[0] : null),
     hasData: hasData && hasWellnessTrackingEnabled(),
+    syncStatus,
     
     addMoodEntry,
     updateWellnessGoal,

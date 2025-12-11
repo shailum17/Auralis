@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import PublicWellnessPage from './public/page';
 
 interface WellnessLayoutProps {
@@ -8,9 +9,7 @@ interface WellnessLayoutProps {
 }
 
 export default function WellnessLayout({ children }: WellnessLayoutProps) {
-  // Mock auth data since auth is removed
-  const isAuthenticated = false;
-  const loading = false;
+  const { isAuthenticated, isLoading: loading } = useAuth();
   const pathname = usePathname();
 
   // Show loading state while checking authentication

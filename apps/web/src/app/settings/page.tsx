@@ -20,7 +20,7 @@ export default function SettingsPage() {
         fullName: getDisplayName(user),
         username: user.username || user.email.split('@')[0],
         bio: user.bio || '',
-        avatar: user.avatar || '',
+        avatar: (user as any).avatar || '',
       });
     }
   }, [user]);
