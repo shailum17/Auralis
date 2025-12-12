@@ -76,6 +76,7 @@ export class CommunityController {
       title: string;
       content: string;
       forumId: string;
+      isAnonymous?: boolean;
     }
   ) {
     const userId = req.user.sub;

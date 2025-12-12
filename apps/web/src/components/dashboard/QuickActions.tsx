@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function QuickActions() {
   // Use actual auth context
   const { user } = useAuth();
+  const router = useRouter();
   const actions = [
     {
       name: 'Log Mood',
@@ -40,17 +42,7 @@ export default function QuickActions() {
       color: 'bg-green-500 hover:bg-green-600',
       href: '/resources/support'
     },
-    {
-      name: 'Anonymous Post',
-      description: 'Share safely and privately',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-      ),
-      color: 'bg-purple-500 hover:bg-purple-600',
-      href: '/community/new-post?anonymous=true'
-    }
+
   ];
 
   return (
@@ -63,6 +55,7 @@ export default function QuickActions() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
+            onClick={() => router.push(action.href)}
             className={`w-full flex items-center space-x-3 p-3 rounded-lg text-white transition-all duration-200 shadow-md hover:shadow-lg hover:scale-[1.02] ${action.color}`}
           >
             <div className="flex-shrink-0">

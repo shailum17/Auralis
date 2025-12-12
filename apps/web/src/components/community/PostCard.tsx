@@ -25,6 +25,7 @@ interface Post {
   isLiked: boolean;
   isPinned: boolean;
   isSolved: boolean;
+  isAnonymous?: boolean;
   lastReply?: {
     author: string;
     timestamp: string;
@@ -91,23 +92,34 @@ export default function PostCard({ post, onLike, onView }: PostCardProps) {
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                post.isAnonymous 
+                  ? 'bg-gray-400' 
+                  : 'bg-gradient-to-r from-blue-500 to-purple-600'
+              }`}>
                 <span className="text-white font-medium text-sm">
-                  {post.author.name.charAt(0)}
+                  {post.isAnonymous ? '?' : post.author.name.charAt(0)}
                 </span>
               </div>
-              {post.author.isOnline && (
+              {!post.isAnonymous && post.author.isOnline && (
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
               )}
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <button 
-                  onClick={() => router.push(`/community/user/${post.author.id}`)}
-                  className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors"
+                  onClick={() => !post.isAnonymous && router.push(`/community/user/${post.author.id}`)}
+                  className={`font-medium text-gray-900 text-sm transition-colors ${
+                    post.isAnonymous ? 'cursor-default' : 'hover:text-blue-600'
+                  }`}
                 >
-                  {post.author.name}
+                  {post.isAnonymous ? 'Anonymous' : post.author.name}
                 </button>
+                {post.isAnonymous && (
+                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                    Anonymous
+                  </span>
+                )}
                 <span className="text-xs text-gray-500">•</span>
                 <span className="text-xs text-gray-500">{formatTimeAgo(post.createdAt)}</span>
                 {post.isPinned && (
@@ -131,7 +143,9 @@ export default function PostCard({ post, onLike, onView }: PostCardProps) {
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryColor(post.category)}`}>
                   {getCategoryIcon(post.category)} {post.category}
                 </span>
-                <span className="text-xs text-gray-500">Rep: {post.author.reputation}</span>
+                {!post.isAnonymous && (
+                  <span className="text-xs text-gray-500">Rep: {post.author.reputation}</span>
+                )}
               </div>
             </div>
           </div>

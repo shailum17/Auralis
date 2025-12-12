@@ -460,13 +460,14 @@ export class CommunityService {
         
         return {
           id: post.id,
-          userId: post.authorId,
-          userName: post.author.fullName || post.author.username || 'Anonymous',
-          userEmail: post.author.email,
+          userId: post.isAnonymous ? 'anonymous' : post.authorId,
+          userName: post.isAnonymous ? 'Anonymous' : (post.author.fullName || post.author.username || 'Anonymous'),
+          userEmail: post.isAnonymous ? null : post.author.email,
           forumId: post.forumId || 'general',
           forumName: forum?.name || 'General Discussion',
           title: post.title,
           content: post.content,
+          isAnonymous: post.isAnonymous,
           createdAt: post.createdAt.toISOString(),
           likes: post._count.reactions, // Count all reactions as likes for now
           comments: post._count.comments,
@@ -488,7 +489,7 @@ export class CommunityService {
     }
   }
 
-  async createPost(userId: string, createPostDto: { title: string; content: string; forumId: string }) {
+  async createPost(userId: string, createPostDto: { title: string; content: string; forumId: string; isAnonymous?: boolean }) {
     console.log('✍️ Creating new post:', { userId, ...createPostDto });
     
     try {
@@ -528,6 +529,7 @@ export class CommunityService {
           content: createPostDto.content,
           forumId: createPostDto.forumId,
           authorId: userId,
+          isAnonymous: createPostDto.isAnonymous || false,
           isPublished: true,
         },
         include: {
@@ -550,13 +552,14 @@ export class CommunityService {
 
       const transformedPost = {
         id: post.id,
-        userId: post.authorId,
-        userName: post.author.fullName || post.author.username || 'Anonymous',
-        userEmail: post.author.email,
+        userId: post.isAnonymous ? 'anonymous' : post.authorId,
+        userName: post.isAnonymous ? 'Anonymous' : (post.author.fullName || post.author.username || 'Anonymous'),
+        userEmail: post.isAnonymous ? null : post.author.email,
         forumId: post.forumId || 'general',
         forumName: forum.name,
         title: post.title,
         content: post.content,
+        isAnonymous: post.isAnonymous,
         createdAt: post.createdAt.toISOString(),
         likes: post._count.reactions, // Count all reactions as likes for now
         comments: post._count.comments,
@@ -612,13 +615,14 @@ export class CommunityService {
 
       const transformedPost = {
         id: post.id,
-        userId: post.authorId,
-        userName: post.author.fullName || post.author.username || 'Anonymous',
-        userEmail: post.author.email,
+        userId: post.isAnonymous ? 'anonymous' : post.authorId,
+        userName: post.isAnonymous ? 'Anonymous' : (post.author.fullName || post.author.username || 'Anonymous'),
+        userEmail: post.isAnonymous ? null : post.author.email,
         forumId: post.forumId || 'general',
         forumName: forumFromDB?.name || 'General Discussion',
         title: post.title,
         content: post.content,
+        isAnonymous: post.isAnonymous,
         createdAt: post.createdAt.toISOString(),
         likes: post._count.reactions, // Count all reactions as likes for now
         comments: post._count.comments,

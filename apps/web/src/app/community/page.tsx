@@ -18,6 +18,7 @@ interface Post {
   createdAt: string;
   likes: number;
   comments: number;
+  isAnonymous?: boolean;
 }
 
 interface Forum {
@@ -53,6 +54,7 @@ export default function CommunityPage() {
     title: '',
     content: '',
     forumId: '',
+    isAnonymous: false,
   });
 
   // Check onboarding completion
@@ -185,14 +187,19 @@ export default function CommunityPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`,
         },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify({
+          title: newPost.title,
+          content: newPost.content,
+          forumId: newPost.forumId,
+          isAnonymous: newPost.isAnonymous,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           setPosts([data.data.post, ...posts]);
-          setNewPost({ title: '', content: '', forumId: '' });
+          setNewPost({ title: '', content: '', forumId: '', isAnonymous: false });
           setIsCreatePostOpen(false);
         }
       }
@@ -455,13 +462,29 @@ export default function CommunityPage() {
                     {posts.map((post) => (
                       <div key={post.id} className="p-6 hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className="flex items-start space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-white font-medium text-sm">{getUserInitials(post.userName)}</span>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            post.isAnonymous 
+                              ? 'bg-gray-400' 
+                              : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                          }`}>
+                            <span className="text-white font-medium text-sm">
+                              {post.isAnonymous ? '?' : getUserInitials(post.userName)}
+                            </span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-semibold text-gray-900">{post.userName}</span>
-                              <span className="text-gray-400">•</span>
+                              <span className="font-semibold text-gray-900">
+                                {post.isAnonymous ? 'Anonymous' : post.userName}
+                              </span>
+                              {post.isAnonymous && (
+                                <>
+                                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                                    Anonymous
+                                  </span>
+                                  <span className="text-gray-400">•</span>
+                                </>
+                              )}
+                              {!post.isAnonymous && <span className="text-gray-400">•</span>}
                               <span className="text-sm text-gray-500">{getTimeAgo(post.createdAt)}</span>
                               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{post.forumName}</span>
                             </div>
@@ -725,6 +748,23 @@ export default function CommunityPage() {
                       rows={8}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                     />
+                  </div>
+                  
+                  {/* Anonymous Option */}
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="anonymous-post"
+                      checked={newPost.isAnonymous}
+                      onChange={(e) => setNewPost({ ...newPost, isAnonymous: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="anonymous-post" className="text-sm text-gray-700">
+                      Post anonymously
+                    </label>
+                    <div className="text-xs text-gray-500">
+                      (Your identity will be hidden from other users)
+                    </div>
                   </div>
                   
                   <div className="flex items-center space-x-3 pt-4">

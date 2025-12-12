@@ -51,29 +51,28 @@ export default function CreatePostModal({
     setError('');
 
     try {
-      // Simulate API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // In a real app, this would be an API call to create the post
-      const newPost = {
-        id: Date.now().toString(),
-        title: formData.title,
-        content: formData.content,
-        category: formData.category,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        author: {
-          name: formData.isAnonymous ? 'Anonymous' : (user?.fullName || user?.username || 'User'),
-          avatar: formData.isAnonymous ? '?' : (user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'U'),
-          role: user?.role || 'Student'
+      // Create post via API
+      const response = await fetch('/api/community/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
         },
-        isAnonymous: formData.isAnonymous,
-        createdAt: new Date().toISOString(),
-        replies: 0,
-        likes: 0,
-        views: 0
-      };
+        body: JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          forumId: formData.category,
+          isAnonymous: formData.isAnonymous,
+        }),
+      });
 
-      console.log('New post created:', newPost);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create post');
+      }
+
+      const result = await response.json();
+      console.log('Post created successfully:', result);
       
       // Reset form
       setFormData({

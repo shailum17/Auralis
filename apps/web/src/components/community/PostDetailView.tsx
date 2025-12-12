@@ -25,6 +25,7 @@ interface Post {
   isLiked: boolean;
   isPinned: boolean;
   isSolved: boolean;
+  isAnonymous?: boolean;
 }
 
 interface Reply {
@@ -41,6 +42,7 @@ interface Reply {
   isLiked: boolean;
   isHelpful: boolean;
   isSolution: boolean;
+  isAnonymous?: boolean;
 }
 
 interface PostDetailViewProps {
@@ -271,18 +273,29 @@ Pro tip: Always double-check your work by expanding the original function (if po
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  currentPost.isAnonymous 
+                    ? 'bg-gray-400' 
+                    : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                }`}>
                   <span className="text-white font-medium">
-                    {currentPost.author.name.charAt(0)}
+                    {currentPost.isAnonymous ? '?' : currentPost.author.name.charAt(0)}
                   </span>
                 </div>
-                {currentPost.author.isOnline && (
+                {!currentPost.isAnonymous && currentPost.author.isOnline && (
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                 )}
               </div>
               <div>
                 <div className="flex items-center space-x-2 mb-1">
-                  <h4 className="font-semibold text-gray-900">{currentPost.author.name}</h4>
+                  <h4 className="font-semibold text-gray-900">
+                    {currentPost.isAnonymous ? 'Anonymous' : currentPost.author.name}
+                  </h4>
+                  {currentPost.isAnonymous && (
+                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                      Anonymous
+                    </span>
+                  )}
                   <span className="text-sm text-gray-500">•</span>
                   <span className="text-sm text-gray-500">{formatTimeAgo(currentPost.createdAt)}</span>
                   {currentPost.isPinned && (
@@ -306,7 +319,9 @@ Pro tip: Always double-check your work by expanding the original function (if po
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryColor(currentPost.category)}`}>
                     {getCategoryIcon(currentPost.category)} {currentPost.category}
                   </span>
-                  <span className="text-xs text-gray-500">Rep: {currentPost.author.reputation}</span>
+                  {!currentPost.isAnonymous && (
+                    <span className="text-xs text-gray-500">Rep: {currentPost.author.reputation}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -496,22 +511,40 @@ Pro tip: Always double-check your work by expanding the original function (if po
                     }`}
                 >
                   <div className="relative">
-                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      reply.isAnonymous 
+                        ? 'bg-gray-400' 
+                        : 'bg-gradient-to-r from-green-500 to-blue-600'
+                    }`}>
                       <span className="text-white font-medium text-sm">
-                        {reply.author.name.charAt(0)}
+                        {reply.isAnonymous ? '?' : reply.author.name.charAt(0)}
                       </span>
                     </div>
-                    {reply.author.isOnline && (
+                    {!reply.isAnonymous && reply.author.isOnline && (
                       <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                     )}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-3">
-                      <h4 className="font-medium text-gray-900">{reply.author.name}</h4>
+                      <h4 className="font-medium text-gray-900">
+                        {reply.isAnonymous ? 'Anonymous' : reply.author.name}
+                      </h4>
+                      {reply.isAnonymous && (
+                        <>
+                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                            Anonymous
+                          </span>
+                          <span className="text-sm text-gray-500">•</span>
+                        </>
+                      )}
                       <span className="text-sm text-gray-500">•</span>
                       <span className="text-sm text-gray-500">{formatTimeAgo(reply.createdAt)}</span>
-                      <span className="text-sm text-gray-500">•</span>
-                      <span className="text-sm text-gray-500">Rep: {reply.author.reputation}</span>
+                      {!reply.isAnonymous && (
+                        <>
+                          <span className="text-sm text-gray-500">•</span>
+                          <span className="text-sm text-gray-500">Rep: {reply.author.reputation}</span>
+                        </>
+                      )}
                       {reply.isSolution && (
                         <>
                           <span className="text-sm text-gray-500">•</span>

@@ -12,6 +12,7 @@ import WellnessInsights from '@/components/dashboard/WellnessInsights';
 import MoodTrackerModal from '@/components/wellness/MoodTrackerModal';
 import StressTrackerModal from '@/components/wellness/StressTrackerModal';
 
+
 export default function Dashboard() {
   // Use actual auth context
   const { user } = useAuth();
@@ -61,6 +62,7 @@ export default function Dashboard() {
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [showStressModal, setShowStressModal] = useState(false);
 
+
   // Navigation handlers
   const handleLogMood = () => {
     setIsExplorePopupOpen(false);
@@ -82,19 +84,9 @@ export default function Dashboard() {
     router.push('/resources/support');
   };
 
-  const handleAnonymousPost = () => {
-    setIsExplorePopupOpen(false);
-    router.push('/community/new-post?anonymous=true');
-  };
-
   const handleExploreForums = () => {
     setIsExplorePopupOpen(false);
     router.push('/community/forum');
-  };
-
-  const handleCreatePost = () => {
-    setIsExplorePopupOpen(false);
-    router.push('/community/new-post');
   };
 
   // Get display name from user data
@@ -247,23 +239,7 @@ export default function Dashboard() {
                             </div>
                           </button>
 
-                          {/* Anonymous Post - Purple */}
-                          <button 
-                            onClick={handleAnonymousPost}
-                            className="group relative overflow-hidden bg-white/80 backdrop-blur-sm border border-purple-200/50 hover:border-purple-300 rounded-xl p-3.5 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/20 hover:-translate-y-0.5"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="relative flex items-center space-x-2.5">
-                              <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform shadow-md flex-shrink-0">
-                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </div>
-                              <div className="text-left min-w-0">
-                                <h4 className="font-semibold text-sm text-gray-900">Anonymous</h4>
-                              </div>
-                            </div>
-                          </button>
+
                         </div>
 
                         {/* Compact Community Stats Card */}
@@ -317,27 +293,7 @@ export default function Dashboard() {
                             </div>
                           </button>
 
-                          {/* Create Post Card */}
-                          <button 
-                            onClick={handleCreatePost}
-                            className="group relative w-full overflow-hidden bg-white/80 backdrop-blur-sm border border-green-200/50 hover:border-green-400 rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-green-500/20 hover:-translate-y-0.5 text-left"
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="relative flex items-center space-x-4">
-                              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-all shadow-lg">
-                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">Create Post</h4>
-                                <p className="text-xs text-gray-600 leading-relaxed">Share your thoughts with the community</p>
-                              </div>
-                              <svg className="w-5 h-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </div>
-                          </button>
+
                         </div>
                       </div>
                     </div>
@@ -430,6 +386,8 @@ export default function Dashboard() {
           window.location.reload();
         }}
       />
+
+
     </DashboardLayout>
   );
 }

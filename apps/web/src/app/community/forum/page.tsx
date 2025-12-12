@@ -25,6 +25,7 @@ interface ForumPost {
   lastActivity: string;
   isPinned?: boolean;
   isHot?: boolean;
+  isAnonymous?: boolean;
 }
 
 export default function ForumPage() {
@@ -439,8 +440,14 @@ export default function ForumPage() {
                   >
                     <div className="flex items-start space-x-4">
                       {/* Author Avatar */}
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-medium text-sm">{post.author.avatar}</span>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        post.isAnonymous 
+                          ? 'bg-gray-400' 
+                          : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                      }`}>
+                        <span className="text-white font-medium text-sm">
+                          {post.isAnonymous ? '?' : post.author.avatar}
+                        </span>
                       </div>
 
                       {/* Post Content */}
@@ -470,9 +477,23 @@ export default function ForumPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="flex items-center space-x-1">
-                              <span className="font-medium">{post.author.name}</span>
-                              <span>•</span>
-                              <span>{post.author.role}</span>
+                              <span className="font-medium">
+                                {post.isAnonymous ? 'Anonymous' : post.author.name}
+                              </span>
+                              {post.isAnonymous && (
+                                <>
+                                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
+                                    Anonymous
+                                  </span>
+                                  <span>•</span>
+                                </>
+                              )}
+                              {!post.isAnonymous && (
+                                <>
+                                  <span>•</span>
+                                  <span>{post.author.role}</span>
+                                </>
+                              )}
                             </span>
                           </div>
 

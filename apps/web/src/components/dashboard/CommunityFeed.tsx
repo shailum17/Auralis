@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import CreatePostModal from '@/components/community/CreatePostModal';
 
 interface Post {
   id: number;
@@ -25,6 +26,7 @@ export default function CommunityFeed() {
   const [filter, setFilter] = useState('all');
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
 
   useEffect(() => {
     // Load real community feed data from API
@@ -146,7 +148,7 @@ export default function CommunityFeed() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900">Community Feed</h2>
           <button 
-            onClick={() => router.push('/community/new-post')}
+            onClick={() => setShowCreatePostModal(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
             New Post
@@ -187,7 +189,7 @@ export default function CommunityFeed() {
               Be the first to share something or check back later for new posts.
             </p>
             <button 
-              onClick={() => router.push('/community/new-post')}
+              onClick={() => setShowCreatePostModal(true)}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Create Your First Post
@@ -312,6 +314,17 @@ export default function CommunityFeed() {
           </button>
         </div>
       )}
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={showCreatePostModal}
+        onClose={() => setShowCreatePostModal(false)}
+        onPostCreated={() => {
+          setShowCreatePostModal(false);
+          // Reload the feed
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

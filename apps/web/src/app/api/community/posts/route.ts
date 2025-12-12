@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, forumId } = body;
+    const { title, content, forumId, isAnonymous } = body;
 
     if (!title || !content || !forumId) {
       return NextResponse.json(
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Authorization': authHeader,
       },
-      body: JSON.stringify({ title, content, forumId }),
+      body: JSON.stringify({ title, content, forumId, isAnonymous }),
     });
 
     if (!response.ok) {
