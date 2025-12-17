@@ -1,12 +1,23 @@
 # 🚀 How to Run the Student Community Platform
 
 ## Prerequisites ✅
-- ✅ Node.js 18+ (You have v22.18.0)
-- ✅ Python 3.11+ (You have v3.13.7)
-- ✅ pnpm installed
+
+### Required Software
+- ✅ **Node.js 18+** (Recommended: v20+)
+- ✅ **Python 3.11+** (For ML service)
+- ✅ **pnpm** (Package manager - `npm install -g pnpm`)
+- ✅ **Git** (Version control)
+
+### Optional (for production)
+- Docker & Docker Compose
+- PostgreSQL (for production database)
+- Redis (for caching and sessions)
+
+### Development Setup Status
 - ✅ Dependencies installed
-- ✅ Database setup complete
-- ✅ Environment configured
+- ✅ Database configured (SQLite for development)
+- ✅ Environment files configured
+- ✅ Services ready to run
 
 ## Quick Start (3 Terminal Setup)
 
@@ -20,7 +31,9 @@ npm run dev
 ### Terminal 2: ML Service
 ```bash
 cd apps/ml-service
+# Install dependencies (first time only)
 pip install -r requirements.txt
+# Start the ML service
 python src/main.py
 ```
 
@@ -33,11 +46,15 @@ npm run dev
 ```
 
 
-## Service URLs
-- 🌐 **Web App**: http://localhost:3000
-- 🔌 **API**: http://localhost:3001
-- 📚 **API Docs**: http://localhost:3001/api/docs
-- 🤖 **ML Service**: http://localhost:8001
+## Service URLs & Ports
+
+| Service | URL | Port | Description |
+|---------|-----|------|-------------|
+| 🌐 **Web App** | http://localhost:3000 | 3000 | Next.js frontend application |
+| 🔌 **API** | http://localhost:3001 | 3001 | NestJS backend API |
+| 📚 **API Docs** | http://localhost:3001/api/docs | 3001 | Swagger/OpenAPI documentation |
+| 🤖 **ML Service** | http://localhost:8001 | 8001 | Python FastAPI ML service |
+| 🔍 **Prisma Studio** | http://localhost:5555 | 5555 | Database management UI |
 
 ## Default Test Accounts
 - **Admin**: admin@example.com / admin123!

@@ -1,6 +1,6 @@
 # Student Community Platform
 
-A privacy-first, scalable student community platform designed to foster safe, supportive academic communities while maintaining strict privacy standards and data minimization principles.
+A comprehensive, privacy-first student community platform designed to foster safe, supportive academic communities while maintaining strict privacy standards and data minimization principles. Built with modern technologies and a focus on mental wellness, real-time communication, and community engagement.
 
 ## 🌟 Features
 
@@ -28,12 +28,45 @@ A privacy-first, scalable student community platform designed to foster safe, su
 ## 🏗️ Architecture
 
 ### Technology Stack
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: NestJS, TypeScript, Prisma ORM
-- **Database**: PostgreSQL with Redis for caching
-- **ML Service**: Python, FastAPI, scikit-learn, Transformers
-- **Real-time**: Socket.io for WebSocket connections
-- **Infrastructure**: Docker, Kubernetes-ready
+
+#### Frontend (Next.js 14 App)
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS with custom design system
+- **UI Components**: Headless UI, Heroicons, Lucide React
+- **State Management**: Zustand, React Query
+- **Forms**: React Hook Form with Zod validation
+- **Charts**: Chart.js, Recharts
+- **Animation**: Framer Motion, Lenis
+- **Real-time**: Socket.io Client
+- **Testing**: Jest, Playwright, Testing Library
+
+#### Backend (NestJS API)
+- **Framework**: NestJS with TypeScript
+- **Database**: Prisma ORM with PostgreSQL/SQLite
+- **Authentication**: JWT with Passport strategies
+- **Real-time**: Socket.io WebSocket gateway
+- **Validation**: Class Validator, Zod
+- **Documentation**: Swagger/OpenAPI
+- **Security**: Helmet, Rate limiting, CORS
+- **Email**: Nodemailer integration
+- **Testing**: Jest, Supertest
+
+#### ML Service (Python FastAPI)
+- **Framework**: FastAPI with Pydantic
+- **Language**: Python 3.11+
+- **Server**: Uvicorn ASGI server
+- **Configuration**: Pydantic Settings
+- **CORS**: FastAPI CORS middleware
+- **Logging**: Custom logging setup
+- **Environment**: Python-dotenv
+
+#### Infrastructure & DevOps
+- **Containerization**: Docker with multi-stage builds
+- **Development**: Hot reload, concurrent development
+- **Package Management**: pnpm workspaces
+- **Code Quality**: ESLint, Prettier, TypeScript strict mode
+- **CI/CD**: Ready for GitHub Actions, Docker deployment
 
 ### Privacy & Security
 - **Zero-Trust Architecture**: No implicit trust between services
@@ -133,20 +166,33 @@ cd apps/web && pnpm dev
 ```
 student-community-platform/
 ├── apps/
-│   ├── web/                    # Next.js frontend
-│   ├── api/                    # NestJS backend
-│   ├── ml-service/            # Python ML service
-│   └── worker/                # Background jobs
-├── packages/
-│   ├── ui/                    # Shared UI components
-│   ├── types/                 # Shared TypeScript types
-│   └── analytics-sdk/         # Event tracking
-├── docs/
-│   ├── architecture/          # System design docs
-│   ├── api/                   # API documentation
-│   └── security-privacy/      # Privacy & security docs
-├── infra/                     # Infrastructure as code
-└── tests/                     # Cross-service tests
+│   ├── web/                    # Next.js 14 frontend application
+│   │   ├── src/
+│   │   │   ├── app/           # Next.js App Router pages
+│   │   │   ├── components/    # React components
+│   │   │   ├── hooks/         # Custom React hooks
+│   │   │   ├── lib/           # Utility libraries
+│   │   │   ├── types/         # TypeScript type definitions
+│   │   │   └── utils/         # Helper utilities
+│   │   └── package.json       # Frontend dependencies
+│   ├── api/                   # NestJS backend API
+│   │   ├── src/
+│   │   │   ├── modules/       # Feature modules
+│   │   │   ├── common/        # Shared utilities
+│   │   │   └── health/        # Health check endpoints
+│   │   ├── prisma/            # Database schema & migrations
+│   │   └── package.json       # Backend dependencies
+│   └── ml-service/            # Python FastAPI ML service
+│       ├── src/               # Python source code
+│       ├── tests/             # ML service tests
+│       └── requirements.txt   # Python dependencies
+├── docs/                      # Comprehensive documentation
+│   ├── architecture/          # System design documents
+│   ├── frontend/              # Frontend documentation
+│   ├── backend/               # Backend documentation
+│   └── ml-service/            # ML service documentation
+├── scripts/                   # Development & deployment scripts
+└── package.json              # Root workspace configuration
 ```
 
 ## 🔐 Privacy & Security
@@ -236,12 +282,24 @@ pnpm test:e2e
 
 ## 📚 Documentation
 
-- [Architecture Overview](docs/architecture/README.md)
-- [Multi-User Support](MULTI_USER_GUIDE.md) - Complete guide to concurrent user support
-- [API Documentation](docs/api/)
-- [Privacy & Security](docs/security-privacy/)
-- [Deployment Guide](docs/deployment/)
-- [Contributing Guide](CONTRIBUTING.md)
+### 📖 Complete Documentation
+
+#### Service Documentation
+- [**Frontend Documentation**](docs/frontend/README.md) - Next.js 14 app architecture, components, and features
+- [**Backend Documentation**](docs/backend/README.md) - NestJS API, modules, and database design  
+- [**ML Service Documentation**](docs/ml-service/README.md) - Python FastAPI service and ML capabilities
+
+#### System Documentation
+- [**Project Summary**](docs/PROJECT_SUMMARY.md) - Comprehensive overview of features and implementation
+- [**Architecture Overview**](docs/architecture/README.md) - System design and service interactions
+- [**Quick Start Guide**](RUN_PROJECT.md) - Get the platform running in 3 terminals
+- [**Multi-User Support**](MULTI_USER_GUIDE.md) - Complete guide to concurrent user support
+
+#### Technical Documentation
+- [**API Documentation**](docs/api/) - REST API endpoints and WebSocket events
+- [**Privacy & Security**](docs/security-privacy/) - Privacy-first design and security measures
+- [**Deployment Guide**](docs/deployment/) - Production deployment instructions
+- [**Contributing Guide**](CONTRIBUTING.md) - Development workflow and standards
 
 ### Multi-User System
 ✅ **Fully Supported** - The platform supports unlimited concurrent users with complete data isolation.
