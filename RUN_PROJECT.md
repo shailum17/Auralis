@@ -10,7 +10,7 @@
 
 ### Optional (for production)
 - Docker & Docker Compose
-- PostgreSQL (for production database)
+- Mongodb (for production database)
 - Redis (for caching and sessions)
 
 ### Development Setup Status
